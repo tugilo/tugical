@@ -1,0 +1,134 @@
+# tugical Project .gitignore
+
+# Laravel
+/backend/vendor/
+/backend/node_modules/
+/backend/public/hot
+/backend/public/storage
+/backend/storage/*.key
+/backend/.env
+/backend/.env.backup
+/backend/.env.production
+/backend/.phpunit.result.cache
+/backend/Homestead.json
+/backend/Homestead.yaml
+/backend/npm-debug.log
+/backend/yarn-error.log
+/backend/.phpstorm.meta.php
+/backend/_ide_helper.php
+
+# Frontend
+/frontend/node_modules/
+/frontend/dist/
+/frontend/build/
+/frontend/.env
+/frontend/.env.local
+/frontend/.env.development.local
+/frontend/.env.test.local
+/frontend/.env.production.local
+/frontend/npm-debug.log*
+/frontend/yarn-debug.log*
+/frontend/yarn-error.log*
+
+# LIFF
+/liff/node_modules/
+/liff/dist/
+/liff/build/
+/liff/.env
+/liff/.env.local
+/liff/.env.development.local
+/liff/.env.test.local
+/liff/.env.production.local
+/liff/npm-debug.log*
+/liff/yarn-debug.log*
+/liff/yarn-error.log*
+
+# Docker & Environment
+.env
+.env.local
+.env.staging
+.env.production
+docker-compose.override.yml
+
+# Database
+*.sql
+*.sqlite
+*.sqlite3
+/backups/
+
+# Logs
+*.log
+logs/
+/docker/logs/
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+.coverage/
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+/tmp/
+
+# SSL Certificates
+/docker/ssl/*.crt
+/docker/ssl/*.key
+/docker/ssl/*.pem
+
+# Build artifacts
+*.tar.gz
+*.zip
+
+# Testing
+/backend/coverage/
+/frontend/coverage/
+/liff/coverage/
+.phpunit.cache
+
+# Cache
+/backend/bootstrap/cache/*.php
+/backend/storage/framework/cache/data/*
+/backend/storage/framework/sessions/*
+/backend/storage/framework/testing/*
+/backend/storage/framework/views/*
+
+# Composer
+/backend/composer.lock
+
+# NPM
+package-lock.json
+yarn.lock
+
+# Documentation builds
+/docs/_build/
+/docs/.doctrees/
+
+# Backup files
+*.bak
+*.backup
+*.orig
+
+# Monitoring & Performance
+newrelic.log 
