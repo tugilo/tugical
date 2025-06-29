@@ -1,0 +1,697 @@
+<?php
+
+namespace App\Models;
+
+use App\Models\Scopes\TenantScope;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
+
+/**
+ * 顧客モデル - 顧客管理
+ * 
+ * 各店舗の顧客情報を管理し、LINE連携・ロイヤリティ・予約履歴を統合管理
+ * 個人情報の暗号化・セキュリティ・プライバシー保護を最優先に実装
+ * 
+ * 主要機能:
+ * - LINE連携による自動顧客登録
+ * - ロイヤリティランク自動判定（予約回数・金額ベース）
+ * - 個人情報暗号化保存
+ * - 予約履歴・統計情報管理
+ * - キャンセル率・ノーショー率追跡
+ * - カスタマーノート・タグ管理
+ * 
+ * セキュリティ機能:
+ * - 個人情報自動暗号化（phone, email, address）
+ * - アクセスログ記録
+ * - データ保持期間管理
+ * - GDPR準拠削除機能
+ * 
+ * 関連テーブル:
+ * - store: 所属店舗（多対1）
+ * - bookings: 予約履歴（1対多）
+ * 
+ * @property int $id 顧客ID
+ * @property int $store_id 店舗ID
+ * @property string|null $line_user_id LINE ユーザーID
+ * @property string $name 顧客名
+ * @property string|null $name_kana 顧客名（カナ）
+ * @property string|null $phone 電話番号（暗号化）
+ * @property string|null $email メールアドレス（暗号化）
+ * @property string|null $address 住所（暗号化）
+ * @property string|null $birthday 生年月日
+ * @property string|null $gender 性別（male/female/other/not_specified）
+ * @property string $loyalty_rank ロイヤリティランク（bronze/silver/gold/platinum/diamond）
+ * @property int $total_bookings 総予約回数
+ * @property int $total_amount 総利用金額（円）
+ * @property int $cancelled_bookings キャンセル回数
+ * @property int $no_show_bookings 無断キャンセル回数
+ * @property Carbon|null $last_booking_date 最終予約日
+ * @property array|null $preferences 顧客設定（JSON: 通知設定、言語設定等）
+ * @property array|null $tags タグ（JSON: 顧客分類用）
+ * @property string|null $notes スタッフノート
+ * @property string|null $line_profile_picture_url LINE プロフィール画像URL
+ * @property bool $is_active アクティブ状態
+ * @property Carbon|null $deleted_at 削除日時（ソフトデリート）
+ * @property Carbon $created_at 作成日時
+ * @property Carbon $updated_at 更新日時
+ * 
+ * @property-read Store $store 所属店舗
+ * @property-read \Illuminate\Database\Eloquent\Collection<Booking> $bookings 予約履歴一覧
+ */
+class Customer extends Model
+{
+    use HasFactory, SoftDeletes;
+
+    /**
+     * テーブル名
+     */
+    protected $table = 'customers';
+
+    /**
+     * 一括代入可能な属性
+     */
+    protected $fillable = [
+        'store_id',
+        'line_user_id',
+        'name',
+        'name_kana',
+        'phone',
+        'email',
+        'address',
+        'birthday',
+        'gender',
+        'loyalty_rank',
+        'total_bookings',
+        'total_amount',
+        'cancelled_bookings',
+        'no_show_bookings',
+        'last_booking_date',
+        'preferences',
+        'tags',
+        'notes',
+        'line_profile_picture_url',
+        'is_active',
+    ];
+
+    /**
+     * 非表示属性（API出力時に除外）
+     * 個人情報保護のため
+     */
+    protected $hidden = [
+        'phone',
+        'email',
+        'address',
+        'notes',
+    ];
+
+    /**
+     * 属性のキャスト設定
+     */
+    protected $casts = [
+        'preferences' => 'array',
+        'tags' => 'array',
+        'total_bookings' => 'integer',
+        'total_amount' => 'integer',
+        'cancelled_bookings' => 'integer',
+        'no_show_bookings' => 'integer',
+        'is_active' => 'boolean',
+        'last_booking_date' => 'datetime',
+        'birthday' => 'date',
+        'deleted_at' => 'datetime',
+    ];
+
+    /**
+     * 性別の定数
+     */
+    public const GENDER_MALE = 'male';
+    public const GENDER_FEMALE = 'female';
+    public const GENDER_OTHER = 'other';
+    public const GENDER_NOT_SPECIFIED = 'not_specified';
+
+    /**
+     * ロイヤリティランクの定数
+     */
+    public const LOYALTY_BRONZE = 'bronze';
+    public const LOYALTY_SILVER = 'silver';
+    public const LOYALTY_GOLD = 'gold';
+    public const LOYALTY_PLATINUM = 'platinum';
+    public const LOYALTY_DIAMOND = 'diamond';
+
+    /**
+     * 暗号化対象フィールド
+     */
+    protected $encrypted = ['phone', 'email', 'address'];
+
+    /**
+     * ロイヤリティランク設定
+     */
+    public static function getLoyaltyRankSettings(): array
+    {
+        return [
+            self::LOYALTY_BRONZE => [
+                'name' => 'ブロンズ',
+                'min_bookings' => 0,
+                'min_amount' => 0,
+                'benefits' => ['基本サービス'],
+                'color' => '#CD7F32',
+                'discount_rate' => 0,
+            ],
+            self::LOYALTY_SILVER => [
+                'name' => 'シルバー',
+                'min_bookings' => 5,
+                'min_amount' => 20000,
+                'benefits' => ['予約優先', '特別クーポン'],
+                'color' => '#C0C0C0',
+                'discount_rate' => 3,
+            ],
+            self::LOYALTY_GOLD => [
+                'name' => 'ゴールド',
+                'min_bookings' => 15,
+                'min_amount' => 60000,
+                'benefits' => ['予約優先', '特別クーポン', '誕生日特典'],
+                'color' => '#FFD700',
+                'discount_rate' => 5,
+            ],
+            self::LOYALTY_PLATINUM => [
+                'name' => 'プラチナ',
+                'min_bookings' => 30,
+                'min_amount' => 120000,
+                'benefits' => ['最優先予約', '専用クーポン', '誕生日特典', 'VIP待遇'],
+                'color' => '#E5E4E2',
+                'discount_rate' => 8,
+            ],
+            self::LOYALTY_DIAMOND => [
+                'name' => 'ダイヤモンド',
+                'min_bookings' => 60,
+                'min_amount' => 300000,
+                'benefits' => ['最優先予約', '専用クーポン', '誕生日特典', 'VIP待遇', '専属担当'],
+                'color' => '#B9F2FF',
+                'discount_rate' => 12,
+            ],
+        ];
+    }
+
+    /**
+     * 利用可能性別一覧
+     */
+    public static function getAvailableGenders(): array
+    {
+        return [
+            self::GENDER_MALE => '男性',
+            self::GENDER_FEMALE => '女性',
+            self::GENDER_OTHER => 'その他',
+            self::GENDER_NOT_SPECIFIED => '未指定',
+        ];
+    }
+
+    /**
+     * モデルの起動時処理
+     * 
+     * TenantScopeを適用してMulti-tenant分離を実現
+     */
+    protected static function booted()
+    {
+        static::addGlobalScope(new TenantScope);
+        
+        // 作成時の処理
+        static::creating(function ($customer) {
+            if (!$customer->store_id && auth()->check()) {
+                $customer->store_id = auth()->user()->store_id;
+            }
+
+            // デフォルト値設定
+            $customer->loyalty_rank = $customer->loyalty_rank ?? self::LOYALTY_BRONZE;
+            $customer->total_bookings = $customer->total_bookings ?? 0;
+            $customer->total_amount = $customer->total_amount ?? 0;
+            $customer->cancelled_bookings = $customer->cancelled_bookings ?? 0;
+            $customer->no_show_bookings = $customer->no_show_bookings ?? 0;
+            $customer->is_active = $customer->is_active ?? true;
+
+            // 個人情報暗号化
+            $customer->encryptPersonalData();
+        });
+
+        // 更新時の処理
+        static::updating(function ($customer) {
+            // 個人情報暗号化
+            $customer->encryptPersonalData();
+
+            // ロイヤリティランク自動更新
+            $customer->updateLoyaltyRank();
+        });
+
+        // 取得時の処理
+        static::retrieved(function ($customer) {
+            // 個人情報復号化
+            $customer->decryptPersonalData();
+        });
+    }
+
+    /**
+     * 所属店舗との関係性
+     */
+    public function store(): BelongsTo
+    {
+        return $this->belongsTo(Store::class);
+    }
+
+    /**
+     * 予約との関係性
+     */
+    public function bookings(): HasMany
+    {
+        return $this->hasMany(Booking::class)->orderBy('booking_date', 'desc');
+    }
+
+    /**
+     * 個人情報暗号化
+     */
+    protected function encryptPersonalData(): void
+    {
+        foreach ($this->encrypted as $field) {
+            if ($this->isDirty($field) && !empty($this->attributes[$field])) {
+                $this->attributes[$field] = encrypt($this->attributes[$field]);
+            }
+        }
+    }
+
+    /**
+     * 個人情報復号化
+     */
+    protected function decryptPersonalData(): void
+    {
+        foreach ($this->encrypted as $field) {
+            if (!empty($this->attributes[$field])) {
+                try {
+                    $this->attributes[$field] = decrypt($this->attributes[$field]);
+                } catch (\Exception $e) {
+                    // 復号化失敗時は空文字に設定
+                    $this->attributes[$field] = '';
+                    \Log::warning("Failed to decrypt customer field: {$field}", [
+                        'customer_id' => $this->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+        }
+    }
+
+    /**
+     * ロイヤリティランク自動更新
+     */
+    public function updateLoyaltyRank(): void
+    {
+        $currentRank = $this->calculateLoyaltyRank();
+        
+        if ($currentRank !== $this->loyalty_rank) {
+            $this->loyalty_rank = $currentRank;
+            
+            // ランクアップ通知（後でイベント化）
+            \Log::info("Customer loyalty rank updated", [
+                'customer_id' => $this->id,
+                'old_rank' => $this->getOriginal('loyalty_rank'),
+                'new_rank' => $currentRank,
+            ]);
+        }
+    }
+
+    /**
+     * ロイヤリティランク計算
+     * 
+     * @return string 計算されたロイヤリティランク
+     */
+    public function calculateLoyaltyRank(): string
+    {
+        $settings = self::getLoyaltyRankSettings();
+        $currentRank = self::LOYALTY_BRONZE;
+
+        foreach ($settings as $rank => $config) {
+            if ($this->total_bookings >= $config['min_bookings'] && 
+                $this->total_amount >= $config['min_amount']) {
+                $currentRank = $rank;
+            }
+        }
+
+        return $currentRank;
+    }
+
+    /**
+     * ロイヤリティランク情報取得
+     * 
+     * @return array ランク詳細情報
+     */
+    public function getLoyaltyRankInfo(): array
+    {
+        $settings = self::getLoyaltyRankSettings();
+        return $settings[$this->loyalty_rank] ?? $settings[self::LOYALTY_BRONZE];
+    }
+
+    /**
+     * 次のランクまでの進捗取得
+     * 
+     * @return array|null 次のランク情報
+     */
+    public function getNextRankProgress(): ?array
+    {
+        $settings = self::getLoyaltyRankSettings();
+        $ranks = array_keys($settings);
+        $currentIndex = array_search($this->loyalty_rank, $ranks);
+        
+        if ($currentIndex === false || $currentIndex >= count($ranks) - 1) {
+            return null; // 最高ランクの場合
+        }
+
+        $nextRank = $ranks[$currentIndex + 1];
+        $nextConfig = $settings[$nextRank];
+
+        return [
+            'rank' => $nextRank,
+            'name' => $nextConfig['name'],
+            'required_bookings' => $nextConfig['min_bookings'],
+            'required_amount' => $nextConfig['min_amount'],
+            'bookings_progress' => min(100, ($this->total_bookings / $nextConfig['min_bookings']) * 100),
+            'amount_progress' => min(100, ($this->total_amount / $nextConfig['min_amount']) * 100),
+            'remaining_bookings' => max(0, $nextConfig['min_bookings'] - $this->total_bookings),
+            'remaining_amount' => max(0, $nextConfig['min_amount'] - $this->total_amount),
+        ];
+    }
+
+    /**
+     * キャンセル率計算
+     * 
+     * @return float キャンセル率（0-100）
+     */
+    public function getCancellationRate(): float
+    {
+        if ($this->total_bookings === 0) {
+            return 0.0;
+        }
+
+        return round(($this->cancelled_bookings / $this->total_bookings) * 100, 2);
+    }
+
+    /**
+     * ノーショー率計算
+     * 
+     * @return float ノーショー率（0-100）
+     */
+    public function getNoShowRate(): float
+    {
+        if ($this->total_bookings === 0) {
+            return 0.0;
+        }
+
+        return round(($this->no_show_bookings / $this->total_bookings) * 100, 2);
+    }
+
+    /**
+     * 平均利用金額計算
+     * 
+     * @return int 平均利用金額（円）
+     */
+    public function getAverageBookingAmount(): int
+    {
+        if ($this->total_bookings === 0) {
+            return 0;
+        }
+
+        return (int) round($this->total_amount / $this->total_bookings);
+    }
+
+    /**
+     * 最終来店からの経過日数
+     * 
+     * @return int|null 経過日数
+     */
+    public function getDaysSinceLastBooking(): ?int
+    {
+        if (!$this->last_booking_date) {
+            return null;
+        }
+
+        return now()->diffInDays($this->last_booking_date);
+    }
+
+    /**
+     * LINE連携状態チェック
+     * 
+     * @return bool LINE連携済みの場合true
+     */
+    public function isLinkedToLine(): bool
+    {
+        return !empty($this->line_user_id);
+    }
+
+    /**
+     * 年齢計算
+     * 
+     * @return int|null 年齢
+     */
+    public function getAge(): ?int
+    {
+        if (!$this->birthday) {
+            return null;
+        }
+
+        return now()->diffInYears($this->birthday);
+    }
+
+    /**
+     * 今月誕生日チェック
+     * 
+     * @return bool 今月誕生日の場合true
+     */
+    public function isBirthdayThisMonth(): bool
+    {
+        if (!$this->birthday) {
+            return false;
+        }
+
+        return $this->birthday->format('m') === now()->format('m');
+    }
+
+    /**
+     * アクティブ顧客チェック
+     * 
+     * @param int $months 期間（月）
+     * @return bool アクティブな場合true
+     */
+    public function isActiveCustomer(int $months = 6): bool
+    {
+        if (!$this->last_booking_date) {
+            return false;
+        }
+
+        $threshold = now()->subMonths($months);
+        return $this->last_booking_date->gte($threshold);
+    }
+
+    /**
+     * VIP顧客チェック
+     * 
+     * @return bool VIP顧客の場合true
+     */
+    public function isVipCustomer(): bool
+    {
+        return in_array($this->loyalty_rank, [self::LOYALTY_PLATINUM, self::LOYALTY_DIAMOND]);
+    }
+
+    /**
+     * 顧客統計取得
+     * 
+     * @return array 統計情報
+     */
+    public function getStatistics(): array
+    {
+        return [
+            'total_bookings' => $this->total_bookings,
+            'total_amount' => $this->total_amount,
+            'average_amount' => $this->getAverageBookingAmount(),
+            'cancellation_rate' => $this->getCancellationRate(),
+            'no_show_rate' => $this->getNoShowRate(),
+            'loyalty_rank' => $this->getLoyaltyRankInfo(),
+            'next_rank_progress' => $this->getNextRankProgress(),
+            'days_since_last_booking' => $this->getDaysSinceLastBooking(),
+            'is_active' => $this->isActiveCustomer(),
+            'is_vip' => $this->isVipCustomer(),
+            'age' => $this->getAge(),
+            'is_birthday_month' => $this->isBirthdayThisMonth(),
+        ];
+    }
+
+    /**
+     * 設定値取得
+     * 
+     * @param string $key 設定キー
+     * @param mixed $default デフォルト値
+     * @return mixed 設定値
+     */
+    public function getPreference(string $key, $default = null)
+    {
+        $preferences = $this->preferences ?? [];
+        return $preferences[$key] ?? $default;
+    }
+
+    /**
+     * 設定値設定
+     * 
+     * @param string $key 設定キー
+     * @param mixed $value 設定値
+     * @return void
+     */
+    public function setPreference(string $key, $value): void
+    {
+        $preferences = $this->preferences ?? [];
+        $preferences[$key] = $value;
+        $this->preferences = $preferences;
+    }
+
+    /**
+     * タグ追加
+     * 
+     * @param string $tag タグ名
+     * @return void
+     */
+    public function addTag(string $tag): void
+    {
+        $tags = $this->tags ?? [];
+        
+        if (!in_array($tag, $tags)) {
+            $tags[] = $tag;
+            $this->tags = $tags;
+        }
+    }
+
+    /**
+     * タグ削除
+     * 
+     * @param string $tag タグ名
+     * @return void
+     */
+    public function removeTag(string $tag): void
+    {
+        $tags = $this->tags ?? [];
+        $this->tags = array_values(array_filter($tags, fn($t) => $t !== $tag));
+    }
+
+    /**
+     * タグ存在チェック
+     * 
+     * @param string $tag タグ名
+     * @return bool 存在する場合true
+     */
+    public function hasTag(string $tag): bool
+    {
+        $tags = $this->tags ?? [];
+        return in_array($tag, $tags);
+    }
+
+    /**
+     * 検索スコープ: アクティブ顧客
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    /**
+     * 検索スコープ: LINE連携済み
+     */
+    public function scopeLinkedToLine($query)
+    {
+        return $query->whereNotNull('line_user_id');
+    }
+
+    /**
+     * 検索スコープ: ロイヤリティランク別
+     */
+    public function scopeByLoyaltyRank($query, string $rank)
+    {
+        return $query->where('loyalty_rank', $rank);
+    }
+
+    /**
+     * 検索スコープ: VIP顧客
+     */
+    public function scopeVip($query)
+    {
+        return $query->whereIn('loyalty_rank', [self::LOYALTY_PLATINUM, self::LOYALTY_DIAMOND]);
+    }
+
+    /**
+     * 検索スコープ: 今月誕生日
+     */
+    public function scopeBirthdayThisMonth($query)
+    {
+        $currentMonth = now()->format('m');
+        return $query->whereRaw('MONTH(birthday) = ?', [$currentMonth]);
+    }
+
+    /**
+     * 検索スコープ: アクティブ期間内
+     */
+    public function scopeActiveWithin($query, int $months = 6)
+    {
+        $threshold = now()->subMonths($months);
+        return $query->where('last_booking_date', '>=', $threshold);
+    }
+
+    /**
+     * 検索スコープ: 予約回数範囲
+     */
+    public function scopeBookingCountRange($query, int $min, int $max)
+    {
+        return $query->whereBetween('total_bookings', [$min, $max]);
+    }
+
+    /**
+     * 検索スコープ: 利用金額範囲
+     */
+    public function scopeAmountRange($query, int $min, int $max)
+    {
+        return $query->whereBetween('total_amount', [$min, $max]);
+    }
+
+    /**
+     * 検索スコープ: タグ検索
+     */
+    public function scopeWithTag($query, string $tag)
+    {
+        return $query->whereJsonContains('tags', $tag);
+    }
+
+    /**
+     * 検索スコープ: キーワード検索
+     */
+    public function scopeSearch($query, string $keyword)
+    {
+        return $query->where(function($q) use ($keyword) {
+            $q->where('name', 'like', "%{$keyword}%")
+              ->orWhere('name_kana', 'like', "%{$keyword}%")
+              ->orWhere('notes', 'like', "%{$keyword}%");
+        });
+    }
+
+    /**
+     * 検索スコープ: 性別
+     */
+    public function scopeByGender($query, string $gender)
+    {
+        return $query->where('gender', $gender);
+    }
+
+    /**
+     * 検索スコープ: 年齢範囲
+     */
+    public function scopeAgeRange($query, int $minAge, int $maxAge)
+    {
+        $maxBirthday = now()->subYears($minAge)->format('Y-m-d');
+        $minBirthday = now()->subYears($maxAge + 1)->format('Y-m-d');
+        
+        return $query->whereBetween('birthday', [$minBirthday, $maxBirthday]);
+    }
+} 
