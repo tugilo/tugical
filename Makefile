@@ -10,78 +10,82 @@ help: ## Show this help message
 	@egrep '^(.+)\:\ ##\ (.+)' $(MAKEFILE_LIST) | column -t -c 2 -s ':#'
 
 build: ## Build Docker containers
-	docker-compose build --no-cache
+	docker compose build --no-cache
 
 up: ## Start all services
-	docker-compose up -d
+	docker compose up -d
 	@echo "Services starting..."
 	@echo "Frontend: http://localhost:3000"
 	@echo "LIFF: http://localhost:5173"
 	@echo "API: http://localhost/api/health"
 	@echo "Admin: http://localhost/admin"
+	@echo "phpMyAdmin: http://localhost:8080"
 
 down: ## Stop all services
-	docker-compose down
+	docker compose down
 
 restart: ## Restart all services
-	docker-compose restart
+	docker compose restart
 
 logs: ## Show logs
-	docker-compose logs -f
+	docker compose logs -f
 
 logs-app: ## Show app container logs
-	docker-compose logs -f app
+	docker compose logs -f app
 
 logs-nginx: ## Show nginx container logs
-	docker-compose logs -f nginx
+	docker compose logs -f nginx
 
 logs-db: ## Show database container logs
-	docker-compose logs -f database
+	docker compose logs -f database
+
+logs-phpmyadmin: ## Show phpMyAdmin container logs
+	docker compose logs -f phpmyadmin
 
 shell: ## Access app container shell
-	docker-compose exec app sh
+	docker compose exec app sh
 
 shell-db: ## Access database shell
-	docker-compose exec database mysql -u tugical_dev -pdev_password_123 tugical_dev
+	docker compose exec database mysql -u tugical_dev -pdev_password_123 tugical_dev
 
 test: ## Run tests
-	docker-compose exec app php artisan test
-	docker-compose exec frontend npm test
-	docker-compose exec liff npm test
+	docker compose exec app php artisan test
+	docker compose exec frontend npm test
+	docker compose exec liff npm test
 
 install: ## Install dependencies
-	docker-compose exec app composer install
-	docker-compose exec frontend npm install
-	docker-compose exec liff npm install
+	docker compose exec app composer install
+	docker compose exec frontend npm install
+	docker compose exec liff npm install
 
 migrate: ## Run database migrations
-	docker-compose exec app php artisan migrate
+	docker compose exec app php artisan migrate
 
 migrate-fresh: ## Fresh migration with data loss warning
 	@echo "⚠️  WARNING: This will drop all data! Continue? [y/N]" && read ans && [ $${ans:-N} = y ]
-	docker-compose exec app php artisan migrate:fresh
+	docker compose exec app php artisan migrate:fresh
 
 seed: ## Run database seeders
-	docker-compose exec app php artisan db:seed
+	docker compose exec app php artisan db:seed
 
 fresh: ## Fresh installation with seeders
 	@echo "⚠️  WARNING: This will drop all data! Continue? [y/N]" && read ans && [ $${ans:-N} = y ]
-	docker-compose exec app php artisan migrate:fresh --seed
+	docker compose exec app php artisan migrate:fresh --seed
 
 status: ## Show container status
-	docker-compose ps
+	docker compose ps
 
 health: ## Check health status
 	@echo "=== tugical Health Check ==="
 	@echo "Checking API health..."
 	@curl -f http://localhost/health 2>/dev/null && echo " ✅ API OK" || echo " ❌ API Error"
 	@echo "Checking database..."
-	@docker-compose exec database mysql -u tugical_dev -pdev_password_123 -e "SELECT 1" tugical_dev >/dev/null 2>&1 && echo " ✅ Database OK" || echo " ❌ Database Error"
+	@docker compose exec database mysql -u tugical_dev -pdev_password_123 -e "SELECT 1" tugical_dev >/dev/null 2>&1 && echo " ✅ Database OK" || echo " ❌ Database Error"
 	@echo "Checking Redis..."
-	@docker-compose exec redis redis-cli -a redis_password_123 ping 2>/dev/null | grep -q PONG && echo " ✅ Redis OK" || echo " ❌ Redis Error"
+	@docker compose exec redis redis-cli -a redis_password_123 ping 2>/dev/null | grep -q PONG && echo " ✅ Redis OK" || echo " ❌ Redis Error"
 
 clean: ## Clean up containers and volumes
-	docker-compose down -v
+	docker compose down -v
 	docker system prune -f
 
 rebuild: ## Rebuild and restart everything
@@ -100,36 +104,37 @@ setup: ## Initial project setup
 	make seed
 	@echo "✅ Setup complete!"
 	@echo "Visit: http://localhost/admin"
+	@echo "phpMyAdmin: http://localhost:8080"
 
 # Production commands
 prod-build: ## Build for production
-	docker-compose -f docker-compose.prod.yml build
+	docker compose -f docker-compose.prod.yml build
 
 prod-up: ## Start production services
-	docker-compose -f docker-compose.prod.yml up -d
+	docker compose -f docker-compose.prod.yml up -d
 
 prod-down: ## Stop production services
-	docker-compose -f docker-compose.prod.yml down
+	docker compose -f docker-compose.prod.yml down
 
 # Development utilities
 artisan: ## Run artisan command (use: make artisan cmd="route:list")
-	docker-compose exec app php artisan $(cmd)
+	docker compose exec app php artisan $(cmd)
 
 composer: ## Run composer command (use: make composer cmd="require package")
-	docker-compose exec app composer $(cmd)
+	docker compose exec app composer $(cmd)
 
 npm-admin: ## Run npm command in admin frontend (use: make npm-admin cmd="install")
-	docker-compose exec frontend npm $(cmd)
+	docker compose exec frontend npm $(cmd)
 
 npm-liff: ## Run npm command in LIFF app (use: make npm-liff cmd="install")
-	docker-compose exec liff npm $(cmd)
+	docker compose exec liff npm $(cmd)
 
 backup-db: ## Backup database
 	@mkdir -p backups
-	docker-compose exec database mysqldump -u tugical_dev -pdev_password_123 tugical_dev > backups/tugical_$(shell date +%Y%m%d_%H%M%S).sql
+	docker compose exec database mysqldump -u tugical_dev -pdev_password_123 tugical_dev > backups/tugical_$(shell date +%Y%m%d_%H%M%S).sql
 	@echo "✅ Database backup created in backups/"
 
 restore-db: ## Restore database (use: make restore-db file="backups/file.sql")
 	@test -f $(file) || (echo "❌ File not found: $(file)" && exit 1)
-	docker-compose exec -T database mysql -u tugical_dev -pdev_password_123 tugical_dev < $(file)
+	docker compose exec -T database mysql -u tugical_dev -pdev_password_123 tugical_dev < $(file)
 	@echo "✅ Database restored from $(file)" 

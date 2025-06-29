@@ -126,6 +126,23 @@ services:
     networks:
       - tugical-network
 
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:5.2-apache
+    container_name: tugical_phpmyadmin
+    environment:
+      PMA_HOST: database
+      PMA_PORT: 3306
+      PMA_USER: tugical_dev
+      PMA_PASSWORD: dev_password_123
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      PMA_ARBITRARY: 1
+    ports:
+      - "8080:80"
+    depends_on:
+      - database
+    networks:
+      - tugical-network
+
 volumes:
   db_data:
     driver: local
