@@ -74,6 +74,12 @@ seed: ## Run database seeders
 
 fresh: ## Fresh installation with seeders
 	@echo "⚠️  WARNING: This will drop all data! Continue? [y/N]" && read ans && [ $${ans:-N} = y ]
+	@echo "🔑 Generating application key..."
+	docker compose exec app php artisan key:generate
+	@echo "🧹 Clearing configuration cache..."
+	docker compose exec app php artisan config:clear
+	docker compose exec app php artisan cache:clear
+	@echo "🗑️  Fresh migration with seeding..."
 	docker compose exec app php artisan migrate:fresh --seed
 
 status: ## Show container status
@@ -104,7 +110,14 @@ setup: ## Initial project setup
 	make up
 	sleep 10
 	make install
+	@echo "🔑 Generating application key..."
+	make artisan cmd="key:generate"
+	@echo "🧹 Clearing configuration cache..."
+	make artisan cmd="config:clear"
+	make artisan cmd="cache:clear"
+	@echo "📁 Running database migrations..."
 	make migrate
+	@echo "🌱 Seeding database..."
 	make seed
 	@echo "✅ Setup complete!"
 	@echo "API Health: http://localhost/health"

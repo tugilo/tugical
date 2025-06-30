@@ -56,6 +56,9 @@ make build
 make up
 sleep 10
 make install
+make artisan cmd="key:generate"
+make artisan cmd="config:clear"
+make artisan cmd="cache:clear"
 make migrate
 make seed
 ```
@@ -140,6 +143,20 @@ make rebuild
 make shell
 chmod -R 775 storage bootstrap/cache
 chown -R www-data:www-data storage bootstrap/cache
+```
+
+#### データベース接続エラー（Connection refused）
+```bash
+# APP_KEY未生成が原因の場合
+make artisan cmd="key:generate"
+make artisan cmd="config:clear"
+make artisan cmd="cache:clear"
+
+# データベース接続テスト
+make shell-db
+
+# ヘルスチェック
+make health
 ```
 
 ### 9. 開発継続時の注意点
