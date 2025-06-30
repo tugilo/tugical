@@ -73,14 +73,13 @@ seed: ## Run database seeders
 	docker compose exec app php artisan db:seed
 
 fresh: ## Fresh installation with seeders
-	@echo "⚠️  WARNING: This will drop all data! Continue? [y/N]" && read ans && [ $${ans:-N} = y ]
-	@echo "🔑 Generating application key..."
-	docker compose exec app php artisan key:generate
-	@echo "🧹 Clearing configuration cache..."
-	docker compose exec app php artisan config:clear
-	docker compose exec app php artisan cache:clear
-	@echo "🗑️  Fresh migration with seeding..."
-	docker compose exec app php artisan migrate:fresh --seed
+	@echo "⚠️  WARNING: This will drop all data and volumes! Continue? [y/N]" && read ans && [ $${ans:-N} = y ]
+	@echo "🛑 Stopping all containers..."
+	docker compose down
+	@echo "🗑️  Removing old volumes..."
+	docker volume rm tugical_db_data tugical_redis_data tugical_mailpit_data 2>/dev/null || true
+	@echo "🚀 Starting fresh setup..."
+	make setup
 
 status: ## Show container status
 	docker compose ps
