@@ -1,81 +1,123 @@
-# tugical Current Focus
-**Updated**: 2025-06-30 17:00
+# tugical Current Focus - セッション継続管理
+**Updated**: 2025-06-30 17:15
 
-## 🎯 Current Status: Mac mini Database Error COMPLETELY RESOLVED
+## ✅ 前回完了内容：Phase 2.1 サービスクラス基盤作成
 
-### ✅ COMPLETED: Mac mini Database Connection Issue - ROOT CAUSE FIXED
-**Duration**: 2025-06-30 16:30 - 17:00 (30 minutes)
+### 🎯 Phase 2.1実装完了（2025-06-30 16:30-17:00）
+**実装成果**: コアサービスクラス4個の基盤構造作成
 
-#### 🔍 Root Cause Analysis
-**Problem**: Mac mini で Access denied エラーが継続発生
+- **BookingService.php** (228行) - 予約管理サービス基盤
+- **AvailabilityService.php** (159行) - 空き時間判定サービス基盤  
+- **HoldTokenService.php** (207行) - 仮押さえ管理サービス基盤
+- **NotificationService.php** (268行) - LINE通知サービス基盤
+
+**Git Status**: feat(phase2): コアサービスクラス4個を作成 (576b910) ✅
+
+## 🎯 現在作業中：Phase 2.2 BookingService メソッド実装
+
+### 📍 実装対象メソッド（今セッション）
+**Target File**: `backend/app/Services/BookingService.php`
+
+#### 1. createBooking() - 予約作成メイン処理
+```php
+public function createBooking(int $storeId, array $bookingData): Booking
 ```
-SQLSTATE[HY000] [1045] Access denied for user 'tugical_dev' (using password: YES)
+**実装内容**:
+- ✅ バリデーション & Hold Token検証
+- ✅ 競合チェック統合
+- ✅ DB Transaction予約作成
+- ✅ 料金計算統合
+- ✅ LINE通知送信
+
+#### 2. checkTimeConflict() - 時間競合検出
+```php
+public function checkTimeConflict(int $storeId, int $resourceId, string $date, string $startTime, string $endTime, ?int $excludeBookingId = null): bool
 ```
 
-**Root Cause Identified**: 
-- **古いデータベースボリューム**が残存
-- データベース初期化スクリプト `docker/mysql/init/01-create-databases.sql` が**再実行されていない**
-- MariaDBが古いユーザー/パスワード設定を保持
+#### 3. calculateTotalPrice() - 動的料金計算
+```php
+public function calculateTotalPrice(Menu $menu, array $options = [], ?Resource $resource = null): int
+```
 
-#### 🔧 Complete Solution Implemented
+#### 4. validateAndReleaseHoldToken() - Hold Token管理
+```php
+private function validateAndReleaseHoldToken(string $holdToken, int $storeId, int $resourceId, string $date, string $startTime): void
+```
 
-1. **Database Volume Complete Cleanup**
-   ```bash
-   docker compose down
-   docker volume rm tugical_db_data tugical_redis_data tugical_mailpit_data
-   ```
+### ⏱️ 推定作業時間：約2.5時間
+- createBooking(): 45分
+- checkTimeConflict(): 30分  
+- calculateTotalPrice(): 30分
+- validateAndReleaseHoldToken(): 15分
+- Testing & Debug: 30分
 
-2. **Makefile fresh Command Enhanced**
-   ```bash
-   make fresh  # Now includes:
-   ├── Container shutdown
-   ├── Volume cleanup (automatic)
-   ├── Fresh setup execution
-   └── Complete environment reset
-   ```
+### ✅ 実装進行チェックリスト
+- [ ] createBooking() メソッド完全実装
+- [ ] checkTimeConflict() メソッド完全実装
+- [ ] calculateTotalPrice() メソッド完全実装
+- [ ] validateAndReleaseHoldToken() メソッド完全実装
+- [ ] エラーハンドリング完備
+- [ ] 日本語PHPDoc完備
+- [ ] Git commit & push
+- [ ] ドキュメント更新
 
-3. **Fresh Database Initialization Verified**
-   - **17 tables created successfully** ✅
-   - **All migrations executed** (2014_10_12 through 2025_06_29) ✅
-   - **Database seeding completed** ✅
-   - **tugical_dev user authenticated** ✅
+## 🔧 現在の環境状況
 
-#### ✅ Final Test Results (Mac mini WORKING)
+### ✅ Infrastructure Status
+```yaml
+Docker: ✅ All containers healthy
+Database: ✅ MariaDB 10.11 (17 tables)
+Redis: ✅ v7.2 authentication OK
+Laravel: ✅ v10 operational  
+Git: ✅ develop branch latest
+```
+
+### 🚀 実行準備完了コマンド
 ```bash
-# Mac mini setup test
-make setup     ✅ COMPLETE SUCCESS
-make migrate   ✅ 17 tables created
-make seed      ✅ Database seeded  
-make health    ✅ All services OK
+# 作業開始
+cd backend
+vim app/Services/BookingService.php
 
-=== tugical Health Check ===
-✅ API OK
-✅ Database OK  
-✅ Redis OK
-
-Database Tables Created:
-+------------------------+
-| Tables_in_tugical_dev  |
-+------------------------+
-| booking_options        |
-| bookings               |
-| business_calendars     |
-| customers              |
-| failed_jobs            |
-| menu_options           |
-| menus                  |
-| migrations             |
-| notification_templates |
-| notifications          |
-| password_reset_tokens  |
-| personal_access_tokens |
-| resources              |
-| staff_accounts         |
-| stores                 |
-| tenants                |
-| users                  |
-+------------------------+
+# 実装確認
+php artisan tinker
+# Test after implementation
+make test
 ```
+
+### 📋 参照仕様書
+- **Database**: `docs/tugical_database_design_v1.0.md`
+- **API**: `docs/tugical_api_specification_v1.0.md`  
+- **Requirements**: `docs/tugical_requirements_specification_v1.0.md`
+
+## 🎯 次回セッション開始ポイント
+
+### Phase 2.2完了後の次ステップ
+1. **Phase 2.3**: AvailabilityServiceメソッド実装
+2. **Phase 2.4**: HoldTokenServiceメソッド実装
+3. **Phase 2.5**: NotificationServiceメソッド実装
+4. **Phase 2.6**: API Controller実装
+
+### 🚀 次回開始コマンド
+```bash
+# 環境確認
+make health
+
+# Phase 2.3開始
+cd backend
+vim app/Services/AvailabilityService.php
+```
+
+### 📝 引き継ぎ事項
+- BookingService基盤構造は完成済み
+- HoldTokenService, NotificationService依存性注入済み
+- マルチテナント対応設計済み（store_id分離）
+- エラーハンドリング用カスタム例外設計済み
+
+---
+
+**Current Focus**: BookingService.createBooking()実装  
+**Environment**: 全サービス正常稼働  
+**Next Action**: `cd backend && vim app/Services/BookingService.php`
 
 ### 🎯 Technical Achievements - Cross-Platform Complete
 
@@ -94,11 +136,11 @@ Docker Environment:
   - API: ✅ Laravel 10 operational
   - phpMyAdmin: ✅ http://localhost:8080
 
-Development Workflow:
-  - make setup: ✅ One-command full setup
-  - make fresh: ✅ Complete environment reset
-  - make health: ✅ Comprehensive health check
-  - Cross-platform: ✅ Mac Air + Mac mini working
+Development Ready:
+  - Git Branch: ✅ develop (最新)
+  - Models: ✅ 13 Laravel models with relationships  
+  - Services: ✅ 4 service classes created (Phase 2.1)
+  - Makefile: ✅ 12 commands operational
 ```
 
 #### ✅ Code & Documentation Status

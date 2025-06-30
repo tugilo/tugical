@@ -19,28 +19,62 @@
 
 ---
 
-## 📝 **ドキュメント更新ルール**
+## 📝 **ドキュメント役割定義 & 更新ルール**
+
+### 📊 **ドキュメントファイルの役割分担**
+
+#### **PROGRESS.md - 全体進捗管理（マクロ視点）**
+**役割**: プロジェクト全体の進捗状況を管理
+- ✅ **Phase単位の完了状況** (Phase 1: 100%, Phase 2: 実行中, etc.)
+- ✅ **累計実装統計** (総行数、ファイル数、機能数)
+- ✅ **技術基盤状況** (Docker, Database, Models, Services)
+- ✅ **長期ロードマップ** (Phase 3, 4の予定)
+- ✅ **プロジェクト概要** (要件、アーキテクチャ、URL情報)
+
+#### **CURRENT_FOCUS.md - 前・今・次のステップ管理（ミクロ視点）**
+**役割**: 作業セッションの継続性を管理
+- ✅ **前回完了内容** (直前セッションの成果詳細)
+- ✅ **現在作業タスク** (具体的実装対象・手順・推定時間)
+- ✅ **次回開始ポイント** (コマンド、ファイル、メソッド名)
+- ✅ **環境状況** (Docker健康状態、Git状況)
+- ✅ **実装進行状況** (チェックリスト形式)
 
 ### **作業開始時**
-```markdown
-# CURRENT_FOCUS.mdに必ず記載
-- 現在作業中のファイル名
-- 実装している機能
-- 参照している仕様書のセクション
-- 発生した問題や疑問点
+```bash
+# 1. 状況確認
+git pull origin develop
+cat docs/CURRENT_FOCUS.md
+
+# 2. CURRENT_FOCUS.md更新のみ
+vim docs/CURRENT_FOCUS.md
+# Update:
+# - ✅ Previous session → "completed"
+# - 🎯 Current task details
+# - 📋 Implementation plan
+# - ⏱️ Estimated time
 ```
 
 ### **作業終了時（各ステップ）**
-```markdown
-# PROGRESS.mdに追記
-- 完了した機能
-- 作成/更新したファイル一覧
-- テスト実行結果
-- 次回の開始ポイント
+```bash
+# 1. PROGRESS.md更新（全体進捗）
+vim docs/PROGRESS.md
+# Update:
+# - Phase completion percentages
+# - Implementation statistics (lines, files)
+# - Overall technical status
 
-# CURRENT_FOCUS.mdを更新
-- 次の作業内容を明記
-- 必要なコマンドを記載
+# 2. CURRENT_FOCUS.md更新（セッション継続）
+vim docs/CURRENT_FOCUS.md
+# Update:
+# - ✅ Mark completed tasks
+# - 🎯 Set next session starting point
+# - 📝 Current blockers/issues
+# - 🚀 Ready commands for next session
+
+# 3. Git commit & push
+git add docs/
+git commit -m "docs: Phase X.Y 完了 - 次セッション準備完了"
+git push origin develop
 ```
 
 ### **作業中断時（CRITICAL）**
