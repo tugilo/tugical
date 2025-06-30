@@ -145,17 +145,22 @@ chmod -R 775 storage bootstrap/cache
 chown -R www-data:www-data storage bootstrap/cache
 ```
 
-#### データベース接続エラー（Connection refused）
+#### データベース接続エラー（Connection refused / Access denied）
 ```bash
-# APP_KEY未生成が原因の場合
+# 1. APP_KEY未生成が原因の場合
 make artisan cmd="key:generate"
 make artisan cmd="config:clear"
 make artisan cmd="cache:clear"
 
-# データベース接続テスト
+# 2. 環境変数設定に問題がある場合
+make down
+rm .env backend/.env
+make setup
+
+# 3. データベース接続テスト
 make shell-db
 
-# ヘルスチェック
+# 4. ヘルスチェック
 make health
 ```
 
