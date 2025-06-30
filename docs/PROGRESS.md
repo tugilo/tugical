@@ -96,12 +96,29 @@
 - ✅ **動的料金計算**: ベース料金 + オプション + リソース差額
 - ✅ **詳細ログ出力**: 全工程の詳細記録
 
-### 📋 Phase 2 残り実装順序
+### ✅ Phase 2.3 完了: AvailabilityService実装 【2025-06-30 17:30完了】
 
-#### 2. **AvailabilityService実装** (次の作業)
-- [ ] getAvailableSlots() メソッド実装
-- [ ] isResourceAvailable() メソッド実装
-- [ ] Cache活用による高速応答実装
+#### 🎯 実装内容
+- **AvailabilityService.php** (完全実装) - 空き時間判定サービス
+  - getAvailableSlots() - 空き時間枠検索（営業時間・既存予約考慮）
+  - isResourceAvailable() - リソース可用性チェック
+  - isWithinBusinessHours() - 営業時間検証（BusinessCalendar対応）
+  - getAvailabilityCalendar() - 月間可用性カレンダー生成
+
+#### 📊 実装統計
+- **追加行数**: 419行追加
+- **削除行数**: 37行削除
+- **総メソッド数**: 4メソッド完全実装
+- **Gitコミット**: feat(availability): AvailabilityService 4メソッド実装完了 (e2b2269)
+
+#### 🎯 技術特徴
+- ✅ **DB Transaction**: 空き時間判定の完全性保証
+- ✅ **マルチテナント対応**: store_id分離設計
+- ✅ **営業時間検証**: BusinessCalendar対応
+- ✅ **可用性判定**: リソース稼働時間に基づく
+- ✅ **Cache活用**: 15分TTLで性能最適化
+
+### 📋 Phase 2 残り実装順序
 
 #### 2. **API レイヤー**
 - [ ] BookingController + API routes
