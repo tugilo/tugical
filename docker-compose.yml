@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   app:
     build: 
@@ -127,7 +125,7 @@ services:
       - tugical-network
 
   phpmyadmin:
-    image: phpmyadmin/phpmyadmin:5.2-apache
+    image: phpmyadmin:latest
     container_name: tugical_phpmyadmin
     environment:
       PMA_HOST: database
