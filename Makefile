@@ -15,11 +15,13 @@ build: ## Build Docker containers
 up: ## Start all services
 	docker compose up -d
 	@echo "Services starting..."
-	@echo "Frontend: http://localhost:3000"
-	@echo "LIFF: http://localhost:5173"
-	@echo "API: http://localhost/api/health"
-	@echo "Admin: http://localhost/admin"
+	@echo "API: http://localhost/health"
 	@echo "phpMyAdmin: http://localhost:8080"
+	@echo ""
+	@echo "Phase 3で実装予定:"
+	@echo "- Admin Panel: http://localhost/admin"
+	@echo "- Frontend: http://localhost:3000"
+	@echo "- LIFF: http://localhost:5173"
 
 down: ## Stop all services
 	docker compose down
@@ -50,13 +52,15 @@ shell-db: ## Access database shell
 
 test: ## Run tests
 	docker compose exec app php artisan test
-	docker compose exec frontend npm test
-	docker compose exec liff npm test
+	# Frontend/LIFF tests (Phase 3で実装予定)
+	# docker compose exec frontend npm test
+	# docker compose exec liff npm test
 
 install: ## Install dependencies
 	docker compose exec app composer install
-	docker compose exec frontend npm install
-	docker compose exec liff npm install
+	# Frontend/LIFF npm install (Phase 3で実装予定)
+	# docker compose exec frontend npm install
+	# docker compose exec liff npm install
 
 migrate: ## Run database migrations
 	docker compose exec app php artisan migrate
@@ -103,8 +107,11 @@ setup: ## Initial project setup
 	make migrate
 	make seed
 	@echo "✅ Setup complete!"
-	@echo "Visit: http://localhost/admin"
+	@echo "API Health: http://localhost/health"
 	@echo "phpMyAdmin: http://localhost:8080"
+	@echo ""
+	@echo "Phase 2: ビジネスロジック実装準備完了"
+	@echo "Next: cd backend && php artisan make:service BookingService"
 
 # Production commands
 prod-build: ## Build for production
