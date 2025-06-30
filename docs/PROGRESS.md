@@ -61,47 +61,47 @@
 ### ✅ Phase 2.1 完了: サービスクラス基盤作成 【2025-06-30 17:00完了】
 
 #### 🎯 実装内容
-- **BookingService.php** (7,631文字) - 予約管理の中核サービス
-  - createBooking() - 予約作成・Hold Token統合・通知連携
-  - checkTimeConflict() - マルチテナント対応競合検出
-  - calculateTotalPrice() - 動的料金計算システム
-  - 完全日本語ドキュメント・エラーハンドリング完備
-
-- **AvailabilityService.php** (6,386文字) - 空き時間判定サービス  
-  - getAvailableSlots() - リアルタイム空き枠検索
-  - isResourceAvailable() - リソース可用性チェック
-  - Cache活用による15分TTL高速応答
-
-- **HoldTokenService.php** (8,241文字) - 仮押さえ管理サービス
-  - createHoldToken() - 10分間排他制御システム
-  - validateHoldToken() - 暗号学的安全なトークン検証
-  - Redis TTL活用による自動期限管理
-
-- **NotificationService.php** (10,706文字) - LINE通知サービス
-  - sendBookingConfirmation() - 予約確定通知
-  - renderNotificationTemplate() - 業種別テンプレート変数置換
-  - LINE Messaging API統合・自動リトライ機能
+- **BookingService.php** (基盤構造) - 予約管理の中核サービス
+- **AvailabilityService.php** (基盤構造) - 空き時間判定サービス  
+- **HoldTokenService.php** (基盤構造) - 仮押さえ管理サービス
+- **NotificationService.php** (基盤構造) - LINE通知サービス
 
 #### 📊 実装統計
-- **総行数**: 1,433行追加
-- **総文字数**: 約33,000文字
-- **ファイル数**: 4サービス + 1実装ガイド
+- **ファイル数**: 4サービスクラス基盤作成
 - **Gitコミット**: feat(phase2): コアサービスクラス4個を作成 (576b910)
 
+### ✅ Phase 2.2 完了: BookingService実装 【2025-06-30 17:30完了】
+
+#### 🎯 実装内容
+- **BookingService.php** (完全実装) - 予約管理の中核サービス
+  - createBooking() - 予約作成・Hold Token統合・通知連携
+  - checkTimeConflict() - マルチテナント対応競合検出
+  - calculateTotalPrice() - 動的料金計算（ベース+オプション+リソース差額）
+  - validateAndReleaseHoldToken() - 仮押さえトークン管理
+  - isWithinBusinessHours() - 営業時間・特別営業時間チェック
+  - calculateEndTime() - メニュー時間からの終了時間算出
+  - generateBookingNumber() - TG{YYYYMMDD}{店舗}{連番}形式
+
+#### 📊 実装統計
+- **追加行数**: 432行追加
+- **削除行数**: 23行削除
+- **総メソッド数**: 7メソッド完全実装
+- **Gitコミット**: feat(booking): BookingService主要メソッド実装完了 (dd84401)
+
 #### 🎯 技術特徴
-- ✅ **マルチテナント対応**: 全サービスでstore_id分離設計
-- ✅ **エラーハンドリング**: カスタム例外クラス対応設計
-- ✅ **パフォーマンス**: Redis Cache・Queue活用設計
-- ✅ **セキュリティ**: 暗号学的安全なToken生成
-- ✅ **ドキュメント**: 全メソッド日本語PHPDoc完備
+- ✅ **DB Transaction**: 予約作成の完全性保証
+- ✅ **マルチテナント対応**: store_id分離設計
+- ✅ **Hold Token統合**: 10分間排他制御システム
+- ✅ **営業時間チェック**: 通常営業時間 + 特別営業時間対応
+- ✅ **動的料金計算**: ベース料金 + オプション + リソース差額
+- ✅ **詳細ログ出力**: 全工程の詳細記録
 
 ### 📋 Phase 2 残り実装順序
 
-#### 2. **BookingService実装** (次の作業)
-- [ ] createBooking() メソッド実装
-- [ ] checkTimeConflict() メソッド実装  
-- [ ] calculateTotalPrice() メソッド実装
-- [ ] validateAndReleaseHoldToken() メソッド実装
+#### 2. **AvailabilityService実装** (次の作業)
+- [ ] getAvailableSlots() メソッド実装
+- [ ] isResourceAvailable() メソッド実装
+- [ ] Cache活用による高速応答実装
 
 #### 2. **API レイヤー**
 - [ ] BookingController + API routes

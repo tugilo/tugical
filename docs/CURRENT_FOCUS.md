@@ -1,61 +1,64 @@
 # tugical Current Focus - セッション継続管理
-**Updated**: 2025-06-30 17:15
+**Updated**: 2025-06-30 17:35
 
-## ✅ 前回完了内容：Phase 2.1 サービスクラス基盤作成
+## ✅ 前回完了内容：Phase 2.2 BookingService実装
 
-### 🎯 Phase 2.1実装完了（2025-06-30 16:30-17:00）
-**実装成果**: コアサービスクラス4個の基盤構造作成
+### 🎯 Phase 2.2実装完了（2025-06-30 17:15-17:30）
+**実装成果**: BookingService 7メソッド完全実装
 
-- **BookingService.php** (228行) - 予約管理サービス基盤
-- **AvailabilityService.php** (159行) - 空き時間判定サービス基盤  
-- **HoldTokenService.php** (207行) - 仮押さえ管理サービス基盤
-- **NotificationService.php** (268行) - LINE通知サービス基盤
+- **createBooking()** - 予約作成メイン処理（Hold Token統合・競合チェック・通知連携）
+- **checkTimeConflict()** - マルチテナント対応時間競合検出
+- **calculateTotalPrice()** - 動的料金計算（ベース+オプション+リソース差額）
+- **validateAndReleaseHoldToken()** - 仮押さえトークン管理
+- **isWithinBusinessHours()** - 営業時間・特別営業時間チェック
+- **calculateEndTime()** - メニュー時間からの終了時間算出
+- **generateBookingNumber()** - TG{YYYYMMDD}{店舗}{連番}形式
 
-**Git Status**: feat(phase2): コアサービスクラス4個を作成 (576b910) ✅
+**実装統計**: 432行追加、23行削除  
+**Git Status**: feat(booking): BookingService主要メソッド実装完了 (dd84401) ✅
 
-## 🎯 現在作業中：Phase 2.2 BookingService メソッド実装
+## 🎯 現在作業中：Phase 2.3 AvailabilityService実装
 
 ### 📍 実装対象メソッド（今セッション）
-**Target File**: `backend/app/Services/BookingService.php`
+**Target File**: `backend/app/Services/AvailabilityService.php`
 
-#### 1. createBooking() - 予約作成メイン処理
+#### 1. getAvailableSlots() - 空き時間検索
 ```php
-public function createBooking(int $storeId, array $bookingData): Booking
+public function getAvailableSlots(int $storeId, string $date, ?int $resourceId = null, int $duration = 60): array
 ```
 **実装内容**:
-- ✅ バリデーション & Hold Token検証
-- ✅ 競合チェック統合
-- ✅ DB Transaction予約作成
-- ✅ 料金計算統合
-- ✅ LINE通知送信
+- ✅ 営業時間内での空き枠検索
+- ✅ 既存予約との競合回避
+- ✅ リソース別可用性判定
+- ✅ Cache活用（15分TTL）
 
-#### 2. checkTimeConflict() - 時間競合検出
+#### 2. isResourceAvailable() - リソース可用性チェック
 ```php
-public function checkTimeConflict(int $storeId, int $resourceId, string $date, string $startTime, string $endTime, ?int $excludeBookingId = null): bool
+public function isResourceAvailable(int $storeId, int $resourceId, string $date, string $startTime, string $endTime): bool
 ```
 
-#### 3. calculateTotalPrice() - 動的料金計算
+#### 3. getResourceWorkingHours() - リソース稼働時間
 ```php
-public function calculateTotalPrice(Menu $menu, array $options = [], ?Resource $resource = null): int
+public function getResourceWorkingHours(int $storeId, int $resourceId, string $date): ?array
 ```
 
-#### 4. validateAndReleaseHoldToken() - Hold Token管理
+#### 4. Cache統合メソッド
 ```php
-private function validateAndReleaseHoldToken(string $holdToken, int $storeId, int $resourceId, string $date, string $startTime): void
+private function getCachedAvailability(string $cacheKey): ?array
+private function setCachedAvailability(string $cacheKey, array $data): void
 ```
 
-### ⏱️ 推定作業時間：約2.5時間
-- createBooking(): 45分
-- checkTimeConflict(): 30分  
-- calculateTotalPrice(): 30分
-- validateAndReleaseHoldToken(): 15分
-- Testing & Debug: 30分
+### ⏱️ 推定作業時間：約2時間
+- getAvailableSlots(): 60分
+- isResourceAvailable(): 30分
+- getResourceWorkingHours(): 20分
+- Cache統合メソッド: 10分
 
 ### ✅ 実装進行チェックリスト
-- [ ] createBooking() メソッド完全実装
-- [ ] checkTimeConflict() メソッド完全実装
-- [ ] calculateTotalPrice() メソッド完全実装
-- [ ] validateAndReleaseHoldToken() メソッド完全実装
+- [ ] getAvailableSlots() メソッド完全実装
+- [ ] isResourceAvailable() メソッド完全実装
+- [ ] getResourceWorkingHours() メソッド完全実装
+- [ ] Cache統合メソッド実装
 - [ ] エラーハンドリング完備
 - [ ] 日本語PHPDoc完備
 - [ ] Git commit & push
@@ -69,14 +72,14 @@ Docker: ✅ All containers healthy
 Database: ✅ MariaDB 10.11 (17 tables)
 Redis: ✅ v7.2 authentication OK
 Laravel: ✅ v10 operational  
-Git: ✅ develop branch latest
+Git: ✅ develop branch latest (dd84401)
 ```
 
 ### 🚀 実行準備完了コマンド
 ```bash
 # 作業開始
 cd backend
-vim app/Services/BookingService.php
+vim app/Services/AvailabilityService.php
 
 # 実装確認
 php artisan tinker
@@ -91,33 +94,33 @@ make test
 
 ## 🎯 次回セッション開始ポイント
 
-### Phase 2.2完了後の次ステップ
-1. **Phase 2.3**: AvailabilityServiceメソッド実装
-2. **Phase 2.4**: HoldTokenServiceメソッド実装
-3. **Phase 2.5**: NotificationServiceメソッド実装
-4. **Phase 2.6**: API Controller実装
+### Phase 2.3完了後の次ステップ
+1. **Phase 2.4**: HoldTokenServiceメソッド実装
+2. **Phase 2.5**: NotificationServiceメソッド実装
+3. **Phase 2.6**: API Controller実装
+4. **Phase 3**: フロントエンド実装開始
 
 ### 🚀 次回開始コマンド
 ```bash
 # 環境確認
 make health
 
-# Phase 2.3開始
+# Phase 2.4開始
 cd backend
-vim app/Services/AvailabilityService.php
+vim app/Services/HoldTokenService.php
 ```
 
 ### 📝 引き継ぎ事項
-- BookingService基盤構造は完成済み
+- BookingService完全実装済み（7メソッド）
 - HoldTokenService, NotificationService依存性注入済み
 - マルチテナント対応設計済み（store_id分離）
-- エラーハンドリング用カスタム例外設計済み
+- エラーハンドリング・ログ出力パターン確立済み
 
 ---
 
-**Current Focus**: BookingService.createBooking()実装  
+**Current Focus**: AvailabilityService.getAvailableSlots()実装  
 **Environment**: 全サービス正常稼働  
-**Next Action**: `cd backend && vim app/Services/BookingService.php`
+**Next Action**: `cd backend && vim app/Services/AvailabilityService.php`
 
 ### 🎯 Technical Achievements - Cross-Platform Complete
 
