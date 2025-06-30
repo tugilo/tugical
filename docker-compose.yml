@@ -4,6 +4,8 @@ services:
       context: ./docker/php
       dockerfile: Dockerfile
     container_name: tugical_app
+    env_file:
+      - ./backend/.env
     volumes:
       - ./backend:/var/www/html
       - ./docker/php/php.ini:/usr/local/etc/php/php.ini
@@ -37,9 +39,11 @@ services:
   database:
     image: mariadb:10.11
     container_name: tugical_db
+    env_file:
+      - ./backend/.env
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
-      MYSQL_USER: tugical
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: tugical_dev
       MYSQL_PASSWORD: ${DB_PASSWORD}
     volumes:
       - ./docker/mysql/init:/docker-entrypoint-initdb.d
@@ -53,7 +57,9 @@ services:
   redis:
     image: redis:7.2-alpine
     container_name: tugical_redis
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    env_file:
+      - ./backend/.env
+    command: redis-server /usr/local/etc/redis/redis.conf
     volumes:
       - redis_data:/data
       - ./docker/redis/redis.conf:/usr/local/etc/redis/redis.conf
@@ -67,6 +73,8 @@ services:
       context: ./docker/php
       dockerfile: Dockerfile
     container_name: tugical_queue
+    env_file:
+      - ./backend/.env
     volumes:
       - ./backend:/var/www/html
     environment:
@@ -84,6 +92,8 @@ services:
       context: ./docker/php
       dockerfile: Dockerfile
     container_name: tugical_scheduler
+    env_file:
+      - ./backend/.env
     volumes:
       - ./backend:/var/www/html
     environment:
@@ -128,12 +138,14 @@ services:
   phpmyadmin:
     image: phpmyadmin:latest
     container_name: tugical_phpmyadmin
+    env_file:
+      - ./backend/.env
     environment:
       PMA_HOST: database
       PMA_PORT: 3306
       PMA_USER: tugical_dev
       PMA_PASSWORD: dev_password_123
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
       PMA_ARBITRARY: 1
     ports:
       - "8080:80"

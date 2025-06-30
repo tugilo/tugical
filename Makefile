@@ -105,7 +105,7 @@ rebuild: ## Rebuild and restart everything
 
 setup: ## Initial project setup
 	@echo "🚀 Setting up tugical development environment..."
-	cp .env.example .env || echo "Create .env file manually"
+	cp backend/.env.example backend/.env || echo "Create .env file manually"
 	make build
 	make up
 	sleep 10

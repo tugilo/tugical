@@ -38,11 +38,11 @@ docker compose version
 ### 3. 環境設定
 
 ```bash
-# .envファイル作成
-cp .env.example .env
+# .envファイル作成（Laravel backend/ディレクトリ内）
+cp backend/.env.example backend/.env
 
 # 必要に応じて.envファイルを編集
-nano .env
+nano backend/.env
 ```
 
 ### 4. プロジェクトセットアップ
