@@ -675,3 +675,202 @@ protected $casts = [
 
 **Development Continuity**: ✅ Ready for model implementation  
 **Context Preservation**: ✅ Complete documentation updated 
+
+# tugical 現在の焦点 - Phase 2 開始
+
+## 🎯 現在のステータス
+
+**Phase**: Phase 1 ✅ 完了 → **Phase 2 開始準備完了** 🚀  
+**日時**: 2025-06-30  
+**前回達成**: `make setup` 完全自動セットアップ成功  
+
+---
+
+## ✅ Phase 1 達成内容（先ほど完了）
+
+### 🏗️ 完全自動セットアップ実装
+- ✅ **`make setup`**: ワンコマンドでゼロから完全環境構築
+- ✅ **環境設定自動生成**: backend/.env 自動作成
+- ✅ **データベース初期化**: マルチ環境対応（dev/staging/prod）
+- ✅ **全サービス健全性確認**: API/Database/Redis 自動検証
+- ✅ **マイグレーション**: 全17テーブル自動作成
+- ✅ **Git管理**: developブランチにプッシュ完了
+
+### 📊 実行結果
+```
+🔨 Dockerコンテナビルド: 84.2秒で完了
+📁 データベースマイグレーション: 17/17 成功
+🔍 ヘルスチェック: 全て成功 (API, Database, Redis)
+```
+
+---
+
+## 🚀 Phase 2: ビジネスロジック実装 【開始】
+
+### 📋 実装優先順序
+
+#### **ステップ1: コアサービス作成** 【次のタスク】
+
+```bash
+# 次回開始コマンド
+cd backend
+php artisan make:service BookingService
+php artisan make:service AvailabilityService  
+php artisan make:service HoldTokenService
+php artisan make:service NotificationService
+```
+
+#### **ステップ2: BookingService 実装**
+**ファイル**: `backend/app/Services/BookingService.php`
+
+**実装する主要メソッド**:
+```php
+// 予約作成（Hold Token統合）
+public function createBooking(int $storeId, array $bookingData): Booking
+
+// 予約更新（競合チェック付き）
+public function updateBooking(Booking $booking, array $updateData): Booking
+
+// 予約キャンセル（通知送信付き）
+public function cancelBooking(Booking $booking, string $reason = null): bool
+
+// 時間競合チェック
+public function checkTimeConflict(int $storeId, array $bookingData, ?int $excludeId = null): bool
+
+// 価格計算（リソース差額・オプション込み）
+public function calculateTotalPrice(int $menuId, array $optionIds, ?int $resourceId): int
+
+// Hold Token検証・解放
+public function validateAndReleaseHoldToken(string $holdToken): bool
+```
+
+**重要な実装ポイント**:
+- 🔒 **Hold Token System**: 10分間排他制御
+- ⚡ **リアルタイム競合検出**: 同時予約回避
+- 💰 **動的価格計算**: ベース料金 + オプション + リソース差額
+- 📧 **自動通知**: LINE API連携
+- 🛡️ **マルチテナント**: store_id完全分離
+
+#### **ステップ3: AvailabilityService 実装**
+**ファイル**: `backend/app/Services/AvailabilityService.php`
+
+**実装する主要メソッド**:
+```php
+// 空き時間枠検索
+public function getAvailableSlots(int $storeId, string $date, int $menuId, ?int $resourceId): array
+
+// リソース可用性チェック
+public function isResourceAvailable(int $resourceId, string $date, string $startTime, string $endTime): bool
+
+// 営業時間内チェック
+public function isWithinBusinessHours(int $storeId, string $date, string $startTime): bool
+
+// 複数日可用性検索
+public function getAvailabilityCalendar(int $storeId, int $menuId, int $days = 30): array
+```
+
+#### **ステップ4: HoldTokenService 実装**
+**ファイル**: `backend/app/Services/HoldTokenService.php`
+
+**実装する主要メソッド**:
+```php
+// Hold Token作成
+public function createHoldToken(int $storeId, array $slotData): string
+
+// Hold Token検証
+public function validateHoldToken(string $token): bool
+
+// Hold Token延長
+public function extendHoldToken(string $token, int $minutes = 10): bool
+
+// 期限切れToken自動削除
+public function cleanupExpiredTokens(): int
+```
+
+---
+
+## 🎯 今日の作業目標
+
+### Phase 2.1: サービス基盤作成
+- [ ] BookingService 骨格作成
+- [ ] AvailabilityService 骨格作成  
+- [ ] HoldTokenService 骨格作成
+- [ ] NotificationService 骨格作成
+
+### Phase 2.2: BookingService コア実装
+- [ ] createBooking() メソッド
+- [ ] checkTimeConflict() メソッド
+- [ ] calculateTotalPrice() メソッド
+- [ ] Hold Token統合
+
+### Phase 2.3: 単体テスト
+- [ ] BookingService テスト
+- [ ] 競合検出テスト
+- [ ] Hold Token テスト
+
+---
+
+## 🔧 使用可能なコマンド
+
+```bash
+# 開発環境
+make up              # サービス起動
+make shell           # アプリコンテナアクセス
+make shell-db        # データベース直接アクセス
+make health          # 全サービス健康状態確認
+
+# テスト
+make test            # Laravel テスト実行
+
+# デバッグ
+make logs            # 全サービスログ確認
+make logs-app        # アプリケーションログのみ
+```
+
+---
+
+## 🌐 現在のアクセス情報
+
+- **API Health Check**: http://localhost/health
+- **phpMyAdmin**: http://localhost:8080 (DB直接確認)
+- **Git Repository**: https://github.com/tugilo/tugical
+- **Active Branch**: develop
+
+---
+
+## 📝 実装時の注意点
+
+### マルチテナント対応 (CRITICAL)
+- 全メソッドで `$storeId` パラメータ必須
+- データベースクエリは必ず `store_id` 制限付き
+- TenantScope 自動適用確認
+
+### パフォーマンス考慮
+- Hold Token は Redis に保存（TTL活用）
+- 可用性検索はキャッシュ活用
+- 大量データ処理時は chunk() 使用
+
+### セキュリティ対応
+- Hold Token は暗号学的に安全な生成
+- ユーザー入力は必ずバリデーション
+- SQL インジェクション対策（Eloquent使用）
+
+---
+
+## 🎯 次回セッション開始点
+
+```bash
+# 実行コマンド
+cd backend
+php artisan make:service BookingService
+```
+
+**推定作業時間**: 2-3時間  
+**完了目標**: BookingService 基本機能実装  
+**成功指標**: 予約作成・競合検出・Hold Token統合動作  
+
+---
+
+**最終更新**: 2025-06-30 16:30  
+**担当**: AI Assistant + User  
+**ステータス**: ✅ Phase 1 完了, 🚀 Phase 2 開始準備完了 
