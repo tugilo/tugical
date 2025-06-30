@@ -146,22 +146,38 @@ chown -R www-data:www-data storage bootstrap/cache
 ```
 
 #### データベース接続エラー（Connection refused / Access denied）
+
+**症状**: `SQLSTATE[HY000] [1045] Access denied for user 'tugical_dev'`
+
+**根本原因**: 古いデータベースボリュームが残存し、初期化スクリプトが再実行されない
+
+**解決方法**:
 ```bash
-# 1. APP_KEY未生成が原因の場合
+# 1. 完全環境リセット（推奨）
+make fresh
+
+# 2. 手動での完全リセット
+make down
+docker volume rm tugical_db_data tugical_redis_data tugical_mailpit_data
+rm .env backend/.env  
+make setup
+
+# 3. APP_KEY問題の場合
 make artisan cmd="key:generate"
 make artisan cmd="config:clear"
 make artisan cmd="cache:clear"
 
-# 2. 環境変数設定に問題がある場合
-make down
-rm .env backend/.env
-make setup
-
-# 3. データベース接続テスト
-make shell-db
-
-# 4. ヘルスチェック
+# 4. 最終確認
 make health
+```
+
+**成功確認**:
+```bash
+# 以下が表示されれば正常
+=== tugical Health Check ===
+✅ API OK
+✅ Database OK  
+✅ Redis OK
 ```
 
 ### 9. 開発継続時の注意点

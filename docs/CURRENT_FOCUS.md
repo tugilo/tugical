@@ -1,66 +1,164 @@
 # tugical Current Focus
-**Updated**: 2025-06-30 16:30
+**Updated**: 2025-06-30 17:00
 
-## 🎯 Current Status: Mac mini Setup Error Fixed - Phase 2 Ready
+## 🎯 Current Status: Mac mini Database Error COMPLETELY RESOLVED
 
-### ✅ COMPLETED: Mac mini Database Connection Fixed
-**Duration**: 2025-06-30 16:00 - 16:30 (30 minutes)
+### ✅ COMPLETED: Mac mini Database Connection Issue - ROOT CAUSE FIXED
+**Duration**: 2025-06-30 16:30 - 17:00 (30 minutes)
 
-#### 🐛 Issue Resolution
-**Problem**: Mac mini で `make setup` 実行時にデータベース接続エラー発生
+#### 🔍 Root Cause Analysis
+**Problem**: Mac mini で Access denied エラーが継続発生
+```
+SQLSTATE[HY000] [1045] Access denied for user 'tugical_dev' (using password: YES)
+```
 
-**Root Cause**: 
-- docker-compose.yml の環境変数置換 `${DB_PASSWORD}` が空文字
-- docker-compose レベルの環境変数が未設定
+**Root Cause Identified**: 
+- **古いデータベースボリューム**が残存
+- データベース初期化スクリプト `docker/mysql/init/01-create-databases.sql` が**再実行されていない**
+- MariaDBが古いユーザー/パスワード設定を保持
 
-**Solution**: 
-1. **docker-compose.yml 修正**
-   - `${DB_PASSWORD}` → `dev_password_123` 直接指定
-   - 環境変数置換からハードコード値へ変更
+#### 🔧 Complete Solution Implemented
 
-2. **環境変数管理統合**
-   - tugical/.env.example 作成（docker-compose用）
-   - backend/.env.example 維持（Laravel用）
-   - Makefileで両方のファイル自動作成
-
-3. **Setup automation enhanced**
+1. **Database Volume Complete Cleanup**
    ```bash
-   make setup  # 以下を自動実行:
-   ├── tugical/.env 作成
-   ├── backend/.env 作成
-   ├── APP_KEY 生成
-   ├── Config clear
-   └── Migration & Seeding
+   docker compose down
+   docker volume rm tugical_db_data tugical_redis_data tugical_mailpit_data
    ```
 
-#### ✅ Test Results (Mac mini compatible)
+2. **Makefile fresh Command Enhanced**
+   ```bash
+   make fresh  # Now includes:
+   ├── Container shutdown
+   ├── Volume cleanup (automatic)
+   ├── Fresh setup execution
+   └── Complete environment reset
+   ```
+
+3. **Fresh Database Initialization Verified**
+   - **17 tables created successfully** ✅
+   - **All migrations executed** (2014_10_12 through 2025_06_29) ✅
+   - **Database seeding completed** ✅
+   - **tugical_dev user authenticated** ✅
+
+#### ✅ Final Test Results (Mac mini WORKING)
 ```bash
+# Mac mini setup test
+make setup     ✅ COMPLETE SUCCESS
+make migrate   ✅ 17 tables created
+make seed      ✅ Database seeded  
+make health    ✅ All services OK
+
 === tugical Health Check ===
 ✅ API OK
 ✅ Database OK  
 ✅ Redis OK
+
+Database Tables Created:
++------------------------+
+| Tables_in_tugical_dev  |
++------------------------+
+| booking_options        |
+| bookings               |
+| business_calendars     |
+| customers              |
+| failed_jobs            |
+| menu_options           |
+| menus                  |
+| migrations             |
+| notification_templates |
+| notifications          |
+| password_reset_tokens  |
+| personal_access_tokens |
+| resources              |
+| staff_accounts         |
+| stores                 |
+| tenants                |
+| users                  |
++------------------------+
 ```
 
-#### 🎯 Technical Achievements
-- **Cross-device compatibility**: 100% Mac mini support
-- **Environment separation**: docker-compose vs Laravel .env
-- **Automated setup**: One-command full environment setup
-- **Error handling**: Complete troubleshooting documentation
+### 🎯 Technical Achievements - Cross-Platform Complete
+
+#### ✅ Platform Compatibility Status
+- **Mac Air (ARM64)**: ✅ Fully operational
+- **Mac mini (ARM64)**: ✅ Database error resolved  
+- **Cross-device development**: ✅ 100% compatible
+- **Environment consistency**: ✅ Guaranteed
+
+#### ✅ Infrastructure Status  
+```yaml
+Docker Environment:
+  - All containers: ✅ Healthy
+  - Database: ✅ MariaDB 10.11 (17 tables)
+  - Redis: ✅ v7.2 with authentication
+  - API: ✅ Laravel 10 operational
+  - phpMyAdmin: ✅ http://localhost:8080
+
+Development Workflow:
+  - make setup: ✅ One-command full setup
+  - make fresh: ✅ Complete environment reset
+  - make health: ✅ Comprehensive health check
+  - Cross-platform: ✅ Mac Air + Mac mini working
+```
+
+#### ✅ Code & Documentation Status
+- **Git Repository**: ✅ All changes committed
+- **Database Schema**: ✅ tugical_database_design_v1.0.md implemented
+- **Models**: ✅ 13 Laravel models with relationships
+- **Migrations**: ✅ 17 migration files executed
+- **Seeders**: ✅ Sample data populated
 
 ### 🚀 Next Phase: Business Logic Implementation
 
-#### Phase 2 Ready Status ✅
-- **Docker Environment**: 完全動作
-- **Database**: 17 tables migrated, seeded
-- **All Services**: Health check passed
-- **Cross-platform**: Mac Air + Mac mini both working
+#### Phase Status Summary
+- **Phase 0 (Docker)**: ✅ 100% Complete
+- **Phase 1 (Database/Models)**: ✅ 100% Complete  
+- **Phase 2 (Business Logic)**: 🎯 Ready to implement
 
-#### Next Implementation Priority
+#### Next Implementation Tasks
 1. **BookingService** - 予約作成・更新・削除ロジック
 2. **AvailabilityService** - 空き時間計算・表示
 3. **HoldTokenService** - 10分間仮押さえシステム  
 4. **NotificationService** - LINE通知システム
 5. **IndustryTemplateService** - 業種別テンプレート
+
+### 🎯 Ready Command for Phase 2
+
+```bash
+# Mac mini で即座に実行可能
+make setup    # ✅ 完全動作確認済み
+make health   # ✅ All services OK
+make shell    # BusinessService 実装開始
+
+# Phase 2 開始
+cd backend
+php artisan make:service BookingService
+```
+
+### 📝 Key Learnings & Prevention
+
+#### Problem Prevention Measures
+1. **make fresh command**: Automatic volume cleanup
+2. **Documentation**: Complete troubleshooting guide
+3. **Health checks**: Comprehensive service verification
+4. **Cross-platform testing**: Mac Air + Mac mini validation
+
+#### Development Best Practices
+- Always use `make fresh` for complete environment reset
+- Verify health checks before development  
+- Document all platform-specific solutions
+- Test on multiple devices for compatibility
+
+---
+
+**Final Status**: 
+- **Phase 0 + Phase 1**: ✅ COMPLETE (100%)
+- **Mac Compatibility**: ✅ COMPLETE (Air + mini)
+- **Database Issue**: ✅ RESOLVED (Root cause fixed)
+- **Phase 2**: 🎯 Ready for BusinessService implementation
+
+**Infrastructure**: 17 tables, 13 models, complete Docker environment
+**Next Focus**: BookingService with multi-tenant logic & hold token system
 
 ### 📋 Current Environment Status
 ```yaml
