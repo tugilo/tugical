@@ -1,3 +1,89 @@
+# tugical Current Focus
+**Updated**: 2025-06-30 15:30
+
+## 🎯 Current Status: Mac Compatibility Complete - Phase 2 Ready
+
+### ✅ COMPLETED: Mac Cross-Device Compatibility
+**Duration**: 2025-06-30 13:00 - 15:30 (2.5 hours)
+
+#### 主要な修正内容
+1. **Makefile Mac Compatibility**
+   - `docker-compose` → `docker compose` 31箇所修正
+   - Mac Docker Desktop完全対応
+
+2. **phpMyAdmin Integration**
+   - `phpmyadmin:latest` イメージ使用
+   - port 8080:80 で http://localhost:8080 アクセス
+   - tugical_dev データベース自動ログイン
+
+3. **Setup Command Enhancement**
+   - `make setup` に APP_KEY 自動生成追加
+   - `config:clear` と `cache:clear` 自動実行
+   - Mac mini Connection refused エラー解決
+
+4. **Documentation Complete**
+   - MAC_SETUP_GUIDE.md 223行完成
+   - トラブルシューティング追加
+   - クロスデバイス開発手順完備
+
+#### 技術的成果
+- ✅ Mac/Linux 完全互換性
+- ✅ ワンコマンドセットアップ（`make setup`）
+- ✅ APP_KEY 生成自動化
+- ✅ Cross-device development対応
+
+### 🚀 NEXT TARGET: Phase 2 - Business Logic Services
+
+#### 実装予定（3-4日）
+1. **BookingService.php** - 予約システム中核
+2. **AvailabilityService.php** - リアルタイム可用性
+3. **HoldTokenService.php** - 仮押さえ管理
+4. **NotificationService.php** - LINE通知統合
+5. **IndustryTemplateService.php** - 業種テンプレート
+
+#### Phase 2 開始条件
+- [x] Docker環境完全稼働
+- [x] 17テーブル + 13モデル完成
+- [x] Mac compatibility完了
+- [x] phpMyAdmin操作環境構築
+
+### 📊 Project Statistics
+- **総開発時間**: 約12時間
+- **実装完了**: Phase 0 + Phase 1 + Mac Compatibility
+- **全体進捗**: 40% Complete
+- **コード行数**: 8,000+ lines (models) + infrastructure
+- **Git Commits**: 15+ commits (develop branch)
+
+### 🔧 Environment Status
+```bash
+# 全サービス正常稼働中
+API Health: http://localhost/health ✅
+phpMyAdmin: http://localhost:8080 ✅  
+Database: tugical_dev (17 tables) ✅
+Redis: Cache/Queue ready ✅
+```
+
+### 📝 Next Session Preparation
+**Ready for Phase 2 Implementation:**
+1. `cd backend && php artisan make:service BookingService`
+2. Implement booking logic with hold token system
+3. Add availability calculation with calendar integration
+4. Create notification service with LINE API
+5. Build industry template service
+
+**Development Continuation:**
+- All Docker services operational
+- Database fully populated and tested
+- Mac compatibility ensures seamless development
+- Documentation complete for cross-device work
+
+---
+
+**Current Branch**: develop  
+**Last Commit**: fix(makefile): APP_KEY生成をsetupコマンドに統合  
+**Environment**: Cross-device compatible (Mac/Linux)  
+**Status**: Phase 2 Implementation Ready 🎯
+
 # tugical Current Focus & Next Session
 
 **Current Session Date**: 2025-06-29  

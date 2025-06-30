@@ -31,9 +31,15 @@
   - Redis 7.2 with authentication
   - Nginx with environment-specific routing
   - Queue and scheduler containers
+  - phpMyAdmin integration (port 8080)
 - **Development Workflow**: Makefile with 12 commands
 - **Multi-Environment Support**: dev/staging/prod configurations
 - **Health Monitoring**: All services verified operational
+- **Mac Compatibility**: Complete cross-device development support
+  - APP_KEY自動生成をsetupコマンドに統合
+  - Mac mini Connection refusedエラー解決
+  - docker compose（スペース区切り）対応完了
+  - 完全なMac Setup Guide作成（223行）
 
 ---
 
