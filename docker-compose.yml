@@ -42,9 +42,9 @@ services:
     env_file:
       - ./backend/.env
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: dev_password_123
       MYSQL_USER: tugical_dev
-      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_PASSWORD: dev_password_123
     volumes:
       - ./docker/mysql/init:/docker-entrypoint-initdb.d
       - ./docker/mysql/my.cnf:/etc/mysql/conf.d/custom.cnf
@@ -145,7 +145,7 @@ services:
       PMA_PORT: 3306
       PMA_USER: tugical_dev
       PMA_PASSWORD: dev_password_123
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: dev_password_123
       PMA_ARBITRARY: 1
     ports:
       - "8080:80"
