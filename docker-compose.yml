@@ -43,6 +43,7 @@ services:
       - ./backend/.env
     environment:
       MYSQL_ROOT_PASSWORD: dev_password_123
+      MYSQL_DATABASE: tugical_dev
       MYSQL_USER: tugical_dev
       MYSQL_PASSWORD: dev_password_123
     volumes:

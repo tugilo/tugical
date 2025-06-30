@@ -93,38 +93,132 @@ health: ## Check health status
 	@echo "Checking Redis..."
 	@docker compose exec redis redis-cli -a redis_password_123 ping 2>/dev/null | grep -q PONG && echo " ✅ Redis OK" || echo " ❌ Redis Error"
 
-clean: ## Clean up containers and volumes
-	docker compose down -v
+clean: ## Complete cleanup (containers, volumes, networks)
+	@echo "🧹 tugical環境を完全クリーンアップ中..."
+	docker compose down -v 2>/dev/null || true
+	docker volume rm tugical_db_data tugical_redis_data 2>/dev/null || true
+	docker network rm tugical_tugical-network 2>/dev/null || true
 	docker system prune -f
+	@echo "✅ クリーンアップ完了"
 
 rebuild: ## Rebuild and restart everything
 	make down
 	make build
 	make up
 
-setup: ## Initial project setup
-	@echo "🚀 Setting up tugical development environment..."
-	cp .env.example .env || echo "Create docker-compose .env file manually"
-	cp backend/.env.example backend/.env || echo "Create backend .env file manually"
-	make build
-	make up
-	sleep 10
-	make install
-	@echo "🔑 Generating application key..."
-	make artisan cmd="key:generate"
-	@echo "🧹 Clearing configuration cache..."
-	make artisan cmd="config:clear"
-	make artisan cmd="cache:clear"
-	@echo "📁 Running database migrations..."
-	make migrate
-	@echo "🌱 Seeding database..."
-	make seed
-	@echo "✅ Setup complete!"
-	@echo "API Health: http://localhost/health"
-	@echo "phpMyAdmin: http://localhost:8080"
+setup: ## Complete tugical development environment setup
+	@echo "🚀 tugical開発環境を初期化しています..."
 	@echo ""
-	@echo "Phase 2: ビジネスロジック実装準備完了"
-	@echo "Next: cd backend && php artisan make:service BookingService"
+	@echo "🛑 既存環境をクリーンアップ中..."
+	docker compose down -v 2>/dev/null || true
+	docker volume rm tugical_db_data tugical_redis_data 2>/dev/null || true
+	@echo ""
+	@echo "📝 環境設定ファイルを作成中..."
+	@echo '# tugical Development Environment Configuration' > backend/.env
+	@echo '# アプリケーション設定' >> backend/.env
+	@echo 'APP_NAME="tugical"' >> backend/.env
+	@echo 'APP_ENV=local' >> backend/.env
+	@echo 'APP_KEY=' >> backend/.env
+	@echo 'APP_DEBUG=true' >> backend/.env
+	@echo 'APP_URL=http://localhost' >> backend/.env
+	@echo '' >> backend/.env
+	@echo '# データベース設定（Docker MariaDB）' >> backend/.env
+	@echo 'DB_CONNECTION=mysql' >> backend/.env
+	@echo 'DB_HOST=database' >> backend/.env
+	@echo 'DB_PORT=3306' >> backend/.env
+	@echo 'DB_DATABASE=tugical_dev' >> backend/.env
+	@echo 'DB_USERNAME=tugical_dev' >> backend/.env
+	@echo 'DB_PASSWORD=dev_password_123' >> backend/.env
+	@echo '' >> backend/.env
+	@echo '# Redis設定（Docker Redis）' >> backend/.env
+	@echo 'REDIS_HOST=redis' >> backend/.env
+	@echo 'REDIS_PASSWORD=redis_password_123' >> backend/.env
+	@echo 'REDIS_PORT=6379' >> backend/.env
+	@echo 'REDIS_DB=0' >> backend/.env
+	@echo 'REDIS_PREFIX=tugical_dev:' >> backend/.env
+	@echo '' >> backend/.env
+	@echo '# キャッシュ設定' >> backend/.env
+	@echo 'CACHE_DRIVER=redis' >> backend/.env
+	@echo 'CACHE_PREFIX=tugical_dev' >> backend/.env
+	@echo 'BROADCAST_DRIVER=log' >> backend/.env
+	@echo 'FILESYSTEM_DISK=local' >> backend/.env
+	@echo '' >> backend/.env
+	@echo '# キュー設定' >> backend/.env
+	@echo 'QUEUE_CONNECTION=redis' >> backend/.env
+	@echo 'QUEUE_PREFIX=tugical_dev' >> backend/.env
+	@echo '' >> backend/.env
+	@echo '# セッション設定' >> backend/.env
+	@echo 'SESSION_DRIVER=redis' >> backend/.env
+	@echo 'SESSION_LIFETIME=120' >> backend/.env
+	@echo '' >> backend/.env
+	@echo '# メール設定（開発環境はログ出力）' >> backend/.env
+	@echo 'MAIL_MAILER=log' >> backend/.env
+	@echo 'MAIL_HOST=smtp.mailtrap.io' >> backend/.env
+	@echo 'MAIL_PORT=2525' >> backend/.env
+	@echo 'MAIL_USERNAME=null' >> backend/.env
+	@echo 'MAIL_PASSWORD=null' >> backend/.env
+	@echo 'MAIL_ENCRYPTION=null' >> backend/.env
+	@echo 'MAIL_FROM_ADDRESS="dev@tugical.com"' >> backend/.env
+	@echo 'MAIL_FROM_NAME="$${APP_NAME}"' >> backend/.env
+	@echo '' >> backend/.env
+	@echo '# LINE API設定（開発環境用）' >> backend/.env
+	@echo 'LINE_CHANNEL_ID=' >> backend/.env
+	@echo 'LINE_CHANNEL_SECRET=' >> backend/.env
+	@echo 'LINE_ACCESS_TOKEN=' >> backend/.env
+	@echo 'LINE_LIFF_ID=' >> backend/.env
+	@echo '' >> backend/.env
+	@echo '# ログ設定' >> backend/.env
+	@echo 'LOG_CHANNEL=stack' >> backend/.env
+	@echo 'LOG_DEPRECATIONS_CHANNEL=null' >> backend/.env
+	@echo 'LOG_LEVEL=debug' >> backend/.env
+	@echo '' >> backend/.env
+	@echo '# テナント設定（マルチテナント）' >> backend/.env
+	@echo 'TENANT_SCOPE_ENABLED=true' >> backend/.env
+	@echo '' >> backend/.env
+	@echo '# 開発環境特有の設定' >> backend/.env
+	@echo 'VITE_APP_NAME="$${APP_NAME}"' >> backend/.env
+	@echo 'VITE_APP_ENV="$${APP_ENV}"' >> backend/.env
+	@echo ""
+	@echo "🔨 Dockerコンテナをビルド中..."
+	docker compose build --no-cache
+	@echo ""
+	@echo "🚀 サービスを起動中..."
+	docker compose up -d
+	@echo ""
+	@echo "⏳ データベース初期化を待機中（30秒）..."
+	sleep 30
+	@echo ""
+	@echo "🔑 アプリケーションキーを生成中..."
+	cd backend && php artisan key:generate
+	@echo ""
+	@echo "📦 Composerパッケージをインストール中..."
+	docker compose exec app composer install --no-interaction
+	@echo ""
+	@echo "📁 データベースマイグレーションを実行中..."
+	docker compose exec app php artisan migrate --force
+	@echo ""
+	@echo "🌱 初期データをシード中..."
+	docker compose exec app php artisan db:seed --force
+	@echo ""
+	@echo "🧹 キャッシュをクリア中..."
+	docker compose exec app php artisan config:clear
+	docker compose exec app php artisan cache:clear
+	@echo ""
+	@echo "🔍 ヘルスチェック実行中..."
+	@sleep 5
+	@make health
+	@echo ""
+	@echo "✅ tugical開発環境のセットアップが完了しました！"
+	@echo ""
+	@echo "🌐 利用可能なサービス:"
+	@echo "  • API Health Check: http://localhost/health"
+	@echo "  • phpMyAdmin:       http://localhost:8080"
+	@echo ""
+	@echo "📝 次のステップ:"
+	@echo "  • ビジネスロジック実装: cd backend && php artisan make:service BookingService"
+	@echo "  • フロントエンド開発: Phase 3で実装予定"
+	@echo "  • LIFF開発:         Phase 3で実装予定"
+	@echo ""
 
 # Production commands
 prod-build: ## Build for production
