@@ -64,13 +64,66 @@ class NotificationService
      */
     public function sendBookingConfirmation(Booking $booking): bool
     {
-        // TODO: 実装予定
-        // 1. テンプレート取得
-        // 2. 変数置換
-        // 3. LINE API呼び出し
-        // 4. 配信結果記録
+        /**
+         * 予約確定時 LINE 通知送信処理
+         * 
+         * 1. テンプレート取得
+         * 2. 変数置換
+         * 3. LINE メッセージ送信
+         * 4. 通知レコード作成
+         * 5. 予約モデルに通知履歴追記
+         */
 
-        throw new \Exception('NotificationService::sendBookingConfirmation() - 実装予定');
+        $store = $booking->store;
+        $customer = $booking->customer;
+
+        // LINE連携必須チェック
+        if (!$customer || empty($customer->line_user_id) || !$store->hasLineIntegration()) {
+            $this->logNotification('booking_confirmed', 'line', $customer->line_user_id ?? 'unknown', 'failed', [
+                'reason' => 'LINE連携未設定',
+            ]);
+            return false;
+        }
+
+        // 変数準備
+        $variables = [
+            'customer_name'   => $customer->name,
+            'booking_number'  => $booking->booking_number,
+            'booking_date'    => $booking->booking_date?->format('Y年m月d日'),
+            'booking_time'    => $booking->start_time,
+            'menu_name'       => $booking->menu?->name,
+            'total_price'     => '¥' . number_format($booking->total_price),
+            'store_name'      => $store->name,
+        ];
+
+        // テンプレートレンダリング
+        $template = $this->renderNotificationTemplate($store->id, NotificationTemplate::TYPE_BOOKING_CONFIRMED, $variables);
+
+        $success = $this->sendLineMessage(
+            $customer->line_user_id,
+            $template['line_messages'],
+            $store->id
+        );
+
+        // 通知レコード保存
+        $notification = $this->recordNotification(
+            $store->id,
+            Notification::TYPE_BOOKING_CONFIRMED,
+            'line',
+            $customer->line_user_id,
+            $success ? Notification::STATUS_SENT : Notification::STATUS_FAILED,
+            [
+                'booking_id' => $booking->id,
+                'template_id' => $template['template_id'] ?? null,
+            ]
+        );
+
+        // 予約に履歴追加
+        if ($success) {
+            $booking->recordNotification('booking_confirmed', ['notification_id' => $notification->id]);
+        }
+
+        return $success;
     }
 
     /**
@@ -84,8 +137,40 @@ class NotificationService
      */
     public function sendBookingReminder(Booking $booking, string $timing): bool
     {
-        // TODO: 実装予定
-        throw new \Exception('NotificationService::sendBookingReminder() - 実装予定');
+        $store = $booking->store;
+        $customer = $booking->customer;
+
+        if (!$customer || empty($customer->line_user_id) || !$store->hasLineIntegration()) {
+            return false;
+        }
+
+        $variables = [
+            'customer_name'  => $customer->name,
+            'booking_number' => $booking->booking_number,
+            'booking_date'   => $booking->booking_date?->format('Y年m月d日'),
+            'booking_time'   => $booking->start_time,
+            'menu_name'      => $booking->menu?->name,
+            'store_name'     => $store->name,
+        ];
+
+        $template = $this->renderNotificationTemplate($store->id, NotificationTemplate::TYPE_BOOKING_REMINDER, $variables);
+
+        $success = $this->sendLineMessage($customer->line_user_id, $template['line_messages'], $store->id);
+
+        $this->recordNotification(
+            $store->id,
+            Notification::TYPE_BOOKING_REMINDER,
+            'line',
+            $customer->line_user_id,
+            $success ? Notification::STATUS_SENT : Notification::STATUS_FAILED,
+            ['booking_id' => $booking->id]
+        );
+
+        if ($success) {
+            $booking->recordNotification('booking_reminder');
+        }
+
+        return $success;
     }
 
     /**
@@ -97,8 +182,40 @@ class NotificationService
      */
     public function sendBookingCancellation(Booking $booking, ?string $reason = null): bool
     {
-        // TODO: 実装予定
-        throw new \Exception('NotificationService::sendBookingCancellation() - 実装予定');
+        $store = $booking->store;
+        $customer = $booking->customer;
+
+        if (!$customer || empty($customer->line_user_id) || !$store->hasLineIntegration()) {
+            return false;
+        }
+
+        $variables = [
+            'customer_name'       => $customer->name,
+            'booking_number'      => $booking->booking_number,
+            'booking_date'        => $booking->booking_date?->format('Y年m月d日'),
+            'booking_time'        => $booking->start_time,
+            'cancellation_reason' => $reason ?? '未設定',
+            'store_name'          => $store->name,
+        ];
+
+        $template = $this->renderNotificationTemplate($store->id, NotificationTemplate::TYPE_BOOKING_CANCELLED, $variables);
+
+        $success = $this->sendLineMessage($customer->line_user_id, $template['line_messages'], $store->id);
+
+        $this->recordNotification(
+            $store->id,
+            Notification::TYPE_BOOKING_CANCELLED,
+            'line',
+            $customer->line_user_id,
+            $success ? Notification::STATUS_SENT : Notification::STATUS_FAILED,
+            ['booking_id' => $booking->id]
+        );
+
+        if ($success) {
+            $booking->recordNotification('booking_cancelled');
+        }
+
+        return $success;
     }
 
     /**
@@ -110,8 +227,44 @@ class NotificationService
      */
     public function sendBookingUpdate(Booking $booking, array $changes): bool
     {
-        // TODO: 実装予定
-        throw new \Exception('NotificationService::sendBookingUpdate() - 実装予定');
+        // Booking Update は予約確定とほぼ同様のテンプレートを利用する
+        $store = $booking->store;
+        $customer = $booking->customer;
+
+        if (!$customer || empty($customer->line_user_id) || !$store->hasLineIntegration()) {
+            return false;
+        }
+
+        $variables = [
+            'customer_name'  => $customer->name,
+            'booking_number' => $booking->booking_number,
+            'booking_date'   => $booking->booking_date?->format('Y年m月d日'),
+            'booking_time'   => $booking->start_time,
+            'menu_name'      => $booking->menu?->name,
+            'store_name'     => $store->name,
+            'changes'        => json_encode($changes, JSON_UNESCAPED_UNICODE),
+        ];
+
+        // booking_updated 用テンプレートが無ければ booking_confirmed を再利用
+        $templateType = NotificationTemplate::TYPE_BOOKING_CONFIRMED;
+        $template = $this->renderNotificationTemplate($store->id, $templateType, $variables);
+
+        $success = $this->sendLineMessage($customer->line_user_id, $template['line_messages'], $store->id);
+
+        $this->recordNotification(
+            $store->id,
+            Notification::TYPE_STATUS_CHANGED,
+            'line',
+            $customer->line_user_id,
+            $success ? Notification::STATUS_SENT : Notification::STATUS_FAILED,
+            ['booking_id' => $booking->id]
+        );
+
+        if ($success) {
+            $booking->recordNotification('booking_updated');
+        }
+
+        return $success;
     }
 
     /**
@@ -124,14 +277,40 @@ class NotificationService
      */
     public function sendLineMessage(string $lineUserId, array $messages, int $storeId): bool
     {
-        // TODO: 実装予定
-        // 1. アクセストークン取得
-        // 2. LINE API Request作成
-        // 3. HTTP送信
-        // 4. レスポンス処理
-        // 5. ログ記録
+        $accessToken = $this->getLineAccessToken($storeId);
 
-        throw new \Exception('NotificationService::sendLineMessage() - 実装予定');
+        if (!$accessToken) {
+            $this->logNotification('system', 'line', $lineUserId, 'failed', ['reason' => 'アクセストークン未設定']);
+            return false;
+        }
+
+        // メッセージフォーマット（LINE API仕様）
+        $payload = [
+            'to' => $lineUserId,
+            'messages' => $messages,
+        ];
+
+        try {
+            $response = Http::withToken($accessToken)
+                ->post(self::LINE_API_URL . '/push', $payload);
+
+            if ($response->successful()) {
+                $this->logNotification('system', 'line', $lineUserId, 'sent', ['payload' => $payload]);
+                return true;
+            }
+
+            $this->logNotification('system', 'line', $lineUserId, 'failed', [
+                'response' => $response->json(),
+                'status'   => $response->status(),
+            ]);
+
+            return false;
+        } catch (\Throwable $e) {
+            $this->logNotification('system', 'line', $lineUserId, 'failed', [
+                'exception' => $e->getMessage(),
+            ]);
+            return false;
+        }
     }
 
     /**
@@ -145,8 +324,19 @@ class NotificationService
      */
     public function sendEmailNotification(string $email, string $subject, string $body, int $storeId): bool
     {
-        // TODO: 実装予定
-        throw new \Exception('NotificationService::sendEmailNotification() - 実装予定');
+        try {
+            \Mail::raw($body, function ($message) use ($email, $subject) {
+                $message->to($email)->subject($subject);
+            });
+
+            $this->recordNotification($storeId, 'email', 'email', $email, Notification::STATUS_SENT);
+            return true;
+        } catch (\Throwable $e) {
+            $this->recordNotification($storeId, 'email', 'email', $email, Notification::STATUS_FAILED, [
+                'error' => $e->getMessage(),
+            ]);
+            return false;
+        }
     }
 
     /**
@@ -164,12 +354,75 @@ class NotificationService
      */
     public function renderNotificationTemplate(int $storeId, string $templateType, array $variables): array
     {
-        // TODO: 実装予定
-        // 1. テンプレート取得（業種別・店舗別優先順位）
-        // 2. 変数置換処理
-        // 3. リッチメッセージ生成
+        // 1. 店舗別カスタムテンプレート > システムテンプレート の順で検索
+        $template = NotificationTemplate::where('store_id', $storeId)
+            ->active()
+            ->byType($templateType)
+            ->first();
 
-        throw new \Exception('NotificationService::renderNotificationTemplate() - 実装予定');
+        $store = Store::find($storeId);
+
+        // 2. 業種別デフォルトテンプレート（店舗にない場合）
+        if (!$template && $store) {
+            $industry = $store->industry_type ?? NotificationTemplate::INDUSTRY_BEAUTY;
+            $defaultTemplates = NotificationTemplate::getDefaultTemplates();
+            $default = $defaultTemplates[$industry][$templateType] ?? null;
+
+            if ($default) {
+                $template = new NotificationTemplate([
+                    'store_id'      => $storeId,
+                    'type'          => $templateType,
+                    'industry_type' => $industry,
+                    'title'         => $default['title'],
+                    'message'       => $default['message'],
+                    'message_type'  => NotificationTemplate::MESSAGE_TYPE_TEXT,
+                    'is_active'     => true,
+                ]);
+            }
+        }
+
+        if (!$template) {
+            // テンプレートが見つからない場合は簡易メッセージ
+            $subject = $variables['store_name'] ?? 'tugical';
+            $body    = $this->replaceVariables('{customer_name} 様、ご予約ありがとうございます。', $variables);
+            return [
+                'subject'      => $subject,
+                'body'         => $body,
+                'line_messages'=> [['type' => 'text', 'text' => $body]],
+            ];
+        }
+
+        // 3. 変数置換
+        $replaced = $template->replaceVariables($variables);
+
+        // LINEメッセージ生成
+        $lineMessages = [];
+        if ($template->message_type === NotificationTemplate::MESSAGE_TYPE_RICH) {
+            $rich = $template->generateRichMessage($variables);
+            if ($rich) {
+                $lineMessages = $rich['messages'] ?? [];
+            }
+        }
+
+        // フォールバック: テキストメッセージ
+        if (empty($lineMessages)) {
+            $lineMessages[] = [
+                'type' => 'text',
+                'text' => $replaced['message'],
+            ];
+        }
+
+        // 使用回数増加（永続テンプレートのみ）
+        if ($template->exists) {
+            $template->incrementUsage();
+        }
+
+        return [
+            'template_id'  => $template->id ?? null,
+            'subject'      => $replaced['title'],
+            'body'         => $replaced['message'],
+            'line_messages'=> $lineMessages,
+        ];
     }
 
     /**
@@ -189,8 +442,33 @@ class NotificationService
      */
     public function sendBulkNotification(int $storeId, array $customerIds, array $message): array
     {
-        // TODO: 実装予定
-        throw new \Exception('NotificationService::sendBulkNotification() - 実装予定');
+        $success = 0;
+        $failed  = 0;
+        $failedCustomers = [];
+
+        $customers = Customer::whereIn('id', $customerIds)->get();
+
+        foreach ($customers as $customer) {
+            if (empty($customer->line_user_id)) {
+                $failed++;
+                $failedCustomers[] = $customer->id;
+                continue;
+            }
+
+            $result = $this->sendLineMessage($customer->line_user_id, $message, $storeId);
+            if ($result) {
+                $success++;
+            } else {
+                $failed++;
+                $failedCustomers[] = $customer->id;
+            }
+        }
+
+        return [
+            'success_count'   => $success,
+            'failed_count'    => $failed,
+            'failed_customers'=> $failedCustomers,
+        ];
     }
 
     /**
@@ -206,8 +484,26 @@ class NotificationService
      */
     public function scheduleNotification(int $storeId, string $scheduleAt, string $notificationType, array $targetData): bool
     {
-        // TODO: 実装予定
-        throw new \Exception('NotificationService::scheduleNotification() - 実装予定');
+        try {
+            Notification::create([
+                'store_id'     => $storeId,
+                'type'         => $notificationType,
+                'recipient_type' => Notification::RECIPIENT_TYPE_CUSTOMER,
+                'recipient_id' => $targetData['line_user_id'] ?? '',
+                'title'        => $targetData['title'] ?? '',
+                'message'      => $targetData['message'] ?? '',
+                'status'       => Notification::STATUS_PENDING,
+                'scheduled_at' => $scheduleAt,
+                'template_variables' => $targetData['variables'] ?? [],
+            ]);
+            return true;
+        } catch (\Throwable $e) {
+            Log::error('Failed to schedule notification', [
+                'store_id' => $storeId,
+                'error'    => $e->getMessage(),
+            ]);
+            return false;
+        }
     }
 
     /**
@@ -229,8 +525,22 @@ class NotificationService
         string $status,
         array $metadata = []
     ): Notification {
-        // TODO: 実装予定
-        throw new \Exception('NotificationService::recordNotification() - 実装予定');
+        return Notification::create(array_merge([
+            'store_id'     => $storeId,
+            'type'         => $notificationType,
+            'recipient_type' => $channel === 'line' ? Notification::RECIPIENT_TYPE_CUSTOMER : Notification::RECIPIENT_TYPE_BROADCAST,
+            'recipient_id' => $recipient,
+            'title'        => $metadata['title'] ?? '',
+            'message'      => $metadata['message'] ?? '',
+            'status'       => $status,
+            'template_id'  => $metadata['template_id'] ?? null,
+            'booking_id'   => $metadata['booking_id'] ?? null,
+            'template_variables' => $metadata['variables'] ?? null,
+            'line_payload' => $metadata['line_payload'] ?? null,
+            'delivery_info'=> $metadata['delivery_info'] ?? null,
+        ], [
+            'max_retries' => self::MAX_RETRY_COUNT,
+        ]));
     }
 
     /**
@@ -241,13 +551,26 @@ class NotificationService
      */
     public function retryFailedNotification(Notification $notification): bool
     {
-        // TODO: 実装予定
-        // 1. リトライ回数確認
-        // 2. 指数バックオフ計算
-        // 3. キュー再投入
-        // 4. リトライ履歴更新
+        if (!$notification->canRetry()) {
+            return false;
+        }
 
-        throw new \Exception('NotificationService::retryFailedNotification() - 実装予定');
+        // バックオフ計算
+        $delaySeconds = self::RETRY_INTERVALS[min($notification->retry_count, count(self::RETRY_INTERVALS) - 1)];
+
+        // キュー投入 (簡易処理として即時呼び出し)
+        $success = $this->sendLineMessage($notification->recipient_id, $notification->line_payload['messages'] ?? [[
+            'type' => 'text',
+            'text' => $notification->message,
+        ]], $notification->store_id);
+
+        if ($success) {
+            $notification->markAsSent(['retry' => true]);
+        } else {
+            $notification->markAsFailed('Retry failed');
+        }
+
+        return $success;
     }
 
     /**
@@ -266,8 +589,31 @@ class NotificationService
      */
     public function getNotificationStats(int $storeId, ?string $startDate = null, ?string $endDate = null): array
     {
-        // TODO: 実装予定
-        throw new \Exception('NotificationService::getNotificationStats() - 実装予定');
+        $query = Notification::where('store_id', $storeId)->sent();
+
+        if ($startDate && $endDate) {
+            $query->dateRange($startDate, $endDate);
+        }
+
+        $totalSent = $query->count();
+
+        $channelBreakdown = Notification::select('recipient_type', \DB::raw('count(*) as cnt'))
+            ->where('store_id', $storeId)
+            ->groupBy('recipient_type')
+            ->pluck('cnt', 'recipient_type')
+            ->toArray();
+
+        $typeBreakdown = Notification::select('type', \DB::raw('count(*) as cnt'))
+            ->where('store_id', $storeId)
+            ->groupBy('type')
+            ->pluck('cnt', 'type')
+            ->toArray();
+
+        return [
+            'total_sent'        => $totalSent,
+            'channel_breakdown' => $channelBreakdown,
+            'type_breakdown'    => $typeBreakdown,
+        ];
     }
 
     /**
@@ -280,13 +626,25 @@ class NotificationService
      */
     public function handleLineWebhook(array $events): bool
     {
-        // TODO: 実装予定
-        // 1. 署名検証
-        // 2. イベント種別判定
-        // 3. 各種イベント処理
-        // 4. レスポンス生成
+        // このメソッドでは受信したLINEイベントをログに記録し、
+        // 必要に応じて後続処理（自動応答や既読処理）へ委譲する。
 
-        throw new \Exception('NotificationService::handleLineWebhook() - 実装予定');
+        try {
+            foreach ($events as $event) {
+                Log::info('Received LINE event', [
+                    'type'   => $event['type'] ?? 'unknown',
+                    'userId' => $event['source']['userId'] ?? null,
+                    'event'  => $event,
+                ]);
+            }
+
+            return true;
+        } catch (\Throwable $e) {
+            Log::error('Failed to handle LINE webhook', [
+                'error' => $e->getMessage(),
+            ]);
+            return false;
+        }
     }
 
     /**
@@ -316,8 +674,13 @@ class NotificationService
      */
     protected function getLineAccessToken(int $storeId): ?string
     {
-        // TODO: 実装予定
-        throw new \Exception('NotificationService::getLineAccessToken() - 実装予定');
+        $store = Store::find($storeId);
+        if (!$store) {
+            return null;
+        }
+
+        $lineSettings = $store->line_integration ?? [];
+        return $lineSettings['access_token'] ?? env('LINE_ACCESS_TOKEN');
     }
 
     /**

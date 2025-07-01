@@ -313,9 +313,11 @@ class Notification extends Model
     }
 
     /**
-     * ステータス情報取得
+     * インスタンスのステータス情報取得
+     *
+     * @return array ステータス詳細情報
      */
-    public function getStatusInfo(): array
+    public function getStatusInfoData(): array
     {
         $statuses = self::getStatusInfo();
         return $statuses[$this->status] ?? [];

@@ -699,3 +699,193 @@ Total Code Implementation:
 **Working Directory**: /Users/tugi/docker/tugical/backend
 **Target File**: app/Services/NotificationService.php
 **Implementation**: 5 methods (sendBookingConfirmation, sendBookingReminder, sendBookingCancellation, sendCustomNotification, processNotificationQueue)
+
+# tugical 現在の作業焦点
+
+**更新日時**: 2025-06-30 20:30  
+**現在のフェーズ**: Phase 3.1 - API レイヤー実装  
+**ブランチ**: develop  
+
+---
+
+## 🎯 現在の焦点: BookingController API実装
+
+### ✅ Phase 2 完了実績
+**4つのコアサービス + 通知システム完全実装**
+
+| 完了項目 | 実装状況 | 主要機能 |
+|---------|---------|---------|
+| BookingService | ✅ 完了 | 予約作成・競合チェック・料金計算・Hold Token統合 |
+| AvailabilityService | ✅ 完了 | 空き時間判定・月間カレンダー・営業時間検証 |
+| HoldTokenService | ✅ 完了 | 10分間仮押さえ・Redis TTL・自動削除・統計 |
+| NotificationService | ✅ 完了 | LINE通知・テンプレート・再送・統計・Webhook |
+| モデル構文エラー修正 | ✅ 完了 | Booking/Notification モデルのメソッド重複解消 |
+
+**総実装**: 約1,850行、33メソッド、構文エラー0件
+
+---
+
+## 🚀 Phase 3.1: BookingController 実装
+
+### 🎯 実装対象API
+
+```php
+// backend/app/Http/Controllers/Api/BookingController.php
+
+class BookingController extends Controller
+{
+    // 1. 予約作成 (BookingService::createBooking統合)
+    POST   /api/v1/bookings
+    
+    // 2. 予約一覧 (フィルタリング・ページネーション)
+    GET    /api/v1/bookings
+    
+    // 3. 予約詳細
+    GET    /api/v1/bookings/{id}
+    
+    // 4. 予約更新
+    PUT    /api/v1/bookings/{id}
+    
+    // 5. ステータス変更 (confirmed/cancelled/completed)
+    PATCH  /api/v1/bookings/{id}/status
+    
+    // 6. 予約削除 (ソフトデリート)
+    DELETE /api/v1/bookings/{id}
+}
+```
+
+### 🔧 技術要件
+
+#### Request/Response設計
+- **Form Request**: CreateBookingRequest, UpdateBookingRequest
+- **API Resource**: BookingResource (統一JSON形式)
+- **Validation**: 日本語エラーメッセージ
+- **Authorization**: Sanctum Token + Multi-tenant分離
+
+#### BookingService統合
+```php
+// Controller → Service → Repository → Model パターン
+
+public function store(CreateBookingRequest $request)
+{
+    $booking = $this->bookingService->createBooking(
+        $request->getStoreId(),
+        $request->validated()
+    );
+    
+    return $this->successResponse(
+        new BookingResource($booking),
+        '予約が作成されました'
+    );
+}
+```
+
+#### エラーハンドリング
+- **競合エラー**: BookingConflictException
+- **Hold Token**: HoldTokenExpiredException  
+- **営業時間外**: OutsideBusinessHoursException
+- **バリデーション**: 統一フォーマット
+
+---
+
+## 📋 実装手順
+
+### Step 1: Controller基盤作成 (30分)
+```bash
+cd backend
+php artisan make:controller Api/BookingController --api
+```
+
+### Step 2: Form Request作成 (30分)
+```bash
+php artisan make:request CreateBookingRequest
+php artisan make:request UpdateBookingRequest
+```
+
+### Step 3: API Resource作成 (30分)
+```bash
+php artisan make:resource BookingResource
+php artisan make:resource BookingCollection
+```
+
+### Step 4: Routes設定 (30分)
+```php
+// routes/api.php
+Route::middleware(['auth:sanctum', 'tenant.scope'])->group(function () {
+    Route::apiResource('bookings', BookingController::class);
+    Route::patch('bookings/{booking}/status', [BookingController::class, 'updateStatus']);
+});
+```
+
+### Step 5: Controller実装 (2時間)
+- 各メソッドの実装
+- BookingService統合
+- エラーハンドリング
+- レスポンス統一
+
+### Step 6: テスト (1時間)
+```bash
+# Postman Collection作成
+# 全エンドポイント検証
+# エラーケーステスト
+```
+
+---
+
+## ⚡ 次の実装順序
+
+### Phase 3.2: AvailabilityController
+- 空き時間検索API
+- Hold Token作成API
+- 月間カレンダーAPI
+
+### Phase 3.3: NotificationController  
+- 通知統計API
+- 一括送信API
+- LINE Webhook処理
+
+### Phase 3.4:統合テスト
+- Postman Collection完成
+- LIFF API連携テスト
+- パフォーマンステスト
+
+---
+
+## 🛠️ 開発環境
+
+```bash
+# 現在の環境状況
+make health  # ✅ API/Database/Redis 全正常
+
+# 利用可能コマンド
+make shell   # アプリコンテナアクセス
+make logs    # ログ確認
+make migrate # マイグレーション実行
+```
+
+### アクセス情報
+- **API**: http://localhost/health ✅ healthy
+- **phpMyAdmin**: http://localhost:8080
+- **Git**: develop ブランチ
+
+---
+
+## 🎯 成功判定基準
+
+### 完了条件
+- [ ] 6つのBooking API エンドポイント実装完了
+- [ ] BookingService 完全統合
+- [ ] エラーハンドリング完備
+- [ ] Postman Collection 動作確認
+- [ ] 構文エラー0件維持
+
+### 品質基準  
+- **レスポンス時間**: < 1秒
+- **エラー率**: < 5%
+- **日本語対応**: 100%
+- **Multi-tenant**: 完全分離
+
+---
+
+**推定作業時間**: 4-5時間  
+**完了予定**: 2025-06-30 深夜

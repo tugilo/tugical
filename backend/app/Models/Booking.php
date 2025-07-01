@@ -383,9 +383,11 @@ class Booking extends Model
     }
 
     /**
-     * ステータス情報取得
+     * インスタンスのステータス情報取得
+     *
+     * @return array ステータス詳細
      */
-    public function getStatusInfo(): array
+    public function getStatusInfoData(): array
     {
         $statusInfo = self::getStatusInfo();
         return $statusInfo[$this->status] ?? [];
@@ -396,7 +398,7 @@ class Booking extends Model
      */
     public function canCancel(): bool
     {
-        $statusInfo = $this->getStatusInfo();
+        $statusInfo = $this->getStatusInfoData();
         return $statusInfo['can_cancel'] ?? false;
     }
 
@@ -405,7 +407,7 @@ class Booking extends Model
      */
     public function canModify(): bool
     {
-        $statusInfo = $this->getStatusInfo();
+        $statusInfo = $this->getStatusInfoData();
         return $statusInfo['can_modify'] ?? false;
     }
 
@@ -414,7 +416,7 @@ class Booking extends Model
      */
     public function canComplete(): bool
     {
-        $statusInfo = $this->getStatusInfo();
+        $statusInfo = $this->getStatusInfoData();
         return $statusInfo['can_complete'] ?? false;
     }
 
