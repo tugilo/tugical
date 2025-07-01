@@ -702,190 +702,163 @@ Total Code Implementation:
 
 # tugical 現在の作業焦点
 
-**更新日時**: 2025-06-30 21:30  
-**現在のフェーズ**: Phase 3.2 - 空き時間・Hold TokenController実装  
+**最終更新**: 2025-06-30 22:30  
+**現在のフェーズ**: Phase 3.3 NotificationController実装  
 **ブランチ**: develop  
 
 ---
 
-## 🎯 現在の焦点: AvailabilityController & HoldTokenController実装
+## 🎯 **現在の焦点: Phase 3.3 NotificationController実装**
 
-### ✅ Phase 3.1 完了実績 【2025-06-30 21:30完了】
-**BookingController API完全実装**
+### ✅ **直前完了: Phase 3.2 AvailabilityController & HoldTokenController実装** 
+**完了時刻**: 2025-06-30 22:30  
+**コミット**: 40bbf41 (feat(phase3): Phase 3.2 AvailabilityController & HoldTokenController実装完了)
 
-| 完了項目 | 実装状況 | 主要機能 |
-|---------|---------|---------| 
-| BookingController | ✅ 完了 | 6エンドポイント・CRUD・ステータス管理 |
-| CreateBookingRequest | ✅ 完了 | 15フィールド・マルチテナント・日本語メッセージ |
-| UpdateBookingRequest | ✅ 完了 | 部分更新・関連性チェック・ステータス遷移 |
-| BookingResource | ✅ 完了 | 統一レスポンス・関連データ・権限制御 |
-| カスタム例外クラス | ✅ 完了 | 3種類・HTTPステータス・詳細メッセージ |
-| APIルート設定 | ✅ 完了 | RESTful・Sanctum認証・バージョニング |
-
-**総実装**: 約1,960行、7ファイル、構文エラー0件
+#### 実装完了内容
+- ✅ **AvailabilityController** (3エンドポイント)
+- ✅ **HoldTokenController** (5エンドポイント)
+- ✅ **CreateHoldTokenRequest** (包括的バリデーション)
+- ✅ **APIルート統合** (8エンドポイント追加)
+- ✅ **構文チェック** 全ファイル正常
+- ✅ **システムヘルスチェック** 正常
 
 ---
 
-## 🚀 Phase 3.2: AvailabilityController & HoldTokenController実装
+## 📋 **Phase 3.3 実装予定: NotificationController**
 
-### 🎯 実装対象API
+### 🎯 **主要実装項目**
 
-#### 1. AvailabilityController
+#### 1. **NotificationController.php** (通知管理API)
 ```php
-// backend/app/Http/Controllers/Api/AvailabilityController.php
-
-class AvailabilityController extends Controller
-{
-    // 1. 空き時間検索 (AvailabilityService::getAvailableSlots統合)
-    GET   /api/v1/availability
-    
-    // 2. 月間可用性カレンダー取得
-    GET   /api/v1/availability/calendar
-    
-    // 3. リソース別可用性取得
-    GET   /api/v1/availability/resources/{resource}
-}
+// 実装予定エンドポイント
+GET    /api/v1/notifications             - 通知履歴一覧取得
+POST   /api/v1/notifications/send        - 通知手動送信
+GET    /api/v1/notifications/{id}        - 通知詳細取得
+DELETE /api/v1/notifications/{id}        - 通知削除
+GET    /api/v1/notifications/stats       - 通知統計取得
 ```
 
-#### 2. HoldTokenController  
+#### 2. **NotificationTemplateController.php** (テンプレート管理)
 ```php
-// backend/app/Http/Controllers/Api/HoldTokenController.php
-
-class HoldTokenController extends Controller
-{
-    // 1. 仮押さえ作成 (HoldTokenService::createHoldToken統合)
-    POST   /api/v1/hold-slots
-    
-    // 2. 仮押さえ延長
-    PATCH  /api/v1/hold-slots/{token}
-    
-    // 3. 仮押さえ解除
-    DELETE /api/v1/hold-slots/{token}
-    
-    // 4. 店舗別仮押さえ一覧 (管理者用)
-    GET    /api/v1/hold-slots
-}
+// 実装予定エンドポイント
+GET    /api/v1/notification-templates    - テンプレート一覧
+GET    /api/v1/notification-templates/{type} - タイプ別テンプレート
+PUT    /api/v1/notification-templates/{type} - テンプレート更新
+POST   /api/v1/notification-templates/preview - プレビュー生成
 ```
 
-### 🔧 実装方針
+#### 3. **バリデーションリクエスト**
+- **SendNotificationRequest** (手動通知送信)
+- **UpdateTemplateRequest** (テンプレート更新)
+
+#### 4. **APIレスポンスリソース**
+- **NotificationResource** (通知情報統一出力)
+- **NotificationTemplateResource** (テンプレート情報出力)
+
+### 🔧 **技術要件**
+
+#### NotificationService統合
+- **完全実装済み**: NotificationService (13メソッド・400行)
+- **活用メソッド**:
+  - `sendLineMessage()` - LINE API統合
+  - `renderNotificationTemplate()` - テンプレートレンダリング  
+  - `recordNotification()` - 履歴記録
+  - `getNotificationStats()` - 統計取得
+  - `retryFailedNotification()` - 自動再送
 
 #### API仕様準拠
-- **tugical_api_specification_v1.0.md**: 空き時間API・仮押さえAPI完全準拠
-- **レスポンス統一**: 成功・エラー・メタデータ形式統一
-- **エラーハンドリング**: Hold Token関連例外活用
+- **tugical_api_specification_v1.0.md** 7.1〜7.3 準拠
+- **統一エラーレスポンス** 形式
+- **マルチテナント** store_id分離
+- **ページング・フィルタリング** 対応
 
-#### Service統合
-- **AvailabilityService**: 既存getAvailableSlots等4メソッド活用
-- **HoldTokenService**: 既存createHoldToken等9メソッド活用
-- **ビジネスロジック分離**: Controller→Service→Repository設計維持
-
-#### Form Request & Resource
-- **AvailabilityRequest**: 空き時間検索パラメータバリデーション
-- **HoldTokenRequest**: 仮押さえ作成・延長バリデーション
-- **AvailabilityResource**: 空き時間レスポンス統一
-- **HoldTokenResource**: 仮押さえ情報レスポンス統一
-
-### ⏱️ 推定作業時間
-
-| 作業項目 | 推定時間 | 内容 |
-|---------|---------|------|
-| AvailabilityController | 2時間 | 3メソッド・Service統合・エラーハンドリング |
-| HoldTokenController | 2時間 | 4メソッド・Token管理・期限チェック |
-| Form Request作成 | 1時間 | バリデーション・日本語メッセージ |
-| Resource作成 | 1時間 | レスポンス統一・関連データ |
-| ルート設定・テスト | 1時間 | API登録・構文チェック・動作確認 |
-
-**合計**: 約7時間
-
----
-
-## 📋 **実装チェックリスト**
-
-### Phase 3.2 作業手順
-
-#### 1. Controller作成
-- [ ] `php artisan make:controller Api/AvailabilityController`
-- [ ] `php artisan make:controller Api/HoldTokenController`
-
-#### 2. Form Request作成
-- [ ] `php artisan make:request AvailabilityRequest` 
-- [ ] `php artisan make:request CreateHoldTokenRequest`
-- [ ] `php artisan make:request ExtendHoldTokenRequest`
-
-#### 3. Resource作成
-- [ ] `php artisan make:resource AvailabilityResource`
-- [ ] `php artisan make:resource HoldTokenResource`
-
-#### 4. Controller実装
-- [ ] AvailabilityController::index() - 空き時間検索
-- [ ] AvailabilityController::calendar() - 月間カレンダー
-- [ ] AvailabilityController::resourceAvailability() - リソース別可用性
-- [ ] HoldTokenController::store() - 仮押さえ作成
-- [ ] HoldTokenController::update() - 仮押さえ延長
-- [ ] HoldTokenController::destroy() - 仮押さえ解除
-- [ ] HoldTokenController::index() - 仮押さえ一覧
-
-#### 5. APIルート追加
-- [ ] availability ルート追加
-- [ ] hold-slots ルート追加
-- [ ] 認証・権限設定
-
-#### 6. テスト・確認
-- [ ] 構文チェック（php -l）
-- [ ] ルート登録確認（route:list）
-- [ ] Git commit & push
-
----
-
-## 📖 **参照ドキュメント**
-
-- **API仕様**: `doc/tugical_api_specification_v1.0.md`（空き時間・Hold Token API）
-- **データベース設計**: `doc/tugical_database_design_v1.0.md`
-- **要件定義**: `doc/tugical_requirements_specification_v1.0.md`（仮押さえシステム）
-
----
-
-## 🛠️ **現在利用可能なコマンド**
-
-```bash
-# 環境確認
-make health        # ✅ All systems OK
-
-# 日常開発  
-make up           # サービス起動
-make shell        # アプリコンテナアクセス
-
-# 実装確認
-cd backend
-php artisan route:list --path=api  # APIルート確認
-php -l app/Http/Controllers/Api/*.php  # 構文チェック
+#### 実装パターン
+```php
+// Controller基本構造
+class NotificationController extends Controller
+{
+    protected NotificationService $notificationService;
+    
+    public function index(Request $request): JsonResponse
+    {
+        // 通知履歴一覧取得
+        // フィルタリング: customer_id, type, status, date_range
+        // ページング: per_page (default: 20, max: 100)
+    }
+    
+    public function send(SendNotificationRequest $request): JsonResponse  
+    {
+        // 手動通知送信
+        // customer_id, type, message, scheduled_at対応
+    }
+}
 ```
 
----
+### 📊 **実装予定統計**
 
-## 🌐 **アクセス情報**
+#### 推定工数
+- **NotificationController**: 2-3時間
+- **NotificationTemplateController**: 1-2時間
+- **バリデーションリクエスト**: 1時間
+- **APIリソース**: 1時間
+- **APIルート追加**: 30分
+- **テスト・検証**: 1時間
+- **ドキュメント更新**: 30分
+- **合計推定**: 約7時間
 
-- **API Health**: http://localhost/health ✅ healthy
-- **BookingController**: http://localhost/api/v1/bookings ✅ ルート登録済み
-- **Git Repository**: https://github.com/tugilo/tugical
-- **Active Branch**: develop (5e927c8)
-
----
-
-## 📈 **Phase 3 完了サマリー**
-
-| コンポーネント | 実装状況 | 実装行数 | 主要機能 | 構文チェック |
-|---------------|---------|---------|---------|-------------|
-| **BookingController** | ✅ 完了 | 670行 | 6API・CRUD・ステータス管理 | ✅ エラーなし |
-| **CreateBookingRequest** | ✅ 完了 | 400行 | 15フィールド・マルチテナント | ✅ エラーなし |
-| **UpdateBookingRequest** | ✅ 完了 | 350行 | 部分更新・関連性チェック | ✅ エラーなし |
-| **BookingResource** | ✅ 完了 | 350行 | 統一レスポンス・権限制御 | ✅ エラーなし |
-| **カスタム例外** | ✅ 完了 | 150行 | 3種類・HTTPステータス対応 | ✅ エラーなし |
-| **APIルート** | ✅ 完了 | 40行 | RESTful・認証・バージョニング | ✅ エラーなし |
-
-**Phase 3.1総実装**: 約1,960行、7ファイル、構文エラー0件 ✅
+#### 成果物予定
+- **新規ファイル**: 6ファイル作成
+- **追加行数**: 約1,200行追加
+- **APIエンドポイント**: 8エンドポイント実装
 
 ---
 
-**最終更新**: 2025-06-30 21:30  
-**ステータス**: ✅ Phase 3.1 完了, 🚀 Phase 3.2 準備完了
+## 🚀 **開始手順**
+
+### 1. **Artisan コマンド実行**
+```bash
+cd backend
+php artisan make:controller Api/NotificationController --api
+php artisan make:controller Api/NotificationTemplateController --api
+php artisan make:request SendNotificationRequest
+php artisan make:request UpdateTemplateRequest
+php artisan make:resource NotificationResource
+php artisan make:resource NotificationTemplateResource
+```
+
+### 2. **実装優先順序**
+1. **NotificationController** (通知履歴・手動送信)
+2. **SendNotificationRequest** (バリデーション)
+3. **NotificationResource** (レスポンス統一)
+4. **NotificationTemplateController** (テンプレート管理)
+5. **APIルート追加** (routes/api.php)
+6. **構文チェック・テスト**
+
+### 3. **成功基準**
+- [ ] 全エンドポイント正常実装
+- [ ] NotificationService完全統合
+- [ ] API仕様100%準拠
+- [ ] 構文エラー0件
+- [ ] ルート登録正常
+- [ ] システムヘルスチェック正常
+
+---
+
+## 📈 **Phase 3 全体進捗**
+
+### ✅ **完了済み**
+- **Phase 3.1**: BookingController (6エンドポイント) ✅
+- **Phase 3.2**: AvailabilityController & HoldTokenController (8エンドポイント) ✅
+
+### 🎯 **実行中**
+- **Phase 3.3**: NotificationController (8エンドポイント予定)
+
+### 📝 **実装後**
+- **Phase 3.4**: 他Controller実装 (Customer/Resource/Menu)
+- **Phase 3.5**: API統合テスト・パフォーマンス最適化
+
+---
+
+**Next Action**: NotificationController実装開始  
+**Estimated Duration**: 約7時間  
+**Target Completion**: Phase 3.3 完了
