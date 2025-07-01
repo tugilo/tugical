@@ -702,190 +702,190 @@ Total Code Implementation:
 
 # tugical 現在の作業焦点
 
-**更新日時**: 2025-06-30 20:30  
-**現在のフェーズ**: Phase 3.1 - API レイヤー実装  
+**更新日時**: 2025-06-30 21:30  
+**現在のフェーズ**: Phase 3.2 - 空き時間・Hold TokenController実装  
 **ブランチ**: develop  
 
 ---
 
-## 🎯 現在の焦点: BookingController API実装
+## 🎯 現在の焦点: AvailabilityController & HoldTokenController実装
 
-### ✅ Phase 2 完了実績
-**4つのコアサービス + 通知システム完全実装**
+### ✅ Phase 3.1 完了実績 【2025-06-30 21:30完了】
+**BookingController API完全実装**
 
 | 完了項目 | 実装状況 | 主要機能 |
-|---------|---------|---------|
-| BookingService | ✅ 完了 | 予約作成・競合チェック・料金計算・Hold Token統合 |
-| AvailabilityService | ✅ 完了 | 空き時間判定・月間カレンダー・営業時間検証 |
-| HoldTokenService | ✅ 完了 | 10分間仮押さえ・Redis TTL・自動削除・統計 |
-| NotificationService | ✅ 完了 | LINE通知・テンプレート・再送・統計・Webhook |
-| モデル構文エラー修正 | ✅ 完了 | Booking/Notification モデルのメソッド重複解消 |
+|---------|---------|---------| 
+| BookingController | ✅ 完了 | 6エンドポイント・CRUD・ステータス管理 |
+| CreateBookingRequest | ✅ 完了 | 15フィールド・マルチテナント・日本語メッセージ |
+| UpdateBookingRequest | ✅ 完了 | 部分更新・関連性チェック・ステータス遷移 |
+| BookingResource | ✅ 完了 | 統一レスポンス・関連データ・権限制御 |
+| カスタム例外クラス | ✅ 完了 | 3種類・HTTPステータス・詳細メッセージ |
+| APIルート設定 | ✅ 完了 | RESTful・Sanctum認証・バージョニング |
 
-**総実装**: 約1,850行、33メソッド、構文エラー0件
+**総実装**: 約1,960行、7ファイル、構文エラー0件
 
 ---
 
-## 🚀 Phase 3.1: BookingController 実装
+## 🚀 Phase 3.2: AvailabilityController & HoldTokenController実装
 
 ### 🎯 実装対象API
 
+#### 1. AvailabilityController
 ```php
-// backend/app/Http/Controllers/Api/BookingController.php
+// backend/app/Http/Controllers/Api/AvailabilityController.php
 
-class BookingController extends Controller
+class AvailabilityController extends Controller
 {
-    // 1. 予約作成 (BookingService::createBooking統合)
-    POST   /api/v1/bookings
+    // 1. 空き時間検索 (AvailabilityService::getAvailableSlots統合)
+    GET   /api/v1/availability
     
-    // 2. 予約一覧 (フィルタリング・ページネーション)
-    GET    /api/v1/bookings
+    // 2. 月間可用性カレンダー取得
+    GET   /api/v1/availability/calendar
     
-    // 3. 予約詳細
-    GET    /api/v1/bookings/{id}
-    
-    // 4. 予約更新
-    PUT    /api/v1/bookings/{id}
-    
-    // 5. ステータス変更 (confirmed/cancelled/completed)
-    PATCH  /api/v1/bookings/{id}/status
-    
-    // 6. 予約削除 (ソフトデリート)
-    DELETE /api/v1/bookings/{id}
+    // 3. リソース別可用性取得
+    GET   /api/v1/availability/resources/{resource}
 }
 ```
 
-### 🔧 技術要件
-
-#### Request/Response設計
-- **Form Request**: CreateBookingRequest, UpdateBookingRequest
-- **API Resource**: BookingResource (統一JSON形式)
-- **Validation**: 日本語エラーメッセージ
-- **Authorization**: Sanctum Token + Multi-tenant分離
-
-#### BookingService統合
+#### 2. HoldTokenController  
 ```php
-// Controller → Service → Repository → Model パターン
+// backend/app/Http/Controllers/Api/HoldTokenController.php
 
-public function store(CreateBookingRequest $request)
+class HoldTokenController extends Controller
 {
-    $booking = $this->bookingService->createBooking(
-        $request->getStoreId(),
-        $request->validated()
-    );
+    // 1. 仮押さえ作成 (HoldTokenService::createHoldToken統合)
+    POST   /api/v1/hold-slots
     
-    return $this->successResponse(
-        new BookingResource($booking),
-        '予約が作成されました'
-    );
+    // 2. 仮押さえ延長
+    PATCH  /api/v1/hold-slots/{token}
+    
+    // 3. 仮押さえ解除
+    DELETE /api/v1/hold-slots/{token}
+    
+    // 4. 店舗別仮押さえ一覧 (管理者用)
+    GET    /api/v1/hold-slots
 }
 ```
 
-#### エラーハンドリング
-- **競合エラー**: BookingConflictException
-- **Hold Token**: HoldTokenExpiredException  
-- **営業時間外**: OutsideBusinessHoursException
-- **バリデーション**: 統一フォーマット
+### 🔧 実装方針
+
+#### API仕様準拠
+- **tugical_api_specification_v1.0.md**: 空き時間API・仮押さえAPI完全準拠
+- **レスポンス統一**: 成功・エラー・メタデータ形式統一
+- **エラーハンドリング**: Hold Token関連例外活用
+
+#### Service統合
+- **AvailabilityService**: 既存getAvailableSlots等4メソッド活用
+- **HoldTokenService**: 既存createHoldToken等9メソッド活用
+- **ビジネスロジック分離**: Controller→Service→Repository設計維持
+
+#### Form Request & Resource
+- **AvailabilityRequest**: 空き時間検索パラメータバリデーション
+- **HoldTokenRequest**: 仮押さえ作成・延長バリデーション
+- **AvailabilityResource**: 空き時間レスポンス統一
+- **HoldTokenResource**: 仮押さえ情報レスポンス統一
+
+### ⏱️ 推定作業時間
+
+| 作業項目 | 推定時間 | 内容 |
+|---------|---------|------|
+| AvailabilityController | 2時間 | 3メソッド・Service統合・エラーハンドリング |
+| HoldTokenController | 2時間 | 4メソッド・Token管理・期限チェック |
+| Form Request作成 | 1時間 | バリデーション・日本語メッセージ |
+| Resource作成 | 1時間 | レスポンス統一・関連データ |
+| ルート設定・テスト | 1時間 | API登録・構文チェック・動作確認 |
+
+**合計**: 約7時間
 
 ---
 
-## 📋 実装手順
+## 📋 **実装チェックリスト**
 
-### Step 1: Controller基盤作成 (30分)
+### Phase 3.2 作業手順
+
+#### 1. Controller作成
+- [ ] `php artisan make:controller Api/AvailabilityController`
+- [ ] `php artisan make:controller Api/HoldTokenController`
+
+#### 2. Form Request作成
+- [ ] `php artisan make:request AvailabilityRequest` 
+- [ ] `php artisan make:request CreateHoldTokenRequest`
+- [ ] `php artisan make:request ExtendHoldTokenRequest`
+
+#### 3. Resource作成
+- [ ] `php artisan make:resource AvailabilityResource`
+- [ ] `php artisan make:resource HoldTokenResource`
+
+#### 4. Controller実装
+- [ ] AvailabilityController::index() - 空き時間検索
+- [ ] AvailabilityController::calendar() - 月間カレンダー
+- [ ] AvailabilityController::resourceAvailability() - リソース別可用性
+- [ ] HoldTokenController::store() - 仮押さえ作成
+- [ ] HoldTokenController::update() - 仮押さえ延長
+- [ ] HoldTokenController::destroy() - 仮押さえ解除
+- [ ] HoldTokenController::index() - 仮押さえ一覧
+
+#### 5. APIルート追加
+- [ ] availability ルート追加
+- [ ] hold-slots ルート追加
+- [ ] 認証・権限設定
+
+#### 6. テスト・確認
+- [ ] 構文チェック（php -l）
+- [ ] ルート登録確認（route:list）
+- [ ] Git commit & push
+
+---
+
+## 📖 **参照ドキュメント**
+
+- **API仕様**: `doc/tugical_api_specification_v1.0.md`（空き時間・Hold Token API）
+- **データベース設計**: `doc/tugical_database_design_v1.0.md`
+- **要件定義**: `doc/tugical_requirements_specification_v1.0.md`（仮押さえシステム）
+
+---
+
+## 🛠️ **現在利用可能なコマンド**
+
 ```bash
+# 環境確認
+make health        # ✅ All systems OK
+
+# 日常開発  
+make up           # サービス起動
+make shell        # アプリコンテナアクセス
+
+# 実装確認
 cd backend
-php artisan make:controller Api/BookingController --api
-```
-
-### Step 2: Form Request作成 (30分)
-```bash
-php artisan make:request CreateBookingRequest
-php artisan make:request UpdateBookingRequest
-```
-
-### Step 3: API Resource作成 (30分)
-```bash
-php artisan make:resource BookingResource
-php artisan make:resource BookingCollection
-```
-
-### Step 4: Routes設定 (30分)
-```php
-// routes/api.php
-Route::middleware(['auth:sanctum', 'tenant.scope'])->group(function () {
-    Route::apiResource('bookings', BookingController::class);
-    Route::patch('bookings/{booking}/status', [BookingController::class, 'updateStatus']);
-});
-```
-
-### Step 5: Controller実装 (2時間)
-- 各メソッドの実装
-- BookingService統合
-- エラーハンドリング
-- レスポンス統一
-
-### Step 6: テスト (1時間)
-```bash
-# Postman Collection作成
-# 全エンドポイント検証
-# エラーケーステスト
+php artisan route:list --path=api  # APIルート確認
+php -l app/Http/Controllers/Api/*.php  # 構文チェック
 ```
 
 ---
 
-## ⚡ 次の実装順序
+## 🌐 **アクセス情報**
 
-### Phase 3.2: AvailabilityController
-- 空き時間検索API
-- Hold Token作成API
-- 月間カレンダーAPI
-
-### Phase 3.3: NotificationController  
-- 通知統計API
-- 一括送信API
-- LINE Webhook処理
-
-### Phase 3.4:統合テスト
-- Postman Collection完成
-- LIFF API連携テスト
-- パフォーマンステスト
+- **API Health**: http://localhost/health ✅ healthy
+- **BookingController**: http://localhost/api/v1/bookings ✅ ルート登録済み
+- **Git Repository**: https://github.com/tugilo/tugical
+- **Active Branch**: develop (5e927c8)
 
 ---
 
-## 🛠️ 開発環境
+## 📈 **Phase 3 完了サマリー**
 
-```bash
-# 現在の環境状況
-make health  # ✅ API/Database/Redis 全正常
+| コンポーネント | 実装状況 | 実装行数 | 主要機能 | 構文チェック |
+|---------------|---------|---------|---------|-------------|
+| **BookingController** | ✅ 完了 | 670行 | 6API・CRUD・ステータス管理 | ✅ エラーなし |
+| **CreateBookingRequest** | ✅ 完了 | 400行 | 15フィールド・マルチテナント | ✅ エラーなし |
+| **UpdateBookingRequest** | ✅ 完了 | 350行 | 部分更新・関連性チェック | ✅ エラーなし |
+| **BookingResource** | ✅ 完了 | 350行 | 統一レスポンス・権限制御 | ✅ エラーなし |
+| **カスタム例外** | ✅ 完了 | 150行 | 3種類・HTTPステータス対応 | ✅ エラーなし |
+| **APIルート** | ✅ 完了 | 40行 | RESTful・認証・バージョニング | ✅ エラーなし |
 
-# 利用可能コマンド
-make shell   # アプリコンテナアクセス
-make logs    # ログ確認
-make migrate # マイグレーション実行
-```
-
-### アクセス情報
-- **API**: http://localhost/health ✅ healthy
-- **phpMyAdmin**: http://localhost:8080
-- **Git**: develop ブランチ
+**Phase 3.1総実装**: 約1,960行、7ファイル、構文エラー0件 ✅
 
 ---
 
-## 🎯 成功判定基準
-
-### 完了条件
-- [ ] 6つのBooking API エンドポイント実装完了
-- [ ] BookingService 完全統合
-- [ ] エラーハンドリング完備
-- [ ] Postman Collection 動作確認
-- [ ] 構文エラー0件維持
-
-### 品質基準  
-- **レスポンス時間**: < 1秒
-- **エラー率**: < 5%
-- **日本語対応**: 100%
-- **Multi-tenant**: 完全分離
-
----
-
-**推定作業時間**: 4-5時間  
-**完了予定**: 2025-06-30 深夜
+**最終更新**: 2025-06-30 21:30  
+**ステータス**: ✅ Phase 3.1 完了, 🚀 Phase 3.2 準備完了

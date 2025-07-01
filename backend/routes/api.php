@@ -3,6 +3,8 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\BookingController;
+use App\Http\Controllers\Api\AvailabilityController;
+use App\Http\Controllers\Api\HoldTokenController;
 
 /*
 |--------------------------------------------------------------------------
@@ -62,13 +64,52 @@ Route::prefix('v1')->group(function () {
         
         /*
         |--------------------------------------------------------------------------
+        | 空き時間・可用性API
+        |--------------------------------------------------------------------------
+        */
+        
+        // 空き時間枠検索
+        Route::get('availability', [AvailabilityController::class, 'index'])
+            ->name('availability.index');
+        
+        // 月間可用性カレンダー
+        Route::get('availability/calendar', [AvailabilityController::class, 'calendar'])
+            ->name('availability.calendar');
+        
+        // リソース可用性チェック
+        Route::get('availability/resource-check', [AvailabilityController::class, 'resourceCheck'])
+            ->name('availability.resource-check');
+        
+        /*
+        |--------------------------------------------------------------------------
+        | Hold Token（仮押さえ）API
+        |--------------------------------------------------------------------------
+        */
+        
+        // Hold Token作成（仮押さえ）
+        Route::post('hold-slots', [HoldTokenController::class, 'store'])
+            ->name('hold-slots.store');
+        
+        // Hold Token詳細取得
+        Route::get('hold-slots/{holdToken}', [HoldTokenController::class, 'show'])
+            ->name('hold-slots.show');
+        
+        // Hold Token解放
+        Route::delete('hold-slots/{holdToken}', [HoldTokenController::class, 'destroy'])
+            ->name('hold-slots.destroy');
+        
+        // Hold Token延長
+        Route::patch('hold-slots/{holdToken}/extend', [HoldTokenController::class, 'extend'])
+            ->name('hold-slots.extend');
+        
+        // 店舗Hold Token一覧
+        Route::get('hold-slots', [HoldTokenController::class, 'index'])
+            ->name('hold-slots.index');
+        
+        /*
+        |--------------------------------------------------------------------------
         | 今後追加予定のルート
         |--------------------------------------------------------------------------
-        
-        // 空き時間・可用性API
-        Route::get('availability', [AvailabilityController::class, 'index']);
-        Route::post('hold-slots', [HoldTokenController::class, 'create']);
-        Route::delete('hold-slots/{token}', [HoldTokenController::class, 'release']);
         
         // 顧客管理API
         Route::apiResource('customers', CustomerController::class);
