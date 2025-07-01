@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\AvailabilityController;
 use App\Http\Controllers\Api\HoldTokenController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\NotificationTemplateController;
+use App\Http\Controllers\Api\AuthController;
 
 /*
 |--------------------------------------------------------------------------
@@ -35,186 +36,128 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 |
 */
 
-// ヘルスチェック（認証不要）
-Route::get('/health', function () {
-    return response()->json([
-        'status' => 'healthy',
-        'timestamp' => now()->toISOString(),
-        'environment' => app()->environment(),
-        'version' => '1.0'
-    ]);
+// ===========================
+// 認証API（tugical_api_specification_v1.0.md Section 1）
+// ===========================
+Route::prefix('v1/auth')->name('auth.')->group(function () {
+    // 管理者ログイン（認証不要）
+    Route::post('login', [AuthController::class, 'login'])->name('login');
+    
+    // 認証必須ルート
+    Route::middleware('auth:sanctum')->group(function () {
+        // ログアウト
+        Route::post('logout', [AuthController::class, 'logout'])->name('logout');
+        
+        // ユーザー情報取得
+        Route::get('user', [AuthController::class, 'user'])->name('user');
+    });
 });
 
-// API v1 グループ
-Route::prefix('v1')->group(function () {
+// ===========================
+// 管理者API（認証必須・マルチテナント対応）
+// ===========================
+Route::prefix('v1')->middleware(['auth:sanctum'])->name('api.v1.')->group(function () {
     
-    // 認証が必要なルート
-    Route::middleware(['auth:sanctum'])->group(function () {
-        
-        /*
-        |--------------------------------------------------------------------------
-        | 予約管理API
-        |--------------------------------------------------------------------------
-        */
-        
-        // 予約CRUD操作
-        Route::apiResource('bookings', BookingController::class);
-        
-        // 予約ステータス変更
-        Route::patch('bookings/{booking}/status', [BookingController::class, 'updateStatus'])
-            ->name('bookings.update-status');
-        
-        /*
-        |--------------------------------------------------------------------------
-        | 空き時間・可用性API
-        |--------------------------------------------------------------------------
-        */
-        
-        // 空き時間枠検索
-        Route::get('availability', [AvailabilityController::class, 'index'])
-            ->name('availability.index');
-        
-        // 月間可用性カレンダー
-        Route::get('availability/calendar', [AvailabilityController::class, 'calendar'])
-            ->name('availability.calendar');
-        
-        // リソース可用性チェック
-        Route::get('availability/resource-check', [AvailabilityController::class, 'resourceCheck'])
-            ->name('availability.resource-check');
-        
-        /*
-        |--------------------------------------------------------------------------
-        | Hold Token（仮押さえ）API
-        |--------------------------------------------------------------------------
-        */
-        
-        // Hold Token作成（仮押さえ）
-        Route::post('hold-slots', [HoldTokenController::class, 'store'])
-            ->name('hold-slots.store');
-        
-        // Hold Token詳細取得
-        Route::get('hold-slots/{holdToken}', [HoldTokenController::class, 'show'])
-            ->name('hold-slots.show');
-        
-        // Hold Token解放
-        Route::delete('hold-slots/{holdToken}', [HoldTokenController::class, 'destroy'])
-            ->name('hold-slots.destroy');
-        
-        // Hold Token延長
-        Route::patch('hold-slots/{holdToken}/extend', [HoldTokenController::class, 'extend'])
-            ->name('hold-slots.extend');
-        
-        // 店舗Hold Token一覧
-        Route::get('hold-slots', [HoldTokenController::class, 'index'])
-            ->name('hold-slots.index');
-        
-        /*
-        |--------------------------------------------------------------------------
-        | 通知管理API
-        |--------------------------------------------------------------------------
-        */
-        
-        // 通知履歴一覧取得
-        Route::get('notifications', [NotificationController::class, 'index'])
-            ->name('notifications.index');
-        
-        // 通知詳細取得
-        Route::get('notifications/{notification}', [NotificationController::class, 'show'])
-            ->name('notifications.show');
-        
-        // 手動通知送信
-        Route::post('notifications/send', [NotificationController::class, 'send'])
-            ->name('notifications.send');
-        
-        // 一括通知送信
-        Route::post('notifications/bulk', [NotificationController::class, 'bulk'])
-            ->name('notifications.bulk');
-        
-        // 通知再送
-        Route::post('notifications/{notification}/retry', [NotificationController::class, 'retry'])
-            ->name('notifications.retry');
-        
-        // 通知統計情報取得
-        Route::get('notifications/stats', [NotificationController::class, 'stats'])
-            ->name('notifications.stats');
-        
-        /*
-        |--------------------------------------------------------------------------
-        | 通知テンプレート管理API
-        |--------------------------------------------------------------------------
-        */
-        
-        // 通知テンプレートCRUD操作
-        Route::apiResource('notification-templates', NotificationTemplateController::class, [
-            'names' => [
-                'index' => 'notification-templates.index',
-                'store' => 'notification-templates.store',
-                'show' => 'notification-templates.show',
-                'update' => 'notification-templates.update',
-                'destroy' => 'notification-templates.destroy',
-            ]
-        ]);
-        
-        // テンプレートプレビュー生成
-        Route::post('notification-templates/{notificationTemplate}/preview', [NotificationTemplateController::class, 'preview'])
-            ->name('notification-templates.preview');
-        
-        // デフォルトテンプレート取得
-        Route::get('notification-templates/defaults', [NotificationTemplateController::class, 'defaults'])
-            ->name('notification-templates.defaults');
-        
-        /*
-        |--------------------------------------------------------------------------
-        | 今後追加予定のルート
-        |--------------------------------------------------------------------------
-        
-        // 顧客管理API
-        Route::apiResource('customers', CustomerController::class);
-        
-        // リソース管理API
-        Route::apiResource('resources', ResourceController::class);
-        
-        // メニュー管理API
-        Route::apiResource('menus', MenuController::class);
-        Route::apiResource('menus.options', MenuOptionController::class);
-        
-        */
+    // 予約管理API（tugical_api_specification_v1.0.md Section 2）
+    Route::apiResource('bookings', BookingController::class);
+    Route::patch('bookings/{booking}/status', [BookingController::class, 'updateStatus'])->name('bookings.update-status');
+
+    // 空き時間・可用性API（tugical_api_specification_v1.0.md Section 3）
+    Route::get('availability', [AvailabilityController::class, 'index'])->name('availability.index');
+    Route::get('availability/calendar', [AvailabilityController::class, 'calendar'])->name('availability.calendar');
+    Route::post('availability/resource-check', [AvailabilityController::class, 'resourceCheck'])->name('availability.resource-check');
+
+    // Hold Token（仮押さえ）管理API
+    Route::prefix('hold-slots')->name('hold-slots.')->group(function () {
+        Route::post('/', [HoldTokenController::class, 'store'])->name('store');
+        Route::get('/', [HoldTokenController::class, 'index'])->name('index');
+        Route::get('{token}', [HoldTokenController::class, 'show'])->name('show');
+        Route::delete('{token}', [HoldTokenController::class, 'destroy'])->name('destroy');
+        Route::patch('{token}/extend', [HoldTokenController::class, 'extend'])->name('extend');
     });
-    
-    /*
-    |--------------------------------------------------------------------------
-    | LIFF API（顧客向け）
-    |--------------------------------------------------------------------------
-    | 
-    | LINE LIFF環境からアクセスするAPI
-    | X-Line-User-Id ヘッダーによる認証
-    | 
-    */
-    Route::prefix('liff')->middleware(['line.verify'])->group(function () {
-        // 店舗情報取得
-        // Route::get('stores/{slug}', [LiffController::class, 'getStore']);
-        
-        // メニュー一覧取得
-        // Route::get('stores/{slug}/menus', [LiffController::class, 'getMenus']);
-        
-        // 空き時間取得
-        // Route::get('stores/{slug}/availability', [LiffController::class, 'getAvailability']);
-        
-        // 予約申込み
-        // Route::post('stores/{slug}/bookings', [LiffController::class, 'createBooking']);
-        
-        // 顧客情報取得・作成
-        // Route::get('customers/profile', [LiffController::class, 'getCustomerProfile']);
-        
-        // 予約履歴取得
-        // Route::get('customers/bookings', [LiffController::class, 'getCustomerBookings']);
+
+    // 通知管理API（tugical_api_specification_v1.0.md Section 7）
+    Route::prefix('notifications')->name('notifications.')->group(function () {
+        Route::get('/', [NotificationController::class, 'index'])->name('index');
+        Route::get('stats', [NotificationController::class, 'stats'])->name('stats');
+        Route::post('send', [NotificationController::class, 'send'])->name('send');
+        Route::post('bulk', [NotificationController::class, 'bulk'])->name('bulk');
+        Route::get('{notification}', [NotificationController::class, 'show'])->name('show');
+        Route::post('{notification}/retry', [NotificationController::class, 'retry'])->name('retry');
     });
-    
-    /*
-    |--------------------------------------------------------------------------
-    | LINE Webhook
-    |--------------------------------------------------------------------------
-    */
-    // Route::post('line/webhook', [LineWebhookController::class, 'handle'])
-    //     ->middleware(['line.signature.verify']);
+
+    // 通知テンプレート管理API
+    Route::prefix('notification-templates')->name('notification-templates.')->group(function () {
+        Route::get('/', [NotificationTemplateController::class, 'index'])->name('index');
+        Route::get('defaults', [NotificationTemplateController::class, 'defaults'])->name('defaults');
+        Route::post('/', [NotificationTemplateController::class, 'store'])->name('store');
+        Route::get('{notificationTemplate}', [NotificationTemplateController::class, 'show'])->name('show');
+        Route::put('{notificationTemplate}', [NotificationTemplateController::class, 'update'])->name('update');
+        Route::delete('{notificationTemplate}', [NotificationTemplateController::class, 'destroy'])->name('destroy');
+        Route::post('{notificationTemplate}/preview', [NotificationTemplateController::class, 'preview'])->name('preview');
+    });
+});
+
+// ===========================
+// LIFF API（LINE認証・顧客向け）
+// ===========================
+Route::prefix('v1/liff')->name('liff.')->group(function () {
+    // TODO: Phase 4.3 LIFF実装時に追加
+    // Route::get('stores/{slug}', [LiffController::class, 'getStore'])->name('store');
+    // Route::get('stores/{slug}/menus', [LiffController::class, 'getMenus'])->name('menus');
+    // Route::get('stores/{slug}/resources', [LiffController::class, 'getResources'])->name('resources');
+    // Route::get('stores/{slug}/availability', [LiffController::class, 'getAvailability'])->name('availability');
+    // Route::post('stores/{slug}/hold-slots', [LiffController::class, 'createHoldSlot'])->name('hold-slots');
+    // Route::post('stores/{slug}/bookings', [LiffController::class, 'createBooking'])->name('bookings');
+    // Route::get('customers/profile', [LiffController::class, 'getCustomerProfile'])->name('customer.profile');
+    // Route::get('customers/bookings', [LiffController::class, 'getCustomerBookings'])->name('customer.bookings');
+});
+
+// ===========================
+// LINE Webhook（LINE Platform認証）
+// ===========================
+Route::prefix('v1/line')->name('line.')->group(function () {
+    // TODO: Phase 4.4 LINE連携実装時に追加
+    // Route::post('webhook', [LineWebhookController::class, 'handle'])->name('webhook');
+});
+
+// ===========================
+// ヘルスチェック・システム情報
+// ===========================
+Route::get('health', function () {
+    return response()->json([
+        'status' => 'healthy',
+        'service' => 'tugical API',
+        'version' => '1.0',
+        'timestamp' => now()->toISOString(),
+        'environment' => app()->environment(),
+        'database' => [
+            'status' => 'connected',
+            'driver' => config('database.default'),
+        ],
+        'cache' => [
+            'status' => 'operational',
+            'driver' => config('cache.default'),
+        ],
+    ]);
+})->name('health');
+
+// ===========================
+// 未対応ルート（404対応）
+// ===========================
+Route::fallback(function () {
+    return response()->json([
+        'success' => false,
+        'error' => [
+            'code' => 'ENDPOINT_NOT_FOUND',
+            'message' => '指定されたAPIエンドポイントが見つかりません',
+            'details' => [
+                'available_versions' => ['v1'],
+                'documentation' => 'https://docs.tugical.com/api',
+            ],
+        ],
+        'meta' => [
+            'timestamp' => now()->toISOString(),
+        ]
+    ], 404);
 });

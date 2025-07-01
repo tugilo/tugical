@@ -18,5 +18,10 @@ class DatabaseSeeder extends Seeder
         //     'name' => 'Test User',
         //     'email' => 'test@example.com',
         // ]);
+
+        // tugical API統合テスト用データ作成
+        $this->call([
+            TestUserSeeder::class,
+        ]);
     }
 }
