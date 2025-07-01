@@ -192,8 +192,49 @@ class BookingService
      */
     public function updateBooking(Booking $booking, array $updateData): Booking
     {
-        // TODO: 実装予定
-        throw new \Exception('BookingService::updateBooking() - 実装予定');
+        Log::info('予約更新開始', [
+            'booking_id' => $booking->id,
+            'booking_number' => $booking->booking_number,
+            'update_data' => $updateData,
+            'store_id' => $booking->store_id
+        ]);
+
+        return DB::transaction(function () use ($booking, $updateData) {
+            // 時間変更時の競合チェック
+            if (isset($updateData['booking_date']) || isset($updateData['start_time']) || isset($updateData['resource_id'])) {
+                $checkData = [
+                    'resource_id' => $updateData['resource_id'] ?? $booking->resource_id,
+                    'booking_date' => $updateData['booking_date'] ?? $booking->booking_date,
+                    'start_time' => $updateData['start_time'] ?? $booking->start_time,
+                    'end_time' => $updateData['end_time'] ?? $booking->end_time
+                ];
+
+                if ($this->checkTimeConflict($booking->store_id, $checkData, $booking->id)) {
+                    throw new \Exception('変更後の時間で予約競合が発生しています');
+                }
+            }
+
+            // オプション更新
+            if (isset($updateData['option_ids'])) {
+                $booking->options()->sync($updateData['option_ids']);
+                unset($updateData['option_ids']);
+            }
+
+            // 基本データ更新
+            $booking->update($updateData);
+
+            // 変更通知送信
+            if (isset($updateData['booking_date']) || isset($updateData['start_time'])) {
+                $this->notificationService->sendBookingUpdate($booking);
+            }
+
+            Log::info('予約更新完了', [
+                'booking_id' => $booking->id,
+                'booking_number' => $booking->booking_number
+            ]);
+
+            return $booking->fresh();
+        });
     }
 
     /**
@@ -207,8 +248,40 @@ class BookingService
      */
     public function cancelBooking(Booking $booking, ?string $reason = null): bool
     {
-        // TODO: 実装予定
-        throw new \Exception('BookingService::cancelBooking() - 実装予定');
+        Log::info('予約キャンセル開始', [
+            'booking_id' => $booking->id,
+            'booking_number' => $booking->booking_number,
+            'reason' => $reason,
+            'store_id' => $booking->store_id
+        ]);
+
+        try {
+            return DB::transaction(function () use ($booking, $reason) {
+                // ステータス更新
+                $booking->update([
+                    'status' => 'cancelled',
+                    'cancelled_at' => now(),
+                    'staff_notes' => $booking->staff_notes . "\n" . 'キャンセル理由: ' . ($reason ?? '理由未記載')
+                ]);
+
+                // キャンセル通知送信
+                $this->notificationService->sendBookingCancellation($booking);
+
+                Log::info('予約キャンセル完了', [
+                    'booking_id' => $booking->id,
+                    'booking_number' => $booking->booking_number
+                ]);
+
+                return true;
+            });
+        } catch (\Exception $e) {
+            Log::error('予約キャンセルエラー', [
+                'booking_id' => $booking->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return false;
+        }
     }
 
     /**
@@ -631,7 +704,41 @@ class BookingService
      */
     public function getBookings(int $storeId, array $filters = [])
     {
-        // TODO: 実装予定
-        throw new \Exception('BookingService::getBookings() - 実装予定');
+        Log::info('予約一覧取得開始', [
+            'store_id' => $storeId,
+            'filters' => $filters
+        ]);
+
+        $query = Booking::where('store_id', $storeId);
+
+        // フィルタリング
+        if (isset($filters['date'])) {
+            $query->whereDate('booking_date', $filters['date']);
+        }
+
+        if (isset($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        if (isset($filters['resource_id'])) {
+            $query->where('resource_id', $filters['resource_id']);
+        }
+
+        if (isset($filters['customer_id'])) {
+            $query->where('customer_id', $filters['customer_id']);
+        }
+
+        // Eager Loading
+        $query->with(['customer', 'menu', 'resource', 'options']);
+
+        // ソート
+        $query->orderBy('booking_date', 'asc')
+              ->orderBy('start_time', 'asc');
+
+        // ページング
+        $perPage = $filters['per_page'] ?? 20;
+        $page = $filters['page'] ?? 1;
+
+        return $query->paginate($perPage, ['*'], 'page', $page);
     }
 } 
