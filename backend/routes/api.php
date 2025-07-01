@@ -5,6 +5,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\BookingController;
 use App\Http\Controllers\Api\AvailabilityController;
 use App\Http\Controllers\Api\HoldTokenController;
+use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\NotificationTemplateController;
 
 /*
 |--------------------------------------------------------------------------
@@ -108,6 +110,61 @@ Route::prefix('v1')->group(function () {
         
         /*
         |--------------------------------------------------------------------------
+        | 通知管理API
+        |--------------------------------------------------------------------------
+        */
+        
+        // 通知履歴一覧取得
+        Route::get('notifications', [NotificationController::class, 'index'])
+            ->name('notifications.index');
+        
+        // 通知詳細取得
+        Route::get('notifications/{notification}', [NotificationController::class, 'show'])
+            ->name('notifications.show');
+        
+        // 手動通知送信
+        Route::post('notifications/send', [NotificationController::class, 'send'])
+            ->name('notifications.send');
+        
+        // 一括通知送信
+        Route::post('notifications/bulk', [NotificationController::class, 'bulk'])
+            ->name('notifications.bulk');
+        
+        // 通知再送
+        Route::post('notifications/{notification}/retry', [NotificationController::class, 'retry'])
+            ->name('notifications.retry');
+        
+        // 通知統計情報取得
+        Route::get('notifications/stats', [NotificationController::class, 'stats'])
+            ->name('notifications.stats');
+        
+        /*
+        |--------------------------------------------------------------------------
+        | 通知テンプレート管理API
+        |--------------------------------------------------------------------------
+        */
+        
+        // 通知テンプレートCRUD操作
+        Route::apiResource('notification-templates', NotificationTemplateController::class, [
+            'names' => [
+                'index' => 'notification-templates.index',
+                'store' => 'notification-templates.store',
+                'show' => 'notification-templates.show',
+                'update' => 'notification-templates.update',
+                'destroy' => 'notification-templates.destroy',
+            ]
+        ]);
+        
+        // テンプレートプレビュー生成
+        Route::post('notification-templates/{notificationTemplate}/preview', [NotificationTemplateController::class, 'preview'])
+            ->name('notification-templates.preview');
+        
+        // デフォルトテンプレート取得
+        Route::get('notification-templates/defaults', [NotificationTemplateController::class, 'defaults'])
+            ->name('notification-templates.defaults');
+        
+        /*
+        |--------------------------------------------------------------------------
         | 今後追加予定のルート
         |--------------------------------------------------------------------------
         
@@ -120,11 +177,6 @@ Route::prefix('v1')->group(function () {
         // メニュー管理API
         Route::apiResource('menus', MenuController::class);
         Route::apiResource('menus.options', MenuOptionController::class);
-        
-        // 通知管理API
-        Route::get('notifications', [NotificationController::class, 'index']);
-        Route::post('notifications/send', [NotificationController::class, 'send']);
-        Route::get('notification-templates', [NotificationTemplateController::class, 'index']);
         
         */
     });
