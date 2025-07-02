@@ -83,7 +83,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <Router>
+    <Router basename="/admin">
       <div className="App">
         <AnimatePresence mode="wait">
           <Routes>
