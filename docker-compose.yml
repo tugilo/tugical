@@ -107,34 +107,19 @@ services:
     networks:
       - tugical-network
 
-  # Frontend services (Phase 3で実装予定)
-  # frontend:
-  #   image: node:18-alpine
-  #   container_name: tugical_frontend
-  #   working_dir: /app
-  #   volumes:
-  #     - ./frontend:/app
-  #   command: npm run dev
-  #   ports:
-  #     - "3000:3000"
-  #   environment:
-  #     - NODE_ENV=development
-  #   networks:
-  #     - tugical-network
-
-  # liff:
-  #   image: node:18-alpine
-  #   container_name: tugical_liff
-  #   working_dir: /app
-  #   volumes:
-  #     - ./liff:/app
-  #   command: npm run dev
-  #   ports:
-  #     - "5173:5173"
-  #   environment:
-  #     - NODE_ENV=development
-  #   networks:
-  #     - tugical-network
+  frontend:
+    image: node:18-alpine
+    container_name: tugical_frontend
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    command: npm run dev
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+    networks:
+      - tugical-network
 
   phpmyadmin:
     image: phpmyadmin:latest
