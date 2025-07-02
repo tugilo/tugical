@@ -1,21 +1,24 @@
 # tugical Current Focus - セッション継続管理
-**Updated**: 2025-06-30 17:35
+**Updated**: 2025-07-02 08:20
 
-## ✅ 前回完了内容：Phase 2.2 BookingService実装
+## ✅ 前回完了内容：予約管理ページ詳細実装
+- BookingCard コンポーネント作成
+- ステータスタブ・検索フォーム・API 連携
+- docs/PROGRESS.md 及び .cursorrules 更新
+- develop ブランチへ push 完了
 
-### 🎯 Phase 2.2実装完了（2025-06-30 17:15-17:30）
-**実装成果**: BookingService 7メソッド完全実装
+## 🔄 現在作業中：顧客管理ページ CRUD & 詳細モーダル
+- CustomerCard コンポーネント
+- 顧客一覧取得 API 連携・フィルタ・検索
+- 詳細モーダルで編集 / ランク管理
+- 進捗ドキュメント更新 → commit/push
 
-- **createBooking()** - 予約作成メイン処理（Hold Token統合・競合チェック・通知連携）
-- **checkTimeConflict()** - マルチテナント対応時間競合検出
-- **calculateTotalPrice()** - 動的料金計算（ベース+オプション+リソース差額）
-- **validateAndReleaseHoldToken()** - 仮押さえトークン管理
-- **isWithinBusinessHours()** - 営業時間・特別営業時間チェック
-- **calculateEndTime()** - メニュー時間からの終了時間算出
-- **generateBookingNumber()** - TG{YYYYMMDD}{店舗}{連番}形式
+## 🚧 次回予定
+1. API 実接続のモック切替完了確認（全ページ）
+2. リアルタイム更新 (WebSocket/SSE) 統合
+3. テスト追加・UI 調整
 
-**実装統計**: 432行追加、23行削除  
-**Git Status**: feat(booking): BookingService主要メソッド実装完了 (dd84401) ✅
+---
 
 ## 🎯 現在作業中：Phase 2.3 AvailabilityService実装
 
@@ -100,7 +103,7 @@ make test
 3. **Phase 2.6**: API Controller実装
 4. **Phase 3**: フロントエンド実装開始
 
-### 🚀 次回開始コマンド
+### �� 次回開始コマンド
 ```bash
 # 環境確認
 make health
