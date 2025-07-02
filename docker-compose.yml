@@ -115,7 +115,7 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
-    command: sh -c "npm install --legacy-peer-deps --silent && npm run dev"
+    command: sh -c "npm install --legacy-peer-deps --silent && npm run dev -- --host --port 3000"
     ports:
       - "3000:3000"
     environment:
