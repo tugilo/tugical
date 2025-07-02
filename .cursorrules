@@ -2780,3 +2780,14 @@ class LoginController extends Controller
 - Real-time booking updates
 - Industry template flexibility
 - VPS → Cloud migration readiness
+
+### Development Branch Flow (開発フロー)
+1. **作業開始前**
+   - `git branch` で **develop** ブランチにいることを確認
+   - `git pull origin develop` で最新状態に更新
+2. **develop ブランチ** で機能開発・ローカルテスト実施
+3. 進捗ドキュメント (`docs/PROGRESS.md` など) を更新
+4. `git add .` → `git commit -m "feat: xxx"` → `git push origin develop`
+5. Pull Request で **ユーザー確認 / コードレビュー**
+6. 承認後 **main ブランチ** へマージ（GitHub UI もしくは CLI）
+7. 作業が続く場合は `git checkout develop` で戻り、新タスクを開始
