@@ -643,3 +643,15 @@ curl -X POST http://localhost/api/v1/auth/logout \
 5. **リアルタイム更新** (1-2時間) - WebSocket/SSE統合
 
 #### 残り推定作業時間: 6-9時間 
+
+### 2025-07-03 10:42 (tugiMacMini.local)
+- フロントエンド開発環境を本番と同じ `/admin/` ベースに統一
+    - `frontend/vite.config.ts` に `base: '/admin/'` を追加、開発ポートを 3000 に変更
+    - `BrowserRouter basename="/admin"` に変更（`src/App.tsx`）
+- docker 開発環境調整
+    - `docker-compose.yml` に frontend サービスを正式追加し、依存パッケージ自動インストール & ホットリロード対応
+    - Nginx 開発設定を修正（proxy_pass ループ解消・WebSocket/HMR 対応）
+    - `/` → 302 `/admin/` リダイレクトは残しつつ、/admin/ で正しく表示・HMR 動作を確認
+- 変更ファイル: docker-compose.yml, docker/nginx/sites/development.conf, frontend/vite.config.ts, frontend/src/App.tsx
+- コミット: 3913d9043c3006e0aaf47b741ea1755959e5dca5
+- 残タスク: 顧客管理ページ CRUD & 詳細モーダル実装 (進行中)
