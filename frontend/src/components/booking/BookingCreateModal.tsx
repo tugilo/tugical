@@ -184,92 +184,11 @@ const BookingCreateModal: React.FC<BookingCreateModalProps> = ({
    */
   const loadMenuOptions = async (menuId: number) => {
     try {
-      // TODO: メニューオプションAPI実装後に修正
-      setMenuOptions([
-        {
-          id: 1,
-          menu_id: menuId,
-          name: 'ヘッドスパ',
-          display_name: 'ヘッドスパ',
-          price: 1000,
-          duration: 15,
-          price_type: 'fixed' as const,
-          price_value: 1000,
-          duration_minutes: 15,
-          is_required: false,
-          is_active: true,
-          sort_order: 1,
-          price_type_info: {
-            name: '固定料金',
-            description: '',
-            value_unit: '円',
-            example: '',
-          },
-          formatted_price: '¥1,000',
-          formatted_duration: '15分',
-          has_stock_management: false,
-          in_stock: true,
-          stock_used: 0,
-          created_at: '',
-          updated_at: '',
-        },
-        {
-          id: 2,
-          menu_id: menuId,
-          name: 'トリートメント',
-          display_name: 'トリートメント',
-          price: 2000,
-          duration: 10,
-          price_type: 'fixed' as const,
-          price_value: 2000,
-          duration_minutes: 10,
-          is_required: false,
-          is_active: true,
-          sort_order: 2,
-          price_type_info: {
-            name: '固定料金',
-            description: '',
-            value_unit: '円',
-            example: '',
-          },
-          formatted_price: '¥2,000',
-          formatted_duration: '10分',
-          has_stock_management: false,
-          in_stock: true,
-          stock_used: 0,
-          created_at: '',
-          updated_at: '',
-        },
-        {
-          id: 3,
-          menu_id: menuId,
-          name: 'ブロー仕上げ',
-          display_name: 'ブロー仕上げ',
-          price: 500,
-          duration: 10,
-          price_type: 'fixed' as const,
-          price_value: 500,
-          duration_minutes: 10,
-          is_required: false,
-          is_active: true,
-          sort_order: 3,
-          price_type_info: {
-            name: '固定料金',
-            description: '',
-            value_unit: '円',
-            example: '',
-          },
-          formatted_price: '¥500',
-          formatted_duration: '10分',
-          has_stock_management: false,
-          in_stock: true,
-          stock_used: 0,
-          created_at: '',
-          updated_at: '',
-        },
-      ]);
+      const response = await menuApi.getOptions(menuId);
+      setMenuOptions(response.options);
     } catch (error) {
       console.error('メニューオプション取得エラー:', error);
+      setMenuOptions([]);
     }
   };
 

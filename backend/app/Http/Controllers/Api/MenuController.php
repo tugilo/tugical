@@ -7,6 +7,8 @@ use App\Http\Requests\CreateMenuRequest;
 use App\Http\Requests\UpdateMenuRequest;
 use App\Http\Resources\MenuResource;
 use App\Models\Menu;
+use App\Models\MenuOption;
+use App\Http\Resources\MenuOptionResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -30,12 +32,15 @@ class MenuController extends Controller
     {
         try {
             $storeId = auth()->user()->store_id;
-            
+
             // クエリビルダー開始
             $query = Menu::where('store_id', $storeId)
-                ->with(['options' => function($q) {
+                ->with(['options' => function ($q) {
                     $q->active()->ordered();
-                }]);
+                }])
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name');
 
             // 検索フィルター
             if ($request->filled('search')) {
@@ -71,7 +76,7 @@ class MenuController extends Controller
             // ソート
             $sortBy = $request->get('sort_by', 'sort_order');
             $sortOrder = $request->get('sort_order', 'asc');
-            
+
             if ($sortBy === 'sort_order') {
                 $query->ordered();
             } else {
@@ -95,7 +100,6 @@ class MenuController extends Controller
                 ],
                 'message' => 'メニュー一覧を取得しました',
             ]);
-
         } catch (\Exception $e) {
             Log::error('メニュー一覧取得エラー', [
                 'error' => $e->getMessage(),
@@ -133,7 +137,7 @@ class MenuController extends Controller
                 ], 404);
             }
 
-            $menu->load(['options' => function($q) {
+            $menu->load(['options' => function ($q) {
                 $q->ordered();
             }, 'store']);
 
@@ -144,7 +148,6 @@ class MenuController extends Controller
                 ],
                 'message' => 'メニュー詳細を取得しました',
             ]);
-
         } catch (\Exception $e) {
             Log::error('メニュー詳細取得エラー', [
                 'error' => $e->getMessage(),
@@ -176,7 +179,7 @@ class MenuController extends Controller
             $menu = DB::transaction(function () use ($request, $storeId) {
                 // sort_order のデフォルト値を計算（最大値 + 1）
                 $maxSortOrder = Menu::where('store_id', $storeId)->max('sort_order') ?? 0;
-                
+
                 // メニュー作成
                 $menu = Menu::create([
                     'store_id' => $storeId,
@@ -221,7 +224,7 @@ class MenuController extends Controller
                 return $menu;
             });
 
-            $menu->load(['options' => function($q) {
+            $menu->load(['options' => function ($q) {
                 $q->ordered();
             }]);
 
@@ -232,7 +235,6 @@ class MenuController extends Controller
                 ],
                 'message' => 'メニューを作成しました',
             ], 201);
-
         } catch (\Exception $e) {
             Log::error('メニュー作成エラー', [
                 'error' => $e->getMessage(),
@@ -297,7 +299,7 @@ class MenuController extends Controller
                 if ($request->has('options')) {
                     // 既存オプションを削除
                     $menu->options()->delete();
-                    
+
                     // 新しいオプションを作成
                     foreach ($request->options as $index => $optionData) {
                         $menu->options()->create([
@@ -317,7 +319,7 @@ class MenuController extends Controller
                 }
             });
 
-            $menu->load(['options' => function($q) {
+            $menu->load(['options' => function ($q) {
                 $q->ordered();
             }]);
 
@@ -328,7 +330,6 @@ class MenuController extends Controller
                 ],
                 'message' => 'メニューを更新しました',
             ]);
-
         } catch (\Exception $e) {
             Log::error('メニュー更新エラー', [
                 'error' => $e->getMessage(),
@@ -385,7 +386,7 @@ class MenuController extends Controller
             DB::transaction(function () use ($menu) {
                 // オプションも一緒に削除（ソフトデリート）
                 $menu->options()->delete();
-                
+
                 // メニュー削除（ソフトデリート）
                 $menu->delete();
             });
@@ -394,7 +395,6 @@ class MenuController extends Controller
                 'success' => true,
                 'message' => 'メニューを削除しました',
             ]);
-
         } catch (\Exception $e) {
             Log::error('メニュー削除エラー', [
                 'error' => $e->getMessage(),
@@ -421,7 +421,7 @@ class MenuController extends Controller
     {
         try {
             $storeId = auth()->user()->store_id;
-            
+
             // 実際に使用されているカテゴリ
             $usedCategories = Menu::where('store_id', $storeId)
                 ->whereNotNull('category')
@@ -450,7 +450,6 @@ class MenuController extends Controller
                 ],
                 'message' => 'メニューカテゴリ一覧を取得しました',
             ]);
-
         } catch (\Exception $e) {
             Log::error('メニューカテゴリ取得エラー', [
                 'error' => $e->getMessage(),
@@ -496,7 +495,6 @@ class MenuController extends Controller
                 'success' => true,
                 'message' => 'メニューの表示順序を更新しました',
             ]);
-
         } catch (\Exception $e) {
             Log::error('メニュー表示順序更新エラー', [
                 'error' => $e->getMessage(),
@@ -512,5 +510,35 @@ class MenuController extends Controller
                 ],
             ], 500);
         }
+    }
+
+    /**
+     * 特定メニューのオプション一覧取得
+     */
+    public function getOptions(Menu $menu): JsonResponse
+    {
+        // メニューが自分の店舗のものか確認
+        if ($menu->store_id !== auth()->user()->store_id) {
+            return response()->json([
+                'success' => false,
+                'error' => [
+                    'code' => 'MENU_NOT_FOUND',
+                    'message' => 'メニューが見つかりません',
+                ],
+            ], 404);
+        }
+
+        $options = MenuOption::where('menu_id', $menu->id)
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'options' => MenuOptionResource::collection($options),
+            ],
+        ]);
     }
 }

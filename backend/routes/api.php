@@ -86,6 +86,7 @@ Route::prefix('v1')->middleware(['auth:sanctum'])->name('api.v1.')->group(functi
 
     // メニュー管理API
     Route::apiResource('menus', MenuController::class);
+    Route::get('menus/{menu}/options', [MenuController::class, 'getOptions'])->name('menus.options');
     Route::get('menus-categories', [MenuController::class, 'categories'])->name('menus.categories');
     Route::patch('menus-order', [MenuController::class, 'updateOrder'])->name('menus.update-order');
 

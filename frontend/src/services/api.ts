@@ -33,6 +33,7 @@ import type {
   CreateMenuRequest,
   UpdateMenuRequest,
   MenuCategoriesResponse,
+  MenuOption,
 } from '../types';
 
 // ========================================
@@ -815,6 +816,21 @@ class ApiClient {
       response.data.error?.message || '通知一覧の取得に失敗しました'
     );
   }
+
+  // メニュー管理API
+  async getMenuOptions(menuId: number): Promise<{ options: MenuOption[] }> {
+    const response = await this.client.get<
+      ApiResponse<{ options: MenuOption[] }>
+    >(`/menus/${menuId}/options`);
+
+    if (response.data.success && response.data.data) {
+      return response.data.data;
+    }
+
+    throw new Error(
+      response.data.error?.message || 'メニューオプションの取得に失敗しました'
+    );
+  }
 }
 
 // ========================================
@@ -870,6 +886,7 @@ export const menuApi = {
   getCategories: () => apiClient.getMenuCategories(),
   updateOrder: (menuOrders: Array<{ id: number; sort_order: number }>) =>
     apiClient.updateMenuOrder(menuOrders),
+  getOptions: (menuId: number) => apiClient.getMenuOptions(menuId),
 };
 
 export const dashboardApi = {
