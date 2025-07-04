@@ -389,7 +389,7 @@ class ApiClient {
   /**
    * メニュー一覧取得
    */
-  async getMenus(filters?: FilterOptions): Promise<PaginatedResponse<Menu>> {
+  async getMenus(filters?: FilterOptions): Promise<{ menus: Menu[]; pagination: { current_page: number; last_page: number; per_page: number; total: number } }> {
     const params = new URLSearchParams();
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
@@ -399,7 +399,7 @@ class ApiClient {
       });
     }
 
-    const response = await this.client.get<ApiResponse<PaginatedResponse<Menu>>>(
+    const response = await this.client.get<ApiResponse<{ menus: Menu[]; pagination: { current_page: number; last_page: number; per_page: number; total: number } }>>(
       `/menus?${params.toString()}`
     );
     

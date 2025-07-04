@@ -68,8 +68,14 @@ const MenusPage: React.FC = () => {
       };
 
       const response = await menuApi.getList(filters);
-      setMenus(response.data);
-      setPagination(response.meta);
+      setMenus(response.menus);
+      // API レスポンスの pagination オブジェクトを安全に設定
+      setPagination({
+        current_page: response.pagination?.current_page || 1,
+        last_page: response.pagination?.last_page || 1,
+        per_page: response.pagination?.per_page || 20,
+        total: response.pagination?.total || 0,
+      });
     } catch (error: any) {
       addNotification({
         type: 'error',
