@@ -65,7 +65,7 @@ class Resource extends Model
     protected $table = 'resources';
 
     /**
-     * 一括代入可能な属性
+     * 一括代入可能な属性（tugical_database_design_v1.0.md 準拠）
      */
     protected $fillable = [
         'store_id',
@@ -73,67 +73,32 @@ class Resource extends Model
         'name',
         'display_name',
         'description',
+        'photo_url',
         'attributes',
-        'specialties',
-        'skill_level',
+        'working_hours',
         'efficiency_rate',
         'hourly_rate_diff',
-        'capacity',
-        'equipment_list',
-        'gender_restriction',
-        'min_age',
-        'max_age',
-        'requirements',
-        'working_hours',
-        'allow_overtime',
-        'break_time_minutes',
-        'unavailable_dates',
         'sort_order',
-        'priority_level',
-        'is_featured',
-        'allow_designation',
-        'profile_image_url',
-        'image_gallery',
-        'background_color',
         'is_active',
-        'is_bookable',
-        'settings',
-        'notes',
     ];
 
     /**
      * 非表示属性（API出力時に除外）
      */
     protected $hidden = [
-        'settings',
-        'notes',
+        // 仕様書では特に非表示フィールドの指定なし
     ];
 
     /**
-     * 属性のキャスト設定
+     * 属性のキャスト設定（tugical_database_design_v1.0.md 準拠）
      */
     protected $casts = [
         'attributes' => 'array',
-        'specialties' => 'array',
         'working_hours' => 'array',
-        'equipment_list' => 'array',
-        'requirements' => 'array',
-        'unavailable_dates' => 'array',
-        'image_gallery' => 'array',
-        'settings' => 'array',
         'efficiency_rate' => 'float',
         'hourly_rate_diff' => 'integer',
-        'capacity' => 'integer',
-        'min_age' => 'integer',
-        'max_age' => 'integer',
-        'break_time_minutes' => 'integer',
         'sort_order' => 'integer',
-        'priority_level' => 'integer',
         'is_active' => 'boolean',
-        'is_featured' => 'boolean',
-        'allow_designation' => 'boolean',
-        'allow_overtime' => 'boolean',
-        'is_bookable' => 'boolean',
         'deleted_at' => 'datetime',
     ];
 
@@ -264,10 +229,7 @@ class Resource extends Model
                 $resource->hourly_rate_diff = 0;
             }
 
-            // デフォルト容量設定
-            if (!$resource->capacity) {
-                $resource->capacity = $resource->type === self::TYPE_STAFF ? 1 : 10;
-            }
+            // 仕様書では capacity フィールドは使用しない
 
             // デフォルトアクティブ状態
             $resource->is_active = $resource->is_active ?? true;
@@ -618,11 +580,13 @@ class Resource extends Model
     }
 
     /**
-     * 検索スコープ: 容量以上
+     * 検索スコープ: 容量以上（仕様書では capacity フィールドなし）
      */
     public function scopeWithCapacity($query, int $minCapacity)
     {
-        return $query->where('capacity', '>=', $minCapacity);
+        // 仕様書通りの構造では capacity フィールドは存在しない
+        // 必要に応じて attributes JSON 内の capacity を使用
+        return $query->whereJsonContains('attributes->capacity', ['>=', $minCapacity]);
     }
 
     /**

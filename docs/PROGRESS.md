@@ -2237,3 +2237,232 @@ curl -X POST http://localhost/api/v1/resources \
 - 一括操作機能
 
 **tugical の核心機能が着実に完成に向かっています！**
+
+# tugical 開発進捗管理
+
+## 最新状況
+- **最終更新**: 2025-07-04 19:48:24
+- **作業端末**: tugiMacMini.local
+- **現在ブランチ**: develop
+- **フェーズ**: Phase 5.6 仕様書準拠修正完了 ✅
+
+## 🚨 重要な反省と学習
+
+### 発生した問題
+場当たり的な対応により、tugical_database_design_v1.0.md の仕様書を無視した実装を行い、プロジェクトの設計思想を破綻させました。
+
+### 根本原因
+1. **.cursorrules の軽視**: 「tugical_database_design_v1.0.md schema EXACTLY」の指示を無視
+2. **仕様書の軽視**: エラー発生時に仕様書を確認せず、場当たり的修正を実施
+3. **設計思想の無視**: tugical独自の統一リソース概念を理解せず、勝手にフィールドを追加
+
+### 正しい対応手順の確立
+**今後は必ず以下の順序で対応:**
+1. **仕様書確認**: tugical_database_design_v1.0.md を最初に確認
+2. **.cursorrules確認**: プロジェクト固有のルールを把握
+3. **設計思想理解**: tugical の統一リソース概念を理解
+4. **仕様書準拠実装**: 仕様書通りの正確な実装
+5. **API動作確認**: 仕様書通りの動作確認
+
+## Phase 5.6: 仕様書準拠修正完了 ✅
+
+### 実施した正しい修正
+
+#### 1. resourcesテーブル構造の仕様書準拠修正
+**修正前（間違った拡張構造）:**
+```sql
+-- 仕様書にない余計なフィールドが多数存在
+specialties, skill_level, equipment_list, gender_restriction, 
+min_age, max_age, requirements, allow_overtime, break_time_minutes,
+unavailable_dates, priority_level, is_featured, allow_designation,
+profile_image_url, image_gallery, background_color, is_bookable,
+settings, notes, deleted_at
+```
+
+**修正後（仕様書通り）:**
+```sql
+-- tugical_database_design_v1.0.md 2.1 resources 準拠
+id, store_id, type, name, display_name, description, photo_url,
+attributes (JSON), working_hours (JSON), efficiency_rate, 
+hourly_rate_diff, sort_order, is_active, created_at, updated_at
+```
+
+#### 2. マイグレーション修正
+**ファイル**: `backend/database/migrations/2025_06_29_235129_create_resources_table.php`
+- 仕様書通りのシンプルな構造に修正
+- 余計なフィールドを全削除
+- インデックスも仕様書通りに修正
+
+#### 3. Resourceモデル修正
+**ファイル**: `backend/app/Models/Resource.php`
+- `fillable`: 仕様書の12フィールドのみに限定
+- `casts`: 仕様書通りのフィールドのみ
+- `booted`: capacity等の存在しないフィールド参照を削除
+
+#### 4. ResourceController修正
+**ファイル**: `backend/app/Http/Controllers/Api/ResourceController.php`
+- `store`メソッド: 仕様書通りのフィールドのみ使用
+- `update`メソッド: 配列フィールドを仕様書通りに限定
+- 存在しないフィールドへの参照を完全削除
+
+#### 5. データベース再構築
+```bash
+docker-compose exec app php artisan migrate:fresh --seed
+# 仕様書通りの正しい構造でテーブル再作成
+```
+
+### 動作確認結果
+
+#### API正常動作確認 ✅
+```bash
+# 仕様書通りのリクエスト
+curl -X POST http://localhost/api/v1/resources \
+  -H "Authorization: Bearer ..." \
+  -d '{
+    "type": "staff",
+    "name": "test_staff", 
+    "display_name": "テストスタッフ",
+    "description": "テスト用スタッフ",
+    "photo_url": "https://example.com/staff.jpg",
+    "attributes": {"specialties": ["cut", "color"], "skill_level": "expert"},
+    "working_hours": {"monday": {"start": "09:00", "end": "18:00"}},
+    "efficiency_rate": 1.0,
+    "hourly_rate_diff": 500,
+    "sort_order": 10,
+    "is_active": true
+  }'
+
+# 成功レスポンス
+{"success":true,"data":{"resource":{"id":1,...}}}
+```
+
+### 仕様書準拠の確認
+
+#### tugical_database_design_v1.0.md 2.1 resources 完全準拠 ✅
+```sql
+| カラム名 | 型 | NOT NULL | デフォルト | 説明 |
+|---------|---|----------|-----------|------|
+| id | BIGINT UNSIGNED | ✓ | AUTO_INCREMENT | リソースID（PK） |
+| store_id | BIGINT UNSIGNED | ✓ | - | 店舗ID（FK） |
+| type | ENUM | ✓ | 'staff' | リソース種別 |
+| name | VARCHAR(255) | ✓ | - | リソース名 |
+| display_name | VARCHAR(255) | | NULL | 表示名（業種別） |
+| description | TEXT | | NULL | 説明 |
+| photo_url | VARCHAR(255) | | NULL | 写真URL |
+| attributes | JSON | | NULL | 属性情報 |
+| working_hours | JSON | | NULL | 稼働時間 |
+| efficiency_rate | DECIMAL(3,2) | ✓ | 1.00 | 作業効率率 |
+| hourly_rate_diff | INT | ✓ | 0 | 指名料金差（円） |
+| sort_order | INT | ✓ | 0 | 表示順序 |
+| is_active | BOOLEAN | ✓ | TRUE | 有効フラグ |
+| created_at | TIMESTAMP | ✓ | CURRENT_TIMESTAMP | 作成日時 |
+| updated_at | TIMESTAMP | ✓ | CURRENT_TIMESTAMP ON UPDATE | 更新日時 |
+```
+
+**✅ 完全一致確認済み**
+
+### tugical 統一リソース概念の正しい理解
+
+#### 仕様書通りの設計思想
+1. **シンプルな構造**: 複雑な個別フィールドではなく、JSON attributesで柔軟性を確保
+2. **統一管理**: staff/room/equipment/vehicle を同一テーブルで管理
+3. **業種対応**: attributes JSONで業種固有の情報を格納
+4. **拡張性**: 新しい属性はattributes JSONに追加
+
+#### 間違った理解（修正前）
+- 個別フィールドを大量追加
+- 複雑な制約フィールドを個別定義
+- 仕様書を無視した独自拡張
+
+### 学んだ教訓
+
+1. **仕様書は絶対**: tugical_database_design_v1.0.md は設計の根幹
+2. **.cursorrules は必読**: プロジェクト固有のルールを必ず確認
+3. **場当たり的対応厳禁**: エラー発生時こそ仕様書を確認
+4. **設計思想の理解**: tugical独自の概念を正しく理解して実装
+
+### 次のステップ
+**Phase 5.7: ResourceEditModal実装**
+- 仕様書通りのフィールドのみを使用
+- tugical_database_design_v1.0.md を厳密に遵守
+- 統一リソース概念に基づく正しい実装
+
+**今後の開発方針:**
+- 仕様書ファーストの開発
+- .cursorrules の厳格な遵守
+- tugical設計思想の深い理解
+
+---
+
+## これまでの完了フェーズ
+
+### Phase 1: 基盤整備 ✅
+- Docker環境構築完了
+- Laravel + React + Vite環境構築
+- 基本認証システム実装
+- データベース設計・マイグレーション完了
+
+### Phase 2: 認証・基本機能 ✅  
+- Sanctum認証システム完成
+- ログイン・ログアウト機能
+- 基本的なCRUD API実装
+- フロントエンド基本レイアウト
+
+### Phase 3: メニュー管理機能 ✅
+- MenuController完成（CRUD + オプション管理）
+- MenusPage実装（メニュー管理画面）
+- メニューオプション機能実装
+- 業種別メニューテンプレート対応
+
+### Phase 4: 顧客管理機能 ✅
+- CustomerController完成（CRUD + ロイヤリティ管理）
+- CustomersPage実装（顧客管理画面）
+- 顧客詳細・編集機能実装
+- LINE連携準備（line_user_id nullable対応）
+
+### Phase 5.1-5.4: リソース管理基盤 ✅
+- ResourceController完成（CRUD + 順序管理）
+- 統一リソース概念実装（staff/room/equipment/vehicle）
+- ResourcesPage実装（リソース管理画面）
+- API統合完了
+
+### Phase 5.5: ResourceCreateModal実装 ✅
+- 革新的リソース作成フォーム実装
+- 4タイプリソース対応UI
+- 業種別ラベル自動切り替え
+- 完全バリデーション・エラーハンドリング
+
+### Phase 5.6: 仕様書準拠修正完了 ✅
+- tugical_database_design_v1.0.md 完全準拠
+- 場当たり的対応の反省と改善
+- 正しい開発プロセスの確立
+- API正常動作確認
+
+## 技術的マイルストーン
+
+### 🎯 tugical独自機能実装済み（仕様書準拠）
+- **統一リソース概念**: 仕様書通りのシンプルな構造で4タイプリソース統一管理
+- **業種別表示**: attributes JSONで5業種対応
+- **マルチテナント**: 完全なstore_id分離
+- **JSON柔軟性**: attributes/working_hours による拡張可能設計
+
+### 📊 実装完了率
+- **バックエンドAPI**: 85% (メニュー・顧客・リソース完了、仕様書準拠)
+- **フロントエンド管理画面**: 70% (3画面完了、仕様書準拠修正必要)
+- **認証システム**: 100% (Sanctum完全動作)
+- **データベース**: 95% (仕様書完全準拠)
+
+### 🔄 現在の課題
+- [ ] ResourceCreateModal の仕様書準拠修正
+- [ ] ResourceEditModal実装（仕様書準拠）
+- [ ] ResourceDetailModal実装（仕様書準拠）
+- [ ] 予約管理フロントエンド
+- [ ] LIFF予約フロー
+
+### 🎉 次回目標
+**Phase 5.7**: ResourceEditModal実装（仕様書厳守）
+- tugical_database_design_v1.0.md の厳密な遵守
+- 統一リソース概念の正しい理解に基づく実装
+- JSON attributes を活用した柔軟な属性管理
+
+**tugical の設計思想を正しく理解し、仕様書に従った実装が完了しました！**

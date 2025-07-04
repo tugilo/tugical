@@ -25,6 +25,20 @@ interface ResourceCreateModalProps {
   initialType?: ResourceType;
 }
 
+interface ResourceFormData {
+  type: 'staff' | 'room' | 'equipment' | 'vehicle';
+  name: string;
+  display_name: string;
+  description: string;
+  photo_url: string;
+  attributes: Record<string, any>;
+  working_hours: Record<string, any>;
+  efficiency_rate: number;
+  hourly_rate_diff: number;
+  sort_order: number;
+  is_active: boolean;
+}
+
 /**
  * リソース新規作成モーダル
  * 
@@ -44,22 +58,18 @@ const ResourceCreateModal: React.FC<ResourceCreateModalProps> = ({
 }) => {
   const { addNotification } = useUIStore();
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState<CreateResourceRequest>({
+  const [formData, setFormData] = useState<ResourceFormData>({
     type: initialType,
     name: '',
     display_name: '',
     description: '',
+    photo_url: '',
     attributes: {},
     working_hours: {},
-    constraints: {},
     efficiency_rate: 1.0,
     hourly_rate_diff: 0,
-    capacity: 1,
-    equipment_specs: {},
-    booking_rules: {},
-    image_url: '',
-    is_active: true,
     sort_order: 0,
+    is_active: true,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -104,7 +114,7 @@ const ResourceCreateModal: React.FC<ResourceCreateModalProps> = ({
     { value: 1.2, label: '120% (ベテラン・高効率)' },
   ];
 
-  const handleInputChange = (field: keyof CreateResourceRequest, value: any) => {
+  const handleInputChange = (field: keyof ResourceFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     // エラーをクリア
     if (errors[field]) {
@@ -196,17 +206,13 @@ const ResourceCreateModal: React.FC<ResourceCreateModalProps> = ({
       name: '',
       display_name: '',
       description: '',
+      photo_url: '',
       attributes: {},
       working_hours: {},
-      constraints: {},
       efficiency_rate: 1.0,
       hourly_rate_diff: 0,
-      capacity: 1,
-      equipment_specs: {},
-      booking_rules: {},
-      image_url: '',
-      is_active: true,
       sort_order: 0,
+      is_active: true,
     });
     setErrors({});
   };
@@ -397,8 +403,8 @@ const ResourceCreateModal: React.FC<ResourceCreateModalProps> = ({
             </label>
             <input
               type="url"
-              value={formData.image_url || ''}
-              onChange={(e) => handleInputChange('image_url', e.target.value)}
+              value={formData.photo_url || ''}
+              onChange={(e) => handleInputChange('photo_url', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
               placeholder="https://example.com/image.jpg"
             />
