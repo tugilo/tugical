@@ -45,43 +45,9 @@ const RESOURCE_TYPE_ICONS = {
 // リソースタイプの表示名
 const RESOURCE_TYPE_LABELS = {
   staff: 'スタッフ',
-  room: '部屋・個室',
-  equipment: '設備・器具',
-  vehicle: '車両・送迎車',
-};
-
-// 業種別リソース表示名
-const INDUSTRY_RESOURCE_LABELS = {
-  beauty: {
-    staff: '美容師',
-    room: '個室',
-    equipment: '美容器具',
-    vehicle: '送迎車',
-  },
-  clinic: {
-    staff: '先生',
-    room: '診療室',
-    equipment: '医療機器',
-    vehicle: '往診車',
-  },
-  rental: {
-    staff: '管理者',
-    room: '会議室',
-    equipment: '設備',
-    vehicle: 'レンタカー',
-  },
-  school: {
-    staff: '講師',
-    room: '教室',
-    equipment: '教材',
-    vehicle: 'スクールバス',
-  },
-  activity: {
-    staff: 'ガイド',
-    room: '集合場所',
-    equipment: '体験器具',
-    vehicle: 'ツアー車両',
-  },
+  room: '部屋',
+  equipment: '設備',
+  vehicle: '車両',
 };
 
 const ResourcesPage: React.FC = () => {
@@ -89,13 +55,13 @@ const ResourcesPage: React.FC = () => {
   const { addToast } = useToast();
 
   // 状態管理
-  const [resources, setResources] = useState<Resource[]>([]);
+  const [allResources, setAllResources] = useState<Resource[]>([]); // 全リソース（統計用）
+  const [filteredResources, setFilteredResources] = useState<Resource[]>([]); // フィルタリング済みリソース（表示用）
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [industryType] = useState<string>('beauty'); // TODO: 店舗設定から取得
 
   // モーダル状態
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -104,31 +70,27 @@ const ResourcesPage: React.FC = () => {
     null
   );
   const [isDeleting, setIsDeleting] = useState(false);
-  // const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
-  // const [showDetailModal, setShowDetailModal] = useState(false);
-  // const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
     setPageTitle('リソース管理');
   }, [setPageTitle]);
 
   /**
-   * リソース一覧を取得
+   * 全リソース一覧を取得
    */
-  const fetchResources = useCallback(async () => {
+  const fetchAllResources = useCallback(async () => {
     try {
-      const filters: FilterOptions = {
-        search: searchTerm || undefined,
-        type: typeFilter !== 'all' ? typeFilter : undefined,
-        status: statusFilter !== 'all' ? statusFilter : undefined,
+      const result = await resourceApi.getList({
         sort: 'type,sort_order,name',
-      };
-
-      const result = await resourceApi.getList(filters);
-      setResources(result.resources || []);
+      });
+      const resources = result.resources || [];
+      setAllResources(resources);
+      // 初回は全リソースをフィルタリング済みとしても設定
+      applyFilters(resources);
     } catch (error: any) {
       console.error('Failed to fetch resources:', error);
-      setResources([]); // エラー時は空配列を設定
+      setAllResources([]);
+      setFilteredResources([]);
       addToast({
         type: 'error',
         title: 'リソース一覧の取得に失敗しました',
@@ -140,12 +102,52 @@ const ResourcesPage: React.FC = () => {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [searchTerm, typeFilter, statusFilter, addToast]);
+  }, [addToast]);
+
+  /**
+   * フィルタリングを適用
+   */
+  const applyFilters = useCallback(
+    (resources: Resource[] = allResources) => {
+      let filtered = [...resources];
+
+      // 検索フィルター
+      if (searchTerm) {
+        filtered = filtered.filter(
+          resource =>
+            resource.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            resource.display_name
+              .toLowerCase()
+              .includes(searchTerm.toLowerCase())
+        );
+      }
+
+      // タイプフィルター
+      if (typeFilter !== 'all') {
+        filtered = filtered.filter(resource => resource.type === typeFilter);
+      }
+
+      // ステータスフィルター
+      if (statusFilter === 'active') {
+        filtered = filtered.filter(resource => resource.is_active);
+      } else if (statusFilter === 'inactive') {
+        filtered = filtered.filter(resource => !resource.is_active);
+      }
+
+      setFilteredResources(filtered);
+    },
+    [allResources, searchTerm, typeFilter, statusFilter]
+  );
+
+  // フィルター変更時にフィルタリングを実行
+  useEffect(() => {
+    applyFilters();
+  }, [applyFilters]);
 
   // 初回読み込み
   useEffect(() => {
-    fetchResources();
-  }, [fetchResources]);
+    fetchAllResources();
+  }, [fetchAllResources]);
 
   /**
    * 検索処理
@@ -173,7 +175,7 @@ const ResourcesPage: React.FC = () => {
    */
   const handleRefresh = () => {
     setIsRefreshing(true);
-    fetchResources();
+    fetchAllResources();
   };
 
   /**
@@ -193,15 +195,13 @@ const ResourcesPage: React.FC = () => {
       message: `${newResource.display_name} が正常に作成されました`,
     });
     setShowCreateModal(false);
-    fetchResources(); // リソース一覧を再取得
+    fetchAllResources(); // 全リソースを再取得
   };
 
   /**
    * リソース詳細表示
    */
   const handleResourceClick = (resource: Resource) => {
-    // setSelectedResource(resource);
-    // setShowDetailModal(true);
     console.log('TODO: リソース詳細モーダルを開く', resource);
   };
 
@@ -209,8 +209,6 @@ const ResourcesPage: React.FC = () => {
    * リソース編集
    */
   const handleEditResource = (resource: Resource) => {
-    // setSelectedResource(resource);
-    // setShowEditModal(true);
     console.log('TODO: リソース編集モーダルを開く', resource);
   };
 
@@ -238,7 +236,7 @@ const ResourcesPage: React.FC = () => {
           resourceToDelete.display_name || resourceToDelete.name
         } の削除が完了しました`,
       });
-      fetchResources();
+      fetchAllResources(); // 全リソースを再取得
       setShowDeleteConfirm(false);
       setResourceToDelete(null);
     } catch (error: any) {
@@ -265,31 +263,27 @@ const ResourcesPage: React.FC = () => {
   };
 
   /**
-   * 業種別リソース表示名を取得
+   * リソース表示名を取得（汎用的な表示名を使用）
    */
   const getResourceTypeLabel = (type: string): string => {
-    return (
-      (INDUSTRY_RESOURCE_LABELS as any)[industryType]?.[type] ||
-      (RESOURCE_TYPE_LABELS as any)[type] ||
-      type
-    );
+    return (RESOURCE_TYPE_LABELS as any)[type] || type;
   };
 
   /**
-   * タイプ別リソース数を取得
+   * タイプ別リソース数を取得（全リソースから計算）
    */
   const getResourceCountByType = (type: string): number => {
-    return Array.isArray(resources)
-      ? resources.filter(resource => resource.type === type).length
+    return Array.isArray(allResources)
+      ? allResources.filter(resource => resource.type === type).length
       : 0;
   };
 
   /**
-   * 稼働中リソース数を取得
+   * 稼働中リソース数を取得（全リソースから計算）
    */
   const getActiveResourceCount = (): number => {
-    return Array.isArray(resources)
-      ? resources.filter(resource => resource.is_active).length
+    return Array.isArray(allResources)
+      ? allResources.filter(resource => resource.is_active).length
       : 0;
   };
 
@@ -306,7 +300,7 @@ const ResourcesPage: React.FC = () => {
         <div>
           <h1 className='text-2xl font-bold text-gray-900'>リソース管理</h1>
           <p className='text-sm text-gray-600 mt-1'>
-            全 {resources.length} 件のリソース（稼働中:{' '}
+            全 {allResources.length} 件のリソース（稼働中:{' '}
             {getActiveResourceCount()} 件）
           </p>
         </div>
@@ -426,12 +420,16 @@ const ResourcesPage: React.FC = () => {
       </Card>
 
       {/* リソース一覧 */}
-      {resources.length === 0 ? (
+      {filteredResources.length === 0 ? (
         <Card>
           <Card.Body>
             <div className='text-center py-12'>
               <CogIcon className='w-12 h-12 text-gray-400 mx-auto mb-4' />
-              <p className='text-gray-600'>リソースが見つかりませんでした</p>
+              <p className='text-gray-600'>
+                {allResources.length === 0
+                  ? 'リソースが登録されていません'
+                  : 'フィルター条件に一致するリソースが見つかりませんでした'}
+              </p>
               {(searchTerm ||
                 typeFilter !== 'all' ||
                 statusFilter !== 'all') && (
@@ -444,11 +442,10 @@ const ResourcesPage: React.FC = () => {
         </Card>
       ) : (
         <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
-          {resources.map(resource => (
+          {filteredResources.map(resource => (
             <ResourceCard
               key={resource.id}
               resource={resource}
-              industryType={industryType}
               onView={() => handleResourceClick(resource)}
               onEdit={() => handleEditResource(resource)}
               onDelete={() => handleDeleteResource(resource)}
@@ -478,8 +475,6 @@ const ResourcesPage: React.FC = () => {
         isDanger={true}
         isLoading={isDeleting}
       />
-
-      {/* TODO: ResourceDetailModal, ResourceEditModal 実装 */}
     </div>
   );
 };

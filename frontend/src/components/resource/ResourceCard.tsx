@@ -1,11 +1,11 @@
 /**
  * ResourceCard コンポーネント
- * 
+ *
  * 統一リソース概念による革新的なリソース表示カード
  * - リソースタイプ別アイコン表示
  * - 業種別表示名対応
  * - 稼働状況・効率率・料金差表示
- * 
+ *
  * @author tugical Development Team
  * @version 1.0
  * @since 2025-07-04
@@ -16,17 +16,17 @@ import { motion } from 'framer-motion';
 import { Resource } from '../../types';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
-import { 
+import {
   UserIcon,
   BuildingOfficeIcon,
   CogIcon,
-  TruckIcon
+  TruckIcon,
 } from '@heroicons/react/24/outline';
 
 // リソースタイプのアイコンマッピング
 const RESOURCE_TYPE_ICONS: Record<string, React.ComponentType<any>> = {
   staff: UserIcon,
-  room: BuildingOfficeIcon, 
+  room: BuildingOfficeIcon,
   equipment: CogIcon,
   vehicle: TruckIcon,
 };
@@ -34,48 +34,13 @@ const RESOURCE_TYPE_ICONS: Record<string, React.ComponentType<any>> = {
 // リソースタイプの表示名
 const RESOURCE_TYPE_LABELS: Record<string, string> = {
   staff: 'スタッフ',
-  room: '部屋・個室',
-  equipment: '設備・器具', 
-  vehicle: '車両・送迎車',
-};
-
-// 業種別リソース表示名
-const INDUSTRY_RESOURCE_LABELS: Record<string, Record<string, string>> = {
-  beauty: {
-    staff: '美容師',
-    room: '個室',
-    equipment: '美容器具',
-    vehicle: '送迎車',
-  },
-  clinic: {
-    staff: '先生',
-    room: '診療室',
-    equipment: '医療機器',
-    vehicle: '往診車',
-  },
-  rental: {
-    staff: '管理者',
-    room: '会議室',
-    equipment: '設備',
-    vehicle: 'レンタカー',
-  },
-  school: {
-    staff: '講師',
-    room: '教室',
-    equipment: '教材',
-    vehicle: 'スクールバス',
-  },
-  activity: {
-    staff: 'ガイド',
-    room: '集合場所',
-    equipment: '体験器具',
-    vehicle: 'ツアー車両',
-  },
+  room: '部屋',
+  equipment: '設備',
+  vehicle: '車両',
 };
 
 interface ResourceCardProps {
   resource: Resource;
-  industryType: string;
   onView: () => void;
   onEdit: () => void;
   onDelete: () => void;
@@ -87,15 +52,12 @@ interface ResourceCardProps {
  */
 const ResourceCard: React.FC<ResourceCardProps> = ({
   resource,
-  industryType,
   onView,
   onEdit,
   onDelete,
 }) => {
   const IconComponent = RESOURCE_TYPE_ICONS[resource.type] || CogIcon;
-  const typeLabel = INDUSTRY_RESOURCE_LABELS[industryType]?.[resource.type] || 
-                   RESOURCE_TYPE_LABELS[resource.type] || 
-                   resource.type;
+  const typeLabel = RESOURCE_TYPE_LABELS[resource.type] || resource.type;
 
   return (
     <motion.div
@@ -104,29 +66,41 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
       whileHover={{ scale: 1.02 }}
       transition={{ duration: 0.2 }}
     >
-      <Card className="h-full hover:shadow-md transition-shadow cursor-pointer" onClick={onView}>
+      <Card
+        className='h-full hover:shadow-md transition-shadow cursor-pointer'
+        onClick={onView}
+      >
         <Card.Body>
           {/* ヘッダー */}
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center">
-              <IconComponent className="w-6 h-6 text-primary-600 mr-2" />
-              <span className="text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded">
+          <div className='flex items-center justify-between mb-3'>
+            <div className='flex items-center'>
+              <IconComponent className='w-6 h-6 text-primary-600 mr-2' />
+              <span className='text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded'>
                 {typeLabel}
               </span>
             </div>
-            <div className={`w-3 h-3 rounded-full ${resource.is_active ? 'bg-green-500' : 'bg-gray-400'}`} />
+            <div
+              className={`w-3 h-3 rounded-full ${
+                resource.is_active ? 'bg-green-500' : 'bg-gray-400'
+              }`}
+            />
           </div>
 
           {/* リソース情報 */}
-          <div className="mb-3">
-            <h3 className="font-semibold text-gray-900 mb-1">{resource.name}</h3>
-            {resource.display_name && resource.display_name !== resource.name && (
-              <p className="text-sm text-gray-600">表示名: {resource.display_name}</p>
-            )}
+          <div className='mb-3'>
+            <h3 className='font-semibold text-gray-900 mb-1'>
+              {resource.name}
+            </h3>
+            {resource.display_name &&
+              resource.display_name !== resource.name && (
+                <p className='text-sm text-gray-600'>
+                  表示名: {resource.display_name}
+                </p>
+              )}
           </div>
 
           {/* 詳細情報 */}
-          <div className="space-y-1 text-sm text-gray-600 mb-4">
+          <div className='space-y-1 text-sm text-gray-600 mb-4'>
             {resource.type === 'staff' && resource.capacity && (
               <p>稼働可能: {resource.capacity}人まで</p>
             )}
@@ -137,24 +111,23 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
               <p>効率率: {(resource.efficiency_rate * 100).toFixed(0)}%</p>
             )}
             {resource.hourly_rate_diff && resource.hourly_rate_diff !== 0 && (
-              <p>指名料金: {resource.hourly_rate_diff > 0 ? '+' : ''}¥{resource.hourly_rate_diff}</p>
+              <p>
+                指名料金: {resource.hourly_rate_diff > 0 ? '+' : ''}¥
+                {resource.hourly_rate_diff}
+              </p>
             )}
           </div>
 
           {/* アクション */}
-          <div className="flex gap-2 pt-3 border-t border-gray-100">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onEdit()}
-            >
+          <div className='flex gap-2 pt-3 border-t border-gray-100'>
+            <Button variant='outline' size='sm' onClick={() => onEdit()}>
               編集
             </Button>
             <Button
-              variant="ghost"
-              size="sm"
+              variant='ghost'
+              size='sm'
               onClick={() => onDelete()}
-              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              className='text-red-600 hover:text-red-700 hover:bg-red-50'
             >
               削除
             </Button>
@@ -165,4 +138,4 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
   );
 };
 
-export default ResourceCard; 
+export default ResourceCard;
