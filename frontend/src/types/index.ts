@@ -483,11 +483,14 @@ export interface FormField {
 export interface FilterOptions {
   search?: string;
   status?: string;
+  category?: string;
   date?: string;
   date_from?: string;
   date_to?: string;
   resource_id?: number;
   customer_id?: number;
+  menu_id?: number;
+  is_active?: boolean;
   page?: number;
   per_page?: number;
   sort?: string;
