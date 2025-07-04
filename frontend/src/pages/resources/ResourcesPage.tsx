@@ -23,7 +23,7 @@ import LoadingScreen from '../../components/ui/LoadingScreen';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import ResourceCard from '../../components/resources/ResourceCard';
 import ResourceCreateModal from '../../components/resources/ResourceCreateModal';
-// import ResourceEditModal from '../../components/resources/ResourceEditModal';
+import ResourceEditModal from '../../components/resources/ResourceEditModal';
 import {
   PlusIcon,
   MagnifyingGlassIcon,
@@ -66,7 +66,9 @@ const ResourcesPage: React.FC = () => {
 
   // モーダル状態
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [resourceToEdit, setResourceToEdit] = useState<Resource | null>(null);
   const [resourceToDelete, setResourceToDelete] = useState<Resource | null>(
     null
   );
@@ -210,8 +212,17 @@ const ResourcesPage: React.FC = () => {
    * リソース編集
    */
   const handleEditResource = (resource: Resource) => {
-    // TODO: ResourceEditModal実装後に有効化
-    console.log('TODO: リソース編集機能を実装', resource);
+    setResourceToEdit(resource);
+    setShowEditModal(true);
+  };
+
+  /**
+   * リソース更新成功時のコールバック
+   */
+  const handleResourceUpdated = (updatedResource: Resource) => {
+    setShowEditModal(false);
+    setResourceToEdit(null);
+    fetchAllResources(); // 全リソースを再取得
   };
 
   /**
@@ -463,7 +474,16 @@ const ResourcesPage: React.FC = () => {
         onCreate={handleResourceCreated}
       />
 
-      {/* TODO: 編集モーダル実装 */}
+      {/* 編集モーダル */}
+      <ResourceEditModal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setResourceToEdit(null);
+        }}
+        onUpdate={handleResourceUpdated}
+        resource={resourceToEdit}
+      />
 
       {/* 削除確認ダイアログ */}
       <ConfirmDialog
