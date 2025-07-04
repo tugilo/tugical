@@ -21,6 +21,7 @@ import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import LoadingScreen from '../../components/ui/LoadingScreen';
 import ResourceCard from '../../components/resource/ResourceCard';
+import ResourceCreateModal from '../../components/resource/ResourceCreateModal';
 import { 
   PlusIcon, 
   MagnifyingGlassIcon,
@@ -94,8 +95,9 @@ const ResourcesPage: React.FC = () => {
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [industryType] = useState<string>('beauty'); // TODO: 店舗設定から取得
-  // モーダル状態（将来実装用）
-  // const [showCreateModal, setShowCreateModal] = useState(false);
+  
+  // モーダル状態
+  const [showCreateModal, setShowCreateModal] = useState(false);
   // const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
   // const [showDetailModal, setShowDetailModal] = useState(false);
   // const [showEditModal, setShowEditModal] = useState(false);
@@ -170,8 +172,20 @@ const ResourcesPage: React.FC = () => {
    * リソース作成
    */
   const handleCreateResource = () => {
-    // setShowCreateModal(true);
-    console.log('TODO: リソース作成モーダルを開く');
+    setShowCreateModal(true);
+  };
+
+  /**
+   * リソース作成成功時のコールバック
+   */
+  const handleResourceCreated = (newResource: Resource) => {
+    addToast({
+      type: 'success',
+      title: 'リソースを作成しました',
+      message: `${newResource.display_name} が正常に作成されました`
+    });
+    setShowCreateModal(false);
+    fetchResources(); // リソース一覧を再取得
   };
 
   /**
@@ -392,11 +406,14 @@ const ResourcesPage: React.FC = () => {
       )}
 
       {/* モーダル */}
-      {/* TODO: ResourceCreateModal, ResourceDetailModal, ResourceEditModal 実装 */}
+      <ResourceCreateModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onCreate={handleResourceCreated}
+      />
+      {/* TODO: ResourceDetailModal, ResourceEditModal 実装 */}
     </div>
   );
 };
-
-
 
 export default ResourcesPage; 

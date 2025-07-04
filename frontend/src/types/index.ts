@@ -262,11 +262,52 @@ export interface Resource {
   capacity?: number;
   attributes: Record<string, any>;
   working_hours: Record<string, any>;
+  constraints: Record<string, any>;
   efficiency_rate: number;
   hourly_rate_diff: number;
+  equipment_specs: Record<string, any>;
+  booking_rules: Record<string, any>;
+  image_url?: string;
   is_active: boolean;
+  sort_order: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface CreateResourceRequest {
+  type: 'staff' | 'room' | 'equipment' | 'vehicle';
+  name: string;
+  display_name?: string;
+  description?: string;
+  attributes?: Record<string, any>;
+  working_hours?: Record<string, any>;
+  constraints?: Record<string, any>;
+  efficiency_rate?: number;
+  hourly_rate_diff?: number;
+  capacity?: number;
+  equipment_specs?: Record<string, any>;
+  booking_rules?: Record<string, any>;
+  image_url?: string;
+  is_active?: boolean;
+  sort_order?: number;
+}
+
+export interface UpdateResourceRequest {
+  type?: 'staff' | 'room' | 'equipment' | 'vehicle';
+  name?: string;
+  display_name?: string;
+  description?: string;
+  attributes?: Record<string, any>;
+  working_hours?: Record<string, any>;
+  constraints?: Record<string, any>;
+  efficiency_rate?: number;
+  hourly_rate_diff?: number;
+  capacity?: number;
+  equipment_specs?: Record<string, any>;
+  booking_rules?: Record<string, any>;
+  image_url?: string;
+  is_active?: boolean;
+  sort_order?: number;
 }
 
 // ========================================

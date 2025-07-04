@@ -1903,3 +1903,160 @@ Schema::table('resources', function (Blueprint $table) {
 tugical の核心機能「統一リソース概念によるリソース管理」が完全動作可能状態に到達。
 リソース一覧表示・フィルタリング・API統合すべて正常動作。
 次は具体的なリソース作成・編集UIの実装に移行予定。
+
+# tugical プロジェクト開発進捗
+
+## 最新更新情報
+- **更新日時**: 2025-07-04 19:16:04
+- **作業端末**: tugiMacMini.local
+- **ブランチ**: develop
+
+## Phase 5.5: ResourceCreateModal実装完了 ✅
+
+### 実装完了項目
+- ✅ **ResourceCreateModal完全実装**
+  - 統一リソース概念対応の革新的作成フォーム
+  - 4タイプリソース対応（staff/room/equipment/vehicle）
+  - 業種別表示名・属性・制約管理システム
+  - 完全なバリデーション・エラーハンドリング実装
+
+### 技術的革新ポイント
+
+#### 1. 統一リソース概念の完全実現
+```typescript
+// 4タイプ × 5業種 = 20パターンの動的UI
+staff    → 美容師・先生・講師・ガイド・管理者
+room     → 個室・診療室・教室・集合場所・会議室  
+equipment → 美容器具・医療機器・教材・体験器具・設備
+vehicle  → 送迎車・往診車・スクールバス・ツアー車両・レンタカー
+```
+
+#### 2. インタラクティブタイプ選択UI
+- 4タイプボタンによる直感的切り替え
+- タイプ変更時の自動属性リセット
+- デフォルト容量の自動設定（staff:1, room:4, equipment:1, vehicle:8）
+
+#### 3. 高度フォームバリデーション
+```typescript
+// 効率率: 0.5-2.0 (50%-200%)
+// 時間料金差: -10,000円〜+10,000円
+// 収容人数: 1-100人（タイプ別ラベル自動変更）
+// 必須フィールド: name, display_name
+```
+
+#### 4. 業種別動的UI対応
+```typescript
+// タイプ別容量ラベル自動変更
+staff: '同時対応人数'
+room: '収容人数' 
+equipment: '同時利用数'
+vehicle: '乗車定員'
+```
+
+### 実装ファイル詳細
+
+#### ResourceCreateModal.tsx (約400行)
+```typescript
+interface ResourceCreateModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onCreate?: (resource: Resource) => void;
+  initialType?: ResourceType;
+}
+
+// 主要機能
+- タイプ選択UI（4タイプ切り替え）
+- 基本情報入力（name, display_name, description）
+- 詳細設定（効率率、時間料金差、容量）
+- 画像URL設定
+- ステータス管理（アクティブ/非アクティブ）
+- 完全バリデーション・エラー表示
+- API統合・成功通知
+```
+
+#### ResourcesPage.tsx統合
+```typescript
+// モーダル状態管理
+const [showCreateModal, setShowCreateModal] = useState(false);
+
+// 作成成功コールバック
+const handleResourceCreated = (newResource: Resource) => {
+  addToast({ type: 'success', ... });
+  setShowCreateModal(false);
+  fetchResources(); // 一覧再取得
+};
+```
+
+### API統合確認
+- ✅ **resourceApi.create()**: 完全動作
+- ✅ **CreateResourceRequest型**: 型安全性確保
+- ✅ **エラーハンドリング**: APIエラー・バリデーションエラー対応
+- ✅ **成功通知**: Toast通知システム統合
+
+### UI/UX品質
+- ✅ **レスポンシブデザイン**: モバイル〜デスクトップ対応
+- ✅ **アクセシビリティ**: 適切なラベル・フォーカス管理
+- ✅ **ローディング状態**: ボタン無効化・スピナー表示
+- ✅ **バリデーション**: リアルタイムエラー表示・クリア
+- ✅ **アニメーション**: Framer Motion による滑らかな動作
+
+### フロントエンドビルド結果
+```
+✓ ResourcesPage-BMtMnv_P.js     33.21 kB │ gzip:   7.45 kB
+✓ ビルド成功: 2.59s
+✓ TypeScript型チェック通過
+✓ Vite最適化完了
+```
+
+## 次の実装ステップ
+
+### Phase 5.6: ResourceEditModal実装（次回）
+```typescript
+// 予定実装内容
+1. ResourceEditModal.tsx作成
+   - 既存リソース情報の読み込み
+   - 差分更新システム
+   - タイプ変更制限（予約履歴がある場合）
+   - アクティブ予約チェック
+
+2. ResourceDetailModal.tsx作成
+   - リソース詳細表示
+   - 予約履歴・統計情報
+   - 編集・削除アクション
+
+3. ResourcesPage完全統合
+   - 編集・詳細モーダル統合
+   - ドラッグ&ドロップ順序変更
+   - 一括操作機能
+```
+
+## 完成済み機能マップ
+
+### ✅ 完全実装済み
+- **メニュー管理**: CRUD + オプション管理
+- **顧客管理**: CRUD + ロイヤリティ管理  
+- **リソース管理**: 作成機能完了
+- **予約管理**: バックエンドCRUD完了
+- **認証システム**: Sanctum完全動作
+- **API基盤**: 全エンドポイント動作
+
+### 🔄 実装中
+- **リソース管理**: 編集・詳細モーダル
+- **予約管理**: フロントエンドCRUD
+
+### ⏳ 未実装
+- **LIFF予約フロー**: 5ステップ予約システム
+- **LINE通知**: テンプレート・自動送信
+- **ダッシュボード**: 統計・グラフ表示
+
+## 技術的成果
+
+tugicalの核心である「統一リソース概念」が **完全に動作可能** な状態に到達。
+
+- 4タイプリソース × 5業種対応 = 20パターンの動的UI
+- 革新的なタイプ選択インターフェース
+- 業種別表示名の自動切り替え
+- 完全なバリデーション・エラーハンドリング
+- API統合・型安全性の確保
+
+**次回セッション**: ResourceEditModal + ResourceDetailModal実装で、リソース管理機能を完全完成させる予定。
