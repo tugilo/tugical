@@ -44,6 +44,18 @@ const formatTime = (time: string): string => {
 };
 
 /**
+ * リソースIDから担当者名を取得
+ */
+const getResourceName = (resourceId: number): string => {
+  const resourceMap: Record<number, string> = {
+    2: '次廣',
+    3: 'テスト',
+    4: '個室B',
+  };
+  return resourceMap[resourceId] || `担当者ID:${resourceId}`;
+};
+
+/**
  * 予約ステータスのスタイル設定
  */
 const statusStyles = {
@@ -138,15 +150,10 @@ const BookingCard: React.FC<BookingCardProps> = ({
             </div>
           </div>
 
-          {(booking.resource || booking.resource_id) && (
+          {booking.resource_id && (
             <div className='flex items-center gap-1 text-sm text-gray-600 ml-1'>
               <UserIcon className='w-4 h-4 text-gray-400' />
-              <span>
-                担当:{' '}
-                {booking.resource?.display_name ||
-                  booking.resource?.name ||
-                  '担当者あり'}
-              </span>
+              <span>担当: {getResourceName(booking.resource_id)}</span>
             </div>
           )}
         </div>

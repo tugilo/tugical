@@ -40,6 +40,7 @@ class BookingResource extends JsonResource
             'end_time' => $this->calculateEndTime(),
             'status' => $this->status,
             'total_price' => $this->total_price,
+            'resource_id' => $this->resource_id,
 
             // ステータス詳細情報
             'status_info' => $this->getStatusInfoData(),
@@ -67,8 +68,8 @@ class BookingResource extends JsonResource
                     'id' => $this->menu->id,
                     'name' => $this->menu->name,
                     'category' => $this->menu->category,
-                    'base_duration' => $this->menu->duration,
-                    'base_price' => $this->menu->price,
+                    'base_duration' => $this->menu->base_duration,
+                    'base_price' => $this->menu->base_price,
                     'description' => $this->when(
                         $this->menu->description,
                         $this->menu->description
@@ -76,22 +77,12 @@ class BookingResource extends JsonResource
                 ];
             }),
 
-            'resource' => $this->whenLoaded('resource', function () {
-                return $this->resource ? [
-                    'id' => $this->resource->id,
-                    'type' => $this->resource->type,
-                    'name' => $this->resource->name,
-                    'display_name' => $this->resource->display_name,
-                    'photo_url' => $this->when(
-                        $this->resource->photo_url,
-                        $this->resource->photo_url
-                    ),
-                    'specialties' => $this->when(
-                        isset($this->resource->attributes['specialties']),
-                        $this->resource->attributes['specialties'] ?? []
-                    )
-                ] : null;
-            }),
+            'resource' => $this->resource ? [
+                'id' => $this->resource->id,
+                'type' => $this->resource->type,
+                'name' => $this->resource->name,
+                'display_name' => $this->resource->display_name,
+            ] : null,
 
             'options' => $this->whenLoaded('options', function () {
                 return $this->options->map(function ($option) {
@@ -122,7 +113,7 @@ class BookingResource extends JsonResource
 
             // 料金詳細（詳細表示時のみ）
             'pricing_breakdown' => $this->when(
-                $request->route()->getName() === 'bookings.show',
+                $request->route() && $request->route()->getName() === 'bookings.show',
                 function () {
                     return $this->getPricingBreakdown();
                 }
@@ -161,7 +152,7 @@ class BookingResource extends JsonResource
     private function getPricingBreakdown(): array
     {
         $breakdown = [
-            'base_price' => $this->menu->price ?? 0,
+            'base_price' => $this->menu->base_price ?? 0,
             'options_total' => 0,
             'resource_fee' => 0,
             'total_price' => $this->total_price
@@ -184,7 +175,7 @@ class BookingResource extends JsonResource
             $menu = $this->menu;
 
             if ($resource->hourly_rate_diff && $menu) {
-                $durationMinutes = $menu->duration;
+                $durationMinutes = $menu->base_duration;
                 $resourceFee = ($durationMinutes / 60) * $resource->hourly_rate_diff;
                 $breakdown['resource_fee'] = intval($resourceFee);
             }
