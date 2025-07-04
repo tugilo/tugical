@@ -411,6 +411,7 @@ Authorization: Bearer {token}
         },
         "efficiency_rate": 0.9,
         "hourly_rate_diff": 500,
+        "capacity": 2,
         "is_active": true
       }
     ]
@@ -439,7 +440,8 @@ Content-Type: application/json
     "saturday": {"start": "09:00", "end": "17:00"}
   },
   "efficiency_rate": 1.1,
-  "hourly_rate_diff": 300
+  "hourly_rate_diff": 300,
+  "capacity": 1
 }
 ```
 

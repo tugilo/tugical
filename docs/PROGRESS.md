@@ -2505,3 +2505,65 @@ curl -X POST http://localhost/api/v1/resources \
 
 ### ファイル変更履歴
 - `doc/tugical_database_design_v1.0.md`: 実装との整合性確認完了
+
+## Phase 5.9: 仕様書更新とcapacityフィールド追加 (2025-07-04 20:18:17)
+
+### 作業概要
+- **目的**: ペルソナ分析に基づくcapacityフィールドの仕様書追加と実装
+- **方針**: 仕様書ファースト、ビジネス価値重視のアプローチ
+- **作業端末**: tugiMacMini.local
+
+### 完了事項
+
+#### 1. ペルソナ分析によるビジネス価値検証
+- **美容室オーナー**: スタッフの同時対応能力管理（新人1人、ベテラン2人同時）
+- **クリニック受付**: 診察室収容人数、医師の同時診察可能数
+- **料理教室運営者**: 教室収容人数、講師の指導可能人数
+- **体験ツアー運営者**: 車両乗車定員、ガイドの案内可能人数
+- **お客様視点**: 透明性・安心感・効率的予約の向上
+
+#### 2. 仕様書更新
+- **tugical_database_design_v1.0.md**: 
+  - resources テーブルに `capacity` フィールド追加
+  - タイプ別の capacity 説明追加（staff: 1-10人、room: 1-100人、等）
+  - attributes JSON 構造例の詳細化
+- **tugical_api_specification_v1.0.md**: 
+  - リソース作成・更新APIレスポンスに capacity フィールド追加
+
+#### 3. データベース実装
+- **マイグレーション修正**: `2025_06_29_235129_create_resources_table.php`
+  - `capacity` INT NOT NULL DEFAULT 1 追加
+  - 収容・対応人数のコメント追加
+
+#### 4. バックエンド実装
+- **Resource.php**: fillable に capacity 追加
+- **ResourceController.php**: store メソッドで capacity 対応済み確認
+- **API動作確認**: capacity=2 のリソース作成成功
+
+#### 5. フロントエンド修正
+- **ResourceCreateModal.tsx**: 
+  - 仕様書にないフィールド（constraints, equipment_specs）削除
+  - capacity フィールドの正しい実装確認
+
+### API動作確認結果
+```bash
+# capacity フィールド付きリソース作成成功
+POST /api/v1/resources
+{
+  "type": "staff",
+  "capacity": 2,
+  ...
+}
+# レスポンス: "capacity": 2 ✅
+```
+
+### 重要な学習
+1. **ペルソナ分析の有効性**: 利用者・お客様の立場から機能の必要性を検証
+2. **仕様書ファーストの重要性**: 実装前の仕様書更新で整合性確保
+3. **ビジネス価値重視**: 技術的な複雑さよりもビジネス価値を優先
+
+### 次のステップ
+- Phase 5.10: ResourceEditModal実装（仕様書準拠、capacity対応）
+- フロントエンドでのcapacity表示・編集UI実装
+
+### ファイル変更履歴

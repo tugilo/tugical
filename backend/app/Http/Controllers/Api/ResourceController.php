@@ -232,6 +232,7 @@ class ResourceController extends Controller
                     'working_hours' => $request->working_hours ?? [],
                     'efficiency_rate' => $request->efficiency_rate ?? 1.0,
                     'hourly_rate_diff' => $request->hourly_rate_diff ?? 0,
+                    'capacity' => $request->capacity ?? 1,
                     'sort_order' => $request->sort_order ?? 10,
                     'is_active' => $request->is_active ?? true,
                 ]);

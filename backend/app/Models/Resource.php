@@ -78,6 +78,7 @@ class Resource extends Model
         'working_hours',
         'efficiency_rate',
         'hourly_rate_diff',
+        'capacity',
         'sort_order',
         'is_active',
     ];

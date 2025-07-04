@@ -30,9 +30,10 @@ return new class extends Migration
             // 稼働時間（JSON）
             $table->json('working_hours')->nullable()->comment('稼働時間');
             
-            // 効率・料金
+            // 効率・料金・収容
             $table->decimal('efficiency_rate', 3, 2)->default(1.00)->comment('作業効率率');
             $table->integer('hourly_rate_diff')->default(0)->comment('指名料金差（円）');
+            $table->integer('capacity')->default(1)->comment('収容・対応人数');
             
             // 管理情報
             $table->integer('sort_order')->default(0)->comment('表示順序');

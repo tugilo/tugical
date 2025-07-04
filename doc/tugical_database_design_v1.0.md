@@ -56,28 +56,55 @@
 | tenant_id | BIGINT UNSIGNED | ✓ | - | テナントID（FK） |
 | name | VARCHAR(255) | ✓ | - | 店舗名 |
 | slug | VARCHAR(100) | ✓ | - | URL用識別子 |
+| display_name | VARCHAR(255) | | NULL | 表示名 |
 | description | TEXT | | NULL | 店舗説明 |
-| address | TEXT | | NULL | 住所 |
+| industry_type | ENUM | ✓ | - | 業種タイプ |
+| industry_settings | JSON | | NULL | 業種別設定 |
 | phone | VARCHAR(20) | | NULL | 電話番号 |
 | email | VARCHAR(255) | | NULL | メールアドレス |
-| website_url | VARCHAR(255) | | NULL | ウェブサイトURL |
-| business_hours | JSON | | NULL | 営業時間設定 |
-| holiday_settings | JSON | | NULL | 定休日設定 |
-| line_channel_id | VARCHAR(100) | | NULL | LINE チャンネルID |
-| line_channel_secret | VARCHAR(255) | | NULL | LINE チャンネルシークレット |
-| line_access_token | VARCHAR(255) | | NULL | LINE アクセストークン |
-| booking_settings | JSON | | NULL | 予約設定 |
+| address | TEXT | | NULL | 住所 |
+| postal_code | VARCHAR(10) | | NULL | 郵便番号 |
+| latitude | DECIMAL(10,8) | | NULL | 緯度 |
+| longitude | DECIMAL(11,8) | | NULL | 経度 |
+| business_hours | JSON | ✓ | - | 営業時間設定（曜日別） |
+| time_slot_interval | INT | ✓ | 30 | 予約時間間隔（分） |
+| advance_booking_days | INT | ✓ | 30 | 事前予約可能日数 |
+| accept_same_day_booking | BOOLEAN | ✓ | TRUE | 当日予約受付 |
+| booking_mode | ENUM | ✓ | 'auto' | 予約承認モード |
+| booking_limit_per_day | INT | ✓ | 50 | 日当たり予約上限 |
+| hold_minutes | INT | ✓ | 10 | 仮押さえ時間（分） |
+| require_customer_info | BOOLEAN | ✓ | FALSE | 顧客情報必須フラグ |
 | notification_settings | JSON | | NULL | 通知設定 |
-| industry_type | VARCHAR(50) | | NULL | 業種タイプ |
+| send_booking_notifications | BOOLEAN | ✓ | TRUE | 予約通知送信 |
+| send_reminder_notifications | BOOLEAN | ✓ | TRUE | リマインダー通知送信 |
+| reminder_hours_before | INT | ✓ | 24 | リマインダー送信時間（時間前） |
+| line_channel_id | VARCHAR(100) | | NULL | LINE チャンネルID |
+| line_channel_secret | TEXT | | NULL | LINE チャンネルシークレット（暗号化） |
+| line_access_token | TEXT | | NULL | LINE アクセストークン（暗号化） |
+| line_liff_id | VARCHAR(100) | | NULL | LIFF アプリID |
+| line_integration_active | BOOLEAN | ✓ | FALSE | LINE連携有効フラグ |
+| logo_url | VARCHAR(255) | | NULL | ロゴ画像URL |
+| cover_image_url | VARCHAR(255) | | NULL | カバー画像URL |
+| theme_color | VARCHAR(7) | ✓ | '#10b981' | テーマカラー |
+| custom_css | JSON | | NULL | カスタムCSS設定 |
 | is_active | BOOLEAN | ✓ | TRUE | 有効フラグ |
+| is_public | BOOLEAN | ✓ | TRUE | 公開フラグ |
+| settings | JSON | | NULL | その他設定 |
+| notes | TEXT | | NULL | 備考 |
 | created_at | TIMESTAMP | ✓ | CURRENT_TIMESTAMP | 作成日時 |
 | updated_at | TIMESTAMP | ✓ | CURRENT_TIMESTAMP ON UPDATE | 更新日時 |
 
 **インデックス**:
 - PRIMARY KEY (`id`)
 - FOREIGN KEY `fk_stores_tenant` (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE
-- UNIQUE KEY `uk_stores_tenant_slug` (`tenant_id`, `slug`)
-- INDEX `idx_stores_is_active` (`is_active`)
+- UNIQUE KEY `uk_stores_slug` (`slug`)
+- INDEX `idx_stores_tenant_active` (`tenant_id`, `is_active`)
+- INDEX `idx_stores_industry` (`industry_type`)
+- INDEX `idx_stores_public` (`is_public`)
+
+**ENUM値**:
+- `industry_type`: 'beauty', 'nail', 'clinic', 'therapy', 'rental', 'school', 'activity'
+- `booking_mode`: 'auto', 'manual'
 
 ---
 
@@ -98,6 +125,7 @@
 | working_hours | JSON | | NULL | 稼働時間 |
 | efficiency_rate | DECIMAL(3,2) | ✓ | 1.00 | 作業効率率 |
 | hourly_rate_diff | INT | ✓ | 0 | 指名料金差（円） |
+| capacity | INT | ✓ | 1 | 収容・対応人数 |
 | sort_order | INT | ✓ | 0 | 表示順序 |
 | is_active | BOOLEAN | ✓ | TRUE | 有効フラグ |
 | created_at | TIMESTAMP | ✓ | CURRENT_TIMESTAMP | 作成日時 |
@@ -111,6 +139,32 @@
 
 **ENUM値**:
 - `type`: 'staff', 'room', 'equipment', 'vehicle'
+
+**capacity フィールド説明**:
+- `staff`: 同時対応可能な顧客数（1-10人）
+- `room`: 部屋の収容人数（1-100人）
+- `equipment`: 同時利用可能数（1-20台）
+- `vehicle`: 乗車定員（1-50人）
+
+**attributes JSON 構造例**:
+```json
+{
+  "specialties": ["cut", "color", "perm"],
+  "skill_level": "expert",
+  "experience_years": 5,
+  "certifications": ["美容師免許", "カラーリスト検定"],
+  "languages": ["ja", "en"],
+  "age_restrictions": {"min": 18, "max": 65},
+  "gender_restrictions": "none",
+  "equipment_specs": {
+    "brand": "Panasonic",
+    "model": "EH-CNA0E",
+    "power": "1200W"
+  },
+  "room_features": ["individual", "soundproof", "wifi"],
+  "vehicle_features": ["wheelchair_accessible", "air_conditioning"]
+}
+```
 
 ---
 
@@ -154,27 +208,61 @@
 |---------|---|----------|-----------|------|
 | id | BIGINT UNSIGNED | ✓ | AUTO_INCREMENT | メニューID（PK） |
 | store_id | BIGINT UNSIGNED | ✓ | - | 店舗ID（FK） |
-| category | VARCHAR(100) | | NULL | カテゴリ |
 | name | VARCHAR(255) | ✓ | - | メニュー名 |
+| display_name | VARCHAR(255) | | NULL | 表示名 |
 | description | TEXT | | NULL | 説明 |
-| photo_url | VARCHAR(255) | | NULL | 写真URL |
-| base_duration | INT | ✓ | - | 標準所要時間（分） |
-| prep_duration | INT | ✓ | 0 | 事前準備時間（分） |
-| cleanup_duration | INT | ✓ | 0 | 事後片付け時間（分） |
+| detailed_description | TEXT | | NULL | 詳細説明 |
+| category | VARCHAR(100) | | NULL | カテゴリ |
+| tags | JSON | | NULL | タグ（検索用） |
+| service_type | ENUM | ✓ | 'individual' | サービス種別 |
+| base_duration | INT | ✓ | - | 基本所要時間（分） |
+| prep_duration | INT | ✓ | 0 | 準備時間（分） |
+| cleanup_duration | INT | ✓ | 0 | 片付け時間（分） |
+| buffer_duration | INT | ✓ | 0 | バッファ時間（分） |
 | base_price | INT | ✓ | - | 基本料金（円） |
-| tax_included | BOOLEAN | ✓ | TRUE | 税込みフラグ |
-| available_resources | JSON | | NULL | 利用可能リソース |
+| pricing_options | JSON | | NULL | 料金オプション |
+| price_varies_by_resource | BOOLEAN | ✓ | FALSE | リソース別料金フラグ |
+| price_varies_by_time | BOOLEAN | ✓ | FALSE | 時間帯別料金フラグ |
+| time_based_pricing | JSON | | NULL | 時間帯別料金設定 |
+| requires_resource | BOOLEAN | ✓ | FALSE | リソース指定必須フラグ |
+| allowed_resource_types | JSON | | NULL | 利用可能リソース種別 |
+| required_resources | JSON | | NULL | 必須リソース一覧 |
+| min_participants | INT | ✓ | 1 | 最小参加人数 |
+| max_participants | INT | ✓ | 1 | 最大参加人数 |
+| min_age | INT | | NULL | 最小年齢 |
+| max_age | INT | | NULL | 最大年齢 |
+| gender_restriction | ENUM | ✓ | 'none' | 性別制限 |
+| advance_booking_hours | INT | ✓ | 1 | 事前予約必要時間 |
+| cancellation_hours | INT | ✓ | 24 | キャンセル可能時間 |
 | booking_rules | JSON | | NULL | 予約ルール |
+| allow_online_booking | BOOLEAN | ✓ | TRUE | オンライン予約許可 |
+| require_approval | BOOLEAN | ✓ | FALSE | 承認必要フラグ |
+| image_url | VARCHAR(255) | | NULL | メイン画像URL |
+| image_gallery | JSON | | NULL | 画像ギャラリー |
+| icon_class | VARCHAR(255) | | NULL | アイコンクラス |
+| background_color | VARCHAR(7) | | NULL | 背景色 |
 | sort_order | INT | ✓ | 0 | 表示順序 |
+| is_featured | BOOLEAN | ✓ | FALSE | おすすめフラグ |
+| is_popular | BOOLEAN | ✓ | FALSE | 人気フラグ |
+| is_new | BOOLEAN | ✓ | FALSE | 新着フラグ |
 | is_active | BOOLEAN | ✓ | TRUE | 有効フラグ |
+| is_bookable | BOOLEAN | ✓ | TRUE | 予約可能フラグ |
+| settings | JSON | | NULL | その他設定 |
+| notes | TEXT | | NULL | 備考 |
 | created_at | TIMESTAMP | ✓ | CURRENT_TIMESTAMP | 作成日時 |
 | updated_at | TIMESTAMP | ✓ | CURRENT_TIMESTAMP ON UPDATE | 更新日時 |
 
 **インデックス**:
 - PRIMARY KEY (`id`)
 - FOREIGN KEY `fk_menus_store` (`store_id`) REFERENCES `stores` (`id`) ON DELETE CASCADE
+- INDEX `idx_menus_store_active` (`store_id`, `is_active`)
 - INDEX `idx_menus_category` (`store_id`, `category`)
-- INDEX `idx_menus_active` (`store_id`, `is_active`)
+- INDEX `idx_menus_bookable` (`store_id`, `is_bookable`)
+- INDEX `idx_menus_sort` (`sort_order`)
+
+**ENUM値**:
+- `service_type`: 'individual', 'group', 'course', 'subscription'
+- `gender_restriction`: 'none', 'male_only', 'female_only'
 
 ---
 
@@ -209,7 +297,7 @@
 |---------|---|----------|-----------|------|
 | id | BIGINT UNSIGNED | ✓ | AUTO_INCREMENT | 顧客ID（PK） |
 | store_id | BIGINT UNSIGNED | ✓ | - | 店舗ID（FK） |
-| line_user_id | VARCHAR(100) | ✓ | - | LINE ユーザーID |
+| line_user_id | VARCHAR(100) | | NULL | LINE ユーザーID |
 | line_display_name | VARCHAR(255) | | NULL | LINE表示名 |
 | line_picture_url | VARCHAR(255) | | NULL | LINEプロフィール画像 |
 | name | VARCHAR(255) | | NULL | 氏名 |

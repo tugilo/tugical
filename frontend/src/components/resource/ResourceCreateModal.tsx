@@ -134,8 +134,6 @@ const ResourceCreateModal: React.FC<ResourceCreateModalProps> = ({
       capacity: typeConfig?.defaultCapacity || 1,
       // タイプ変更時に属性をリセット
       attributes: {},
-      constraints: {},
-      equipment_specs: {},
     }));
   };
 
