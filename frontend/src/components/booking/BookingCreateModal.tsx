@@ -425,6 +425,15 @@ const BookingCreateModal: React.FC<BookingCreateModalProps> = ({
         option_ids: selectedOptions,
       };
 
+      // デバッグ: 送信データをコンソールに出力
+      console.log('📤 予約作成データ送信:', {
+        submissionData,
+        formData,
+        selectedOptions,
+        selectedCustomer,
+        selectedMenu,
+      });
+
       const booking = await bookingApi.create(submissionData);
 
       // APIレスポンスの構造に対応した安全な予約番号取得
@@ -441,6 +450,7 @@ const BookingCreateModal: React.FC<BookingCreateModalProps> = ({
       handleClose();
     } catch (error: any) {
       console.error('予約作成エラー:', error);
+      console.error('エラーレスポンス詳細:', error.response?.data);
 
       if (error.response?.data?.error?.details) {
         setErrors(error.response.data.error.details);

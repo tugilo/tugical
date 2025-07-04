@@ -70,6 +70,7 @@ class CreateBookingRequest extends FormRequest
             'resource_id' => [
                 'nullable',
                 'integer',
+                'min:1',
                 'exists:resources,id'
             ],
             'end_time' => [
@@ -254,6 +255,19 @@ class CreateBookingRequest extends FormRequest
      */
     protected function failedValidation(\Illuminate\Contracts\Validation\Validator $validator): void
     {
+        // デバッグ: バリデーションエラーの詳細をログに記録
+        \Log::error('予約作成バリデーションエラー', [
+            'all_input_data' => $this->all(),
+            'validation_errors' => $validator->errors()->toArray(),
+            'failed_rules' => $validator->failed(),
+            'user_id' => auth()->id(),
+            'store_id' => auth()->user()->store_id ?? null,
+            'ip_address' => $this->ip(),
+            'user_agent' => $this->userAgent(),
+            'url' => $this->fullUrl(),
+            'method' => $this->method(),
+        ]);
+
         $response = response()->json([
             'success' => false,
             'error' => [
@@ -279,5 +293,32 @@ class CreateBookingRequest extends FormRequest
     public function getStoreId(): ?int
     {
         return auth()->user()->store_id ?? null;
+    }
+
+    /**
+     * バリデーション前の前処理
+     * 
+     * フロントエンドからの特殊値を正規化
+     */
+    protected function prepareForValidation(): void
+    {
+        // resource_id が 0 の場合は null に変換（指定なし）
+        if ($this->has('resource_id') && $this->get('resource_id') === 0) {
+            $this->merge(['resource_id' => null]);
+        }
+
+        // customer_id, menu_id が文字列の場合は整数に変換
+        if ($this->has('customer_id') && is_string($this->get('customer_id'))) {
+            $this->merge(['customer_id' => (int) $this->get('customer_id')]);
+        }
+
+        if ($this->has('menu_id') && is_string($this->get('menu_id'))) {
+            $this->merge(['menu_id' => (int) $this->get('menu_id')]);
+        }
+
+        if ($this->has('resource_id') && is_string($this->get('resource_id'))) {
+            $resourceId = (int) $this->get('resource_id');
+            $this->merge(['resource_id' => $resourceId === 0 ? null : $resourceId]);
+        }
     }
 }
