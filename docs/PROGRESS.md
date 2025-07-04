@@ -873,4 +873,15 @@ curl -X POST http://localhost/api/v1/auth/logout \
   - 修正: `make_line_user_id_nullable_in_customers_table` マイグレーションを作成・実行
   - 結果: 管理画面から顧客を手動作成できるように改善
 
+### 2025-07-04 14:06 (tugiMacAir.local)
+- **顧客マッチング機能の設計**
+  - 管理画面で手動登録した顧客が後から LINE 連携する場合の統合処理を設計
+  - 実装案:
+    - 電話番号をキーとした既存顧客検索
+    - 本人確認プロセス（SMS/メール確認コード）
+    - スタッフ承認型マッチング（複数候補がある場合）
+    - customer_match_requests テーブルで申請管理
+  - 仕様書（tugical_requirements_specification_v1.0.md）に追記済み
+  - 実装時期: LIFF 開発フェーズで実装予定
+
 ---
