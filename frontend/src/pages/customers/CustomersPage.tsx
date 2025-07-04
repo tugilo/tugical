@@ -15,7 +15,6 @@ import {
 import { customerApi } from '../../services/api';
 import type { Customer, PaginatedResponse, FilterOptions } from '../../types';
 import { cn } from '../../utils';
-import DashboardLayout from '../../components/layout/DashboardLayout';
 import Card from '../../components/ui/Card';
 import LoadingScreen from '../../components/ui/LoadingScreen';
 import CustomerCard from '../../components/customer/CustomerCard';
@@ -172,8 +171,7 @@ const CustomersPage: React.FC = () => {
   }
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
+    <div className="space-y-6">
       {/* ヘッダー */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -331,7 +329,6 @@ const CustomersPage: React.FC = () => {
         onDelete={handleCustomerDelete}
       />
     </div>
-    </DashboardLayout>
   );
 };
 

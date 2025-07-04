@@ -777,4 +777,12 @@ curl -X POST http://localhost/api/v1/auth/logout \
   - CustomerCard の compact モードに基本情報表示を追加
   - 電話番号、予約回数、売上金額を compact モードでも表示
 
+#### 🐛 修正: DashboardLayout 二重適用 【2025-07-04 12:58 修正】
+- **問題**: ヘッダーとサイドバーが二重に表示される
+- **原因**: App.tsx と CustomersPage の両方で DashboardLayout を適用
+- **修正内容**:
+  - CustomersPage から DashboardLayout を削除
+  - App.tsx のルーティングで一元管理
+  - 各ページコンポーネントは直接コンテンツを返すように統一
+
 ---
