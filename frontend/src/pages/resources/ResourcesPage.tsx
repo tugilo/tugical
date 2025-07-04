@@ -21,8 +21,9 @@ import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import LoadingScreen from '../../components/ui/LoadingScreen';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
-import ResourceCard from '../../components/resource/ResourceCard';
-import ResourceCreateModal from '../../components/resource/ResourceCreateModal';
+import ResourceCard from '../../components/resources/ResourceCard';
+import ResourceCreateModal from '../../components/resources/ResourceCreateModal';
+// import ResourceEditModal from '../../components/resources/ResourceEditModal';
 import {
   PlusIcon,
   MagnifyingGlassIcon,
@@ -209,7 +210,8 @@ const ResourcesPage: React.FC = () => {
    * リソース編集
    */
   const handleEditResource = (resource: Resource) => {
-    console.log('TODO: リソース編集モーダルを開く', resource);
+    // TODO: ResourceEditModal実装後に有効化
+    console.log('TODO: リソース編集機能を実装', resource);
   };
 
   /**
@@ -460,6 +462,8 @@ const ResourcesPage: React.FC = () => {
         onClose={() => setShowCreateModal(false)}
         onCreate={handleResourceCreated}
       />
+
+      {/* TODO: 編集モーダル実装 */}
 
       {/* 削除確認ダイアログ */}
       <ConfirmDialog
