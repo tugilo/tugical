@@ -1,12 +1,12 @@
 /**
  * tugical Admin Dashboard リソース管理ページ
- * 
+ *
  * 統一リソース概念による革新的なリソース管理
  * - staff（スタッフ）
  * - room（部屋・個室）
  * - equipment（設備・器具）
  * - vehicle（車両・送迎車）
- * 
+ *
  * @author tugical Development Team
  * @version 1.0
  * @since 2025-07-04
@@ -20,23 +20,24 @@ import { Resource, FilterOptions } from '../../types';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import LoadingScreen from '../../components/ui/LoadingScreen';
+import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import ResourceCard from '../../components/resource/ResourceCard';
 import ResourceCreateModal from '../../components/resource/ResourceCreateModal';
-import { 
-  PlusIcon, 
+import {
+  PlusIcon,
   MagnifyingGlassIcon,
   UserIcon,
   BuildingOfficeIcon,
   CogIcon,
   TruckIcon,
   ArrowPathIcon,
-  FunnelIcon
+  FunnelIcon,
 } from '@heroicons/react/24/outline';
 
 // リソースタイプのアイコンマッピング
 const RESOURCE_TYPE_ICONS = {
   staff: UserIcon,
-  room: BuildingOfficeIcon, 
+  room: BuildingOfficeIcon,
   equipment: CogIcon,
   vehicle: TruckIcon,
 };
@@ -45,7 +46,7 @@ const RESOURCE_TYPE_ICONS = {
 const RESOURCE_TYPE_LABELS = {
   staff: 'スタッフ',
   room: '部屋・個室',
-  equipment: '設備・器具', 
+  equipment: '設備・器具',
   vehicle: '車両・送迎車',
 };
 
@@ -86,7 +87,7 @@ const INDUSTRY_RESOURCE_LABELS = {
 const ResourcesPage: React.FC = () => {
   const { setPageTitle } = useUIStore();
   const { addToast } = useToast();
-  
+
   // 状態管理
   const [resources, setResources] = useState<Resource[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -95,9 +96,14 @@ const ResourcesPage: React.FC = () => {
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [industryType] = useState<string>('beauty'); // TODO: 店舗設定から取得
-  
+
   // モーダル状態
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [resourceToDelete, setResourceToDelete] = useState<Resource | null>(
+    null
+  );
+  const [isDeleting, setIsDeleting] = useState(false);
   // const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
   // const [showDetailModal, setShowDetailModal] = useState(false);
   // const [showEditModal, setShowEditModal] = useState(false);
@@ -115,7 +121,7 @@ const ResourcesPage: React.FC = () => {
         search: searchTerm || undefined,
         type: typeFilter !== 'all' ? typeFilter : undefined,
         status: statusFilter !== 'all' ? statusFilter : undefined,
-        sort: 'type,sort_order,name'
+        sort: 'type,sort_order,name',
       };
 
       const result = await resourceApi.getList(filters);
@@ -126,7 +132,9 @@ const ResourcesPage: React.FC = () => {
       addToast({
         type: 'error',
         title: 'リソース一覧の取得に失敗しました',
-        message: error.response?.data?.error?.message || 'しばらく時間をおいて再度お試しください'
+        message:
+          error.response?.data?.error?.message ||
+          'しばらく時間をおいて再度お試しください',
       });
     } finally {
       setIsLoading(false);
@@ -182,7 +190,7 @@ const ResourcesPage: React.FC = () => {
     addToast({
       type: 'success',
       title: 'リソースを作成しました',
-      message: `${newResource.display_name} が正常に作成されました`
+      message: `${newResource.display_name} が正常に作成されました`,
     });
     setShowCreateModal(false);
     fetchResources(); // リソース一覧を再取得
@@ -207,27 +215,52 @@ const ResourcesPage: React.FC = () => {
   };
 
   /**
-   * リソース削除
+   * リソース削除確認ダイアログを表示
    */
-  const handleDeleteResource = async (resource: Resource) => {
-    if (!confirm(`${resource.name} を削除してもよろしいですか？`)) {
-      return;
-    }
+  const handleDeleteResource = (resource: Resource) => {
+    setResourceToDelete(resource);
+    setShowDeleteConfirm(true);
+  };
 
+  /**
+   * リソース削除実行
+   */
+  const executeDeleteResource = async () => {
+    if (!resourceToDelete) return;
+
+    setIsDeleting(true);
     try {
-      await resourceApi.delete(resource.id);
+      await resourceApi.delete(resourceToDelete.id);
       addToast({
         type: 'success',
         title: 'リソースを削除しました',
-        message: `${resource.name} の削除が完了しました`
+        message: `${
+          resourceToDelete.display_name || resourceToDelete.name
+        } の削除が完了しました`,
       });
       fetchResources();
+      setShowDeleteConfirm(false);
+      setResourceToDelete(null);
     } catch (error: any) {
       addToast({
         type: 'error',
         title: 'リソースの削除に失敗しました',
-        message: error.response?.data?.error?.message || 'しばらく時間をおいて再度お試しください'
+        message:
+          error.response?.data?.error?.message ||
+          'しばらく時間をおいて再度お試しください',
       });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  /**
+   * 削除確認ダイアログを閉じる
+   */
+  const handleDeleteCancel = () => {
+    if (!isDeleting) {
+      setShowDeleteConfirm(false);
+      setResourceToDelete(null);
     }
   };
 
@@ -235,21 +268,29 @@ const ResourcesPage: React.FC = () => {
    * 業種別リソース表示名を取得
    */
   const getResourceTypeLabel = (type: string): string => {
-    return (INDUSTRY_RESOURCE_LABELS as any)[industryType]?.[type] || (RESOURCE_TYPE_LABELS as any)[type] || type;
+    return (
+      (INDUSTRY_RESOURCE_LABELS as any)[industryType]?.[type] ||
+      (RESOURCE_TYPE_LABELS as any)[type] ||
+      type
+    );
   };
 
   /**
    * タイプ別リソース数を取得
    */
   const getResourceCountByType = (type: string): number => {
-    return Array.isArray(resources) ? resources.filter(resource => resource.type === type).length : 0;
+    return Array.isArray(resources)
+      ? resources.filter(resource => resource.type === type).length
+      : 0;
   };
 
   /**
    * 稼働中リソース数を取得
    */
   const getActiveResourceCount = (): number => {
-    return Array.isArray(resources) ? resources.filter(resource => resource.is_active).length : 0;
+    return Array.isArray(resources)
+      ? resources.filter(resource => resource.is_active).length
+      : 0;
   };
 
   if (isLoading) {
@@ -259,27 +300,28 @@ const ResourcesPage: React.FC = () => {
   const resourceTypes = ['staff', 'room', 'equipment', 'vehicle'];
 
   return (
-    <div className="space-y-6">
+    <div className='space-y-6'>
       {/* ヘッダー */}
-      <div className="flex items-center justify-between">
+      <div className='flex items-center justify-between'>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">リソース管理</h1>
-          <p className="text-sm text-gray-600 mt-1">
-            全 {resources.length} 件のリソース（稼働中: {getActiveResourceCount()} 件）
+          <h1 className='text-2xl font-bold text-gray-900'>リソース管理</h1>
+          <p className='text-sm text-gray-600 mt-1'>
+            全 {resources.length} 件のリソース（稼働中:{' '}
+            {getActiveResourceCount()} 件）
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className='flex gap-3'>
           <Button
-            variant="outline"
-            leftIcon={<ArrowPathIcon className="w-4 h-4" />}
+            variant='outline'
+            leftIcon={<ArrowPathIcon className='w-4 h-4' />}
             onClick={handleRefresh}
             loading={isRefreshing}
           >
             更新
           </Button>
           <Button
-            variant="primary"
-            leftIcon={<PlusIcon className="w-4 h-4" />}
+            variant='primary'
+            leftIcon={<PlusIcon className='w-4 h-4' />}
             onClick={handleCreateResource}
           >
             新規リソース
@@ -288,12 +330,12 @@ const ResourcesPage: React.FC = () => {
       </div>
 
       {/* リソース種別サマリー */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {resourceTypes.map((type) => {
+      <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
+        {resourceTypes.map(type => {
           const IconComponent = (RESOURCE_TYPE_ICONS as any)[type];
           const count = getResourceCountByType(type);
           const label = getResourceTypeLabel(type);
-          
+
           return (
             <motion.div
               key={type}
@@ -302,14 +344,20 @@ const ResourcesPage: React.FC = () => {
             >
               <Card
                 className={`cursor-pointer transition-colors ${
-                  typeFilter === type ? 'ring-2 ring-primary-500 bg-primary-50' : 'hover:bg-gray-50'
+                  typeFilter === type
+                    ? 'ring-2 ring-primary-500 bg-primary-50'
+                    : 'hover:bg-gray-50'
                 }`}
-                onClick={() => handleTypeFilterChange(typeFilter === type ? 'all' : type)}
+                onClick={() =>
+                  handleTypeFilterChange(typeFilter === type ? 'all' : type)
+                }
               >
-                <Card.Body className="text-center">
-                  <IconComponent className="w-8 h-8 mx-auto mb-2 text-primary-600" />
-                  <h3 className="text-lg font-semibold text-gray-900">{count}</h3>
-                  <p className="text-sm text-gray-600">{label}</p>
+                <Card.Body className='text-center'>
+                  <IconComponent className='w-8 h-8 mx-auto mb-2 text-primary-600' />
+                  <h3 className='text-lg font-semibold text-gray-900'>
+                    {count}
+                  </h3>
+                  <p className='text-sm text-gray-600'>{label}</p>
                 </Card.Body>
               </Card>
             </motion.div>
@@ -320,27 +368,27 @@ const ResourcesPage: React.FC = () => {
       {/* フィルター */}
       <Card>
         <Card.Body>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
             {/* 検索 */}
-            <div className="relative">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <div className='relative'>
+              <MagnifyingGlassIcon className='absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400' />
               <input
-                type="text"
-                placeholder="リソース名で検索"
+                type='text'
+                placeholder='リソース名で検索'
                 value={searchTerm}
-                onChange={(e) => handleSearch(e.target.value)}
-                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                onChange={e => handleSearch(e.target.value)}
+                className='w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent'
               />
             </div>
 
             {/* タイプフィルター */}
             <select
               value={typeFilter}
-              onChange={(e) => handleTypeFilterChange(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              onChange={e => handleTypeFilterChange(e.target.value)}
+              className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent'
             >
-              <option value="all">すべてのタイプ</option>
-              {resourceTypes.map((type) => (
+              <option value='all'>すべてのタイプ</option>
+              {resourceTypes.map(type => (
                 <option key={type} value={type}>
                   {getResourceTypeLabel(type)}
                 </option>
@@ -350,24 +398,26 @@ const ResourcesPage: React.FC = () => {
             {/* ステータスフィルター */}
             <select
               value={statusFilter}
-              onChange={(e) => handleStatusFilterChange(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              onChange={e => handleStatusFilterChange(e.target.value)}
+              className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent'
             >
-              <option value="all">すべてのステータス</option>
-              <option value="active">稼働中</option>
-              <option value="inactive">停止中</option>
+              <option value='all'>すべてのステータス</option>
+              <option value='active'>稼働中</option>
+              <option value='inactive'>停止中</option>
             </select>
 
             {/* フィルタークリア */}
             <Button
-              variant="ghost"
-              leftIcon={<FunnelIcon className="w-4 h-4" />}
+              variant='ghost'
+              leftIcon={<FunnelIcon className='w-4 h-4' />}
               onClick={() => {
                 setSearchTerm('');
                 setTypeFilter('all');
                 setStatusFilter('all');
               }}
-              disabled={!searchTerm && typeFilter === 'all' && statusFilter === 'all'}
+              disabled={
+                !searchTerm && typeFilter === 'all' && statusFilter === 'all'
+              }
             >
               フィルターをクリア
             </Button>
@@ -379,11 +429,13 @@ const ResourcesPage: React.FC = () => {
       {resources.length === 0 ? (
         <Card>
           <Card.Body>
-            <div className="text-center py-12">
-              <CogIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600">リソースが見つかりませんでした</p>
-              {(searchTerm || typeFilter !== 'all' || statusFilter !== 'all') && (
-                <p className="text-sm text-gray-500 mt-2">
+            <div className='text-center py-12'>
+              <CogIcon className='w-12 h-12 text-gray-400 mx-auto mb-4' />
+              <p className='text-gray-600'>リソースが見つかりませんでした</p>
+              {(searchTerm ||
+                typeFilter !== 'all' ||
+                statusFilter !== 'all') && (
+                <p className='text-sm text-gray-500 mt-2'>
                   フィルター条件を変更してみてください
                 </p>
               )}
@@ -391,8 +443,8 @@ const ResourcesPage: React.FC = () => {
           </Card.Body>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {resources.map((resource) => (
+        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+          {resources.map(resource => (
             <ResourceCard
               key={resource.id}
               resource={resource}
@@ -411,9 +463,25 @@ const ResourcesPage: React.FC = () => {
         onClose={() => setShowCreateModal(false)}
         onCreate={handleResourceCreated}
       />
+
+      {/* 削除確認ダイアログ */}
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        onClose={handleDeleteCancel}
+        onConfirm={executeDeleteResource}
+        title='リソースの削除'
+        message={`${
+          resourceToDelete?.display_name || resourceToDelete?.name
+        } を削除してもよろしいですか？この操作は取り消せません。`}
+        confirmText='削除する'
+        cancelText='キャンセル'
+        isDanger={true}
+        isLoading={isDeleting}
+      />
+
       {/* TODO: ResourceDetailModal, ResourceEditModal 実装 */}
     </div>
   );
 };
 
-export default ResourcesPage; 
+export default ResourcesPage;

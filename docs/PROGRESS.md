@@ -5,37 +5,44 @@
 ### Phase 5.2: ResourcesPage フロントエンド実装完了
 
 **実装内容:**
-- **ResourcesPage.tsx**: 統一リソース概念対応リソース管理画面（約500行）
-  - 4タイプリソース対応（staff/room/equipment/vehicle）
+
+- **ResourcesPage.tsx**: 統一リソース概念対応リソース管理画面（約 500 行）
+
+  - 4 タイプリソース対応（staff/room/equipment/vehicle）
   - 業種別表示名（美容師・先生・講師・ガイド・管理者）
   - インタラクティブタイプ別サマリーカード
   - 高度フィルタリング（検索・タイプ・ステータス）
   - リアルタイム統計表示（全リソース数・稼働中リソース数）
 
-- **ResourceCard.tsx**: リソース表示専用コンポーネント（約170行）
+- **ResourceCard.tsx**: リソース表示専用コンポーネント（約 170 行）
+
   - タイプ別アイコン表示（UserIcon/BuildingOfficeIcon/CogIcon/TruckIcon）
   - 業種別ラベル自動変換
   - 容量・効率率・料金差表示
   - 稼働状況インジケーター
-  - CRUD操作ボタン
+  - CRUD 操作ボタン
 
-- **API統合**: ResourceApi完全対応
+- **API 統合**: ResourceApi 完全対応
+
   - getList/get/create/update/delete/getTypes メソッド追加
   - ApiClient にリソース関連メソッド実装
   - エラーハンドリング・ローディング状態管理
 
-- **型定義強化**: 
-  - Resource型に capacity プロパティ追加
-  - FilterOptions型に type プロパティ追加
+- **型定義強化**:
+  - Resource 型に capacity プロパティ追加
+  - FilterOptions 型に type プロパティ追加
   - 統一リソース概念完全対応
 
 **技術特徴:**
-- **革新的なUI設計**: 
+
+- **革新的な UI 設計**:
+
   - タイプ別サマリーカードによる直感的フィルタリング
   - 業種別表示名による自然な操作体験
   - モーション効果による滑らかな操作感
 
 - **統一リソース概念の実現**:
+
   - staff（美容師・先生・講師・ガイド・管理者）
   - room（個室・診療室・教室・集合場所・会議室）
   - equipment（美容器具・医療機器・教材・体験器具・設備）
@@ -47,67 +54,78 @@
   - 表示名の自動変換とアイコン切り替え
 
 **実装統計:**
-- 新規ファイル: 2ファイル（ResourcesPage.tsx, ResourceCard.tsx）
-- 更新ファイル: 2ファイル（api.ts, types/index.ts）
-- 総実装行数: 約700行
-- API統合: 6メソッド実装
-- フロントエンドビルド: 成功（2.70秒・ResourcesPage-CdZ3pLXm.js 15.46kB）
+
+- 新規ファイル: 2 ファイル（ResourcesPage.tsx, ResourceCard.tsx）
+- 更新ファイル: 2 ファイル（api.ts, types/index.ts）
+- 総実装行数: 約 700 行
+- API 統合: 6 メソッド実装
+- フロントエンドビルド: 成功（2.70 秒・ResourcesPage-CdZ3pLXm.js 15.46kB）
 
 **解決済み:**
+
 - ✅ 統一リソース概念フロントエンド完全実装
 - ✅ 業種別表示名システム動作
 - ✅ タイプ別フィルタリング・検索機能
-- ✅ CRUD操作インターフェース
+- ✅ CRUD 操作インターフェース
 - ✅ リアルタイム統計表示
 - ✅ レスポンシブデザイン対応
 
 **次のステップ:**
+
 - リソース作成/編集/詳細モーダル実装
-- 稼働時間設定UI
+- 稼働時間設定 UI
 - 制約管理インターフェース
 - ドラッグ&ドロップ表示順序変更
 
 ## 2025-07-04 18:12:31 (tugiMacAir.local)
 
-### フロントエンド予約管理画面エラー修正（第2弾）
+### フロントエンド予約管理画面エラー修正（第 2 弾）
 
 **新しいエラー内容:**
+
 - `response.meta.last_page` undefined エラー
 - `bookings.length` undefined エラー
 - API レスポンス構造の不整合
 
 **エラー原因:**
+
 - BookingsPage が `bookingApi.getList()` を呼び出し
-- APIクライアントの `getBookings()` が `PaginatedResponse<Booking>` を返却
-- 実際のAPIは `{ bookings: [], pagination: {} }` 構造で返却
+- API クライアントの `getBookings()` が `PaginatedResponse<Booking>` を返却
+- 実際の API は `{ bookings: [], pagination: {} }` 構造で返却
 - フロントエンドが `response.meta` を期待するが実際は `response.pagination`
 
 **修正内容:**
-1. **APIクライアント修正**
-   - `getBookings()` メソッドの戻り値型を実際のAPI構造に修正
+
+1. **API クライアント修正**
+
+   - `getBookings()` メソッドの戻り値型を実際の API 構造に修正
    - `{ bookings: Booking[]; pagination: {...} }` 型に変更
 
-2. **BookingsPage修正**
-   - API呼び出しを `bookingApi.getList()` に変更（既存メソッド使用）
+2. **BookingsPage 修正**
+
+   - API 呼び出しを `bookingApi.getList()` に変更（既存メソッド使用）
    - レスポンス構造を実際の構造に合わせて修正
    - `response.bookings`, `response.pagination.last_page` でアクセス
 
 3. **API レスポンス確認**
    - `/api/v1/bookings` エンドポイントのレスポンス構造確認
-   - `{ success: true, data: { bookings: [], pagination: {...} }, message: "...", meta: {...} }` 
+   - `{ success: true, data: { bookings: [], pagination: {...} }, message: "...", meta: {...} }`
 
 **技術修正詳細:**
+
 - APIClient.getBookings(): 戻り値型修正
-- BookingsPage.fetchBookings(): API呼び出しとレスポンス処理修正
+- BookingsPage.fetchBookings(): API 呼び出しとレスポンス処理修正
 - フロントエンドビルド成功確認（2.40s でビルド完了）
 
 **解決済み:**
-- ✅ APIレスポンス構造の整合性確保
+
+- ✅ API レスポンス構造の整合性確保
 - ✅ フロントエンド予約一覧表示修復
 - ✅ ページネーション情報正常取得
 - ✅ ビルドエラーなし
 
 **次のステップ:**
+
 - ブラウザでの動作確認
 - 予約データ追加テスト
 - ResourcesPage 実装継続
@@ -117,154 +135,175 @@
 ### 予約管理画面エラー修正完了
 
 **エラー内容:**
-- フロントエンド予約管理画面で500エラー発生
+
+- フロントエンド予約管理画面で 500 エラー発生
 - `Target class [tenant.scope] does not exist.` エラー
 - `Route [login] not defined.` エラー
 
 **修正内容:**
-1. **BookingController修正**
+
+1. **BookingController 修正**
+
    - 存在しない `tenant.scope` ミドルウェア参照を削除
    - モデルの TenantScope による自動分離に変更
 
 2. **認証設定修正**
+
    - `config/auth.php` に Sanctum guard 追加
-   - web.php に login ルート追加（401エラー時のリダイレクト対応）
+   - web.php に login ルート追加（401 エラー時のリダイレクト対応）
 
-3. **APIトークン修正**
-   - 正しいSanctumトークンを生成・設定
-   - フロントエンドAPIクライアントにテスト用トークン設定
+3. **API トークン修正**
 
-4. **API動作確認**
+   - 正しい Sanctum トークンを生成・設定
+   - フロントエンド API クライアントにテスト用トークン設定
+
+4. **API 動作確認**
    - `/api/v1/bookings` エンドポイント正常動作確認
    - 空の予約リスト正常返却（データなしのため）
 
 **技術修正詳細:**
+
 - BookingController: `$this->middleware('tenant.scope')` をコメントアウト
 - Auth Guard: `api` guard with `sanctum` driver 追加
-- Login Route: `/login` ルート追加（API情報返却）
+- Login Route: `/login` ルート追加（API 情報返却）
 - API Token: `13|mJaRrztOiOwPhsZl3K0xNfF67l4U2GZg3pf6zytF0b76b778` 設定
 
 **解決済み:**
-- ✅ 予約管理API正常動作
+
+- ✅ 予約管理 API 正常動作
 - ✅ 認証トークン有効
 - ✅ マルチテナント分離維持
 - ✅ フロントエンド接続準備完了
 
 **次のステップ:**
+
 - フロントエンド予約管理画面での動作確認
 - 予約データ作成・表示テスト
 - ResourcesPage フロントエンド実装継続
 
 ## 2025-07-04 18:04:38 (tugiMacAir.local)
 
-### Phase 5: ResourceController実装完了
+### Phase 5: ResourceController 実装完了
 
 **実装内容:**
+
 - CreateResourceRequest.php/UpdateResourceRequest.php 作成
   - 統一リソース概念対応バリデーション
   - タイプ別検証（staff/room/equipment/vehicle）
   - 稼働時間・効率率・制約管理バリデーション
   - アクティブな予約がある場合の更新制限
   - 日本語エラーメッセージ完備
-- ResourceController.php 完成（計約650行）
+- ResourceController.php 完成（計約 650 行）
   - update() メソッド実装（配列フィールドマージ対応）
   - destroy() メソッド実装（アクティブ予約チェック・ソフト/ハードデリート）
   - updateOrder() メソッド実装（ドラッグ&ドロップ表示順序変更）
   - マルチテナント分離・詳細ログ・エラーハンドリング完備
-- API Routes追加
-  - /api/v1/resources（全CRUD対応）
+- API Routes 追加
+  - /api/v1/resources（全 CRUD 対応）
   - /api/v1/resources-types（タイプ一覧）
   - /api/v1/resources-order（表示順序更新）
 
 **技術特徴:**
+
 - 統一リソース概念（staff/room/equipment/vehicle）完全対応
 - アクティブな予約がある場合の安全な更新・削除制限
 - 効率率・稼働時間・制約管理の高度バリデーション
 - タイプ変更制限（予約履歴がある場合は変更不可）
-- 配列フィールド（attributes, working_hours等）のマージ更新対応
+- 配列フィールド（attributes, working_hours 等）のマージ更新対応
 - 論理削除・物理削除の自動判定
 
 **実装統計:**
-- 新規ファイル: 2ファイル（CreateResourceRequest, UpdateResourceRequest）
-- 更新ファイル: 2ファイル（ResourceController, routes/api.php）
-- 総追加行数: 約800行
+
+- 新規ファイル: 2 ファイル（CreateResourceRequest, UpdateResourceRequest）
+- 更新ファイル: 2 ファイル（ResourceController, routes/api.php）
+- 総追加行数: 約 800 行
 - バリデーションメソッド: 20+メソッド
-- APIエンドポイント: 8エンドポイント
+- API エンドポイント: 8 エンドポイント
 
 **次のステップ:**
+
 - フロントエンド ResourcesPage 実装
 - CRUD モーダル（作成/編集/詳細）実装
-- ドラッグ&ドロップ表示順序変更UI
+- ドラッグ&ドロップ表示順序変更 UI
 
 ## 2025-07-04 14:29:24 (tugiMacAir.local)
 
-### Phase 4.8: メニューAPI統合エラー修正完了
+### Phase 4.8: メニュー API 統合エラー修正完了
 
 **問題解決:**
-- APIエンドポイント404エラーの原因解明・修正
-  - Laravelルートキャッシュクリア実行
-  - メニューAPIルートが正常に認識されるよう修正
-- SoftDeletesエラー修正
-  - menusテーブルにdeleted_atカラム追加
-  - menu_optionsテーブルにdeleted_atカラム追加
-  - MenuモデルとMenuOptionモデルのSoftDeletes機能正常化
 
-**API動作確認:**
+- API エンドポイント 404 エラーの原因解明・修正
+  - Laravel ルートキャッシュクリア実行
+  - メニュー API ルートが正常に認識されるよう修正
+- SoftDeletes エラー修正
+  - menus テーブルに deleted_at カラム追加
+  - menu_options テーブルに deleted_at カラム追加
+  - Menu モデルと MenuOption モデルの SoftDeletes 機能正常化
+
+**API 動作確認:**
+
 - GET /api/v1/menus → 正常動作（空配列取得）
 - GET /api/v1/menus-categories → 正常動作（美容院カテゴリ取得）
 - 認証システム正常動作（Bearer Token）
 - マルチテナント分離正常動作
 
 **技術修正:**
+
 - Laravel route:clear + config:clear + cache:clear 実行
 - マイグレーション追加・実行
   - 2025_07_04_142803_add_deleted_at_to_menus_table.php
   - 2025_07_04_142838_add_deleted_at_to_menu_options_table.php
 
 **動作状況:**
-- フロントエンドUI: 完全動作
-- バックエンドAPI: 完全動作
+
+- フロントエンド UI: 完全動作
+- バックエンド API: 完全動作
 - 認証・認可: 正常
 - データベース: 正常
 
 **次のステップ:**
+
 - テストデータ作成（メニュー・オプション）
 - メニュー作成/編集モーダル実装
 - リソース管理実装
 
 ## 2025-07-04 14:24:19 (tugiMacAir.local)
 
-### Phase 4.7: メニュー管理UI実装完了
+### Phase 4.7: メニュー管理 UI 実装完了
 
 **実装内容:**
-- MenusPage完全実装
+
+- MenusPage 完全実装
   - グリッド/リスト表示切り替え
   - 高度な検索・フィルタリング機能
   - カテゴリ別フィルタリング
   - ステータス別フィルタリング
   - ページネーション対応
-  - CRUD操作ボタン（モーダルは次回実装）
+  - CRUD 操作ボタン（モーダルは次回実装）
 - MenuCard/MenuTableRow コンポーネント
   - 価格・時間・オプション数表示
   - ステータス表示（アクティブ/非アクティブ/要承認）
   - 操作ボタン（詳細/編集/削除）
-- TypeScript型定義修正
+- TypeScript 型定義修正
   - FilterOptions に category, menu_id, is_active 追加
   - 型エラー解決
-- Toast通知システム統合
-  - addNotification使用に統一
+- Toast 通知システム統合
+  - addNotification 使用に統一
   - エラー/成功メッセージ表示
 
 **変更ファイル:**
+
 - frontend/src/pages/menus/MenusPage.tsx（完全実装）
-- frontend/src/types/index.ts（FilterOptions拡張）
+- frontend/src/types/index.ts（FilterOptions 拡張）
 
 **ビルド結果:**
+
 - フロントエンドビルド成功
 - MenusPage: 23.58 kB (gzip: 4.29 kB)
-- 警告: 500kB超のチャンクあり（最適化要検討）
+- 警告: 500kB 超のチャンクあり（最適化要検討）
 
 **次のステップ:**
+
 - メニュー作成/編集モーダル実装
 - リソース管理実装（ResourceController + ResourcesPage）
 - 予約カレンダー実装
@@ -272,17 +311,18 @@
 ---
 
 ## Project Overview
-**Service**: tugical - LINE連携型予約管理SaaS  
+
+**Service**: tugical - LINE 連携型予約管理 SaaS  
 **Concept**: "次の時間が、もっと自由になる。"  
 **Repository**: https://github.com/tugilo/tugical  
-**Current Branch**: develop  
+**Current Branch**: develop
 
 ---
 
 ## 📊 全体進捗概要
 
 **現在のフェーズ**: Phase 4 実行中 → **Phase 4.7 進行中** 🚀  
-**実装済み機能**: ✅ 完全自動セットアップ + データベース基盤 + **全コアサービス + API完成 + 認証システム + React基盤 + 顧客管理完全CRUD + 予約管理ページ + メニュー管理完全実装**  
+**実装済み機能**: ✅ 完全自動セットアップ + データベース基盤 + **全コアサービス + API 完成 + 認証システム + React 基盤 + 顧客管理完全 CRUD + 予約管理ページ + メニュー管理完全実装**  
 **次の焦点**: リソース管理ページ実装 + 予約カレンダー実装  
 **最終更新**: 2025-07-04 14:24:19
 
@@ -291,38 +331,42 @@
 ## ✅ Phase 1: 基盤構築 【完了】
 
 ### 🏗️ 環境構築 - 100% 完了
-- [x] **Docker環境**: 完全自動化構築
+
+- [x] **Docker 環境**: 完全自動化構築
 - [x] **マルチ環境対応**: dev/staging/prod データベース分離
 - [x] **ワンコマンドセットアップ**: `make setup` で完全自動化
 - [x] **ヘルスチェック**: API/Database/Redis 全自動検証
 - [x] **環境設定**: backend/.env 自動生成機能
 
 ### 📋 ドキュメント基盤 - 100% 完了
+
 - [x] **要件定義**: tugical_requirements_specification_v1.0.md
-- [x] **データベース設計**: tugical_database_design_v1.0.md  
-- [x] **API仕様**: tugical_api_specification_v1.0.md
+- [x] **データベース設計**: tugical_database_design_v1.0.md
+- [x] **API 仕様**: tugical_api_specification_v1.0.md
 - [x] **デプロイ戦略**: tugical_deployment_guide_v1.0.md
 - [x] **テスト戦略**: tugical_test_strategy_v1.0.md
-- [x] **UI設計**: tugical_ui_design_system_v1.0.md
+- [x] **UI 設計**: tugical_ui_design_system_v1.0.md
 
 ### 🗄️ データベース基盤 - 100% 完了
-- [x] **マイグレーション**: 全17テーブル作成済み
+
+- [x] **マイグレーション**: 全 17 テーブル作成済み
   - [x] tenants (テナント管理)
   - [x] stores (店舗)
   - [x] resources (統一リソース: staff/room/equipment)
   - [x] staff_accounts (スタッフアカウント)
   - [x] menus + menu_options (メニュー・オプション)
-  - [x] customers (顧客: LINE連携)
+  - [x] customers (顧客: LINE 連携)
   - [x] bookings + booking_options (予約・予約オプション)
   - [x] notifications + notification_templates (通知)
   - [x] business_calendars (営業カレンダー)
 - [x] **外部キー制約**: 全リレーション設定済み
-- [x] **マルチテナント**: store_id分離スコープ実装
+- [x] **マルチテナント**: store_id 分離スコープ実装
 - [x] **データシード**: 基本データ投入機能
 
 ### 🔧 開発ツール - 100% 完了
+
 - [x] **Makefile**: 20+コマンド（setup, health, migrate, etc.）
-- [x] **Git管理**: develop ブランチで管理
+- [x] **Git 管理**: develop ブランチで管理
 - [x] **phpMyAdmin**: http://localhost:8080
 - [x] **クリーンアップ**: `make clean` で完全初期化
 
@@ -330,23 +374,26 @@
 
 ## 🚀 Phase 2: ビジネスロジック実装 【🎉 完了】
 
-### ✅ Phase 2.1 完了: サービスクラス基盤作成 【2025-06-30 17:00完了】
+### ✅ Phase 2.1 完了: サービスクラス基盤作成 【2025-06-30 17:00 完了】
 
 #### 🎯 実装内容
+
 - **BookingService.php** (基盤構造) - 予約管理の中核サービス
-- **AvailabilityService.php** (基盤構造) - 空き時間判定サービス  
+- **AvailabilityService.php** (基盤構造) - 空き時間判定サービス
 - **HoldTokenService.php** (基盤構造) - 仮押さえ管理サービス
-- **NotificationService.php** (基盤構造) - LINE通知サービス
+- **NotificationService.php** (基盤構造) - LINE 通知サービス
 
 #### 📊 実装統計
-- **ファイル数**: 4サービスクラス基盤作成
-- **Gitコミット**: feat(phase2): コアサービスクラス4個を作成 (576b910)
 
-### ✅ Phase 2.2 完了: BookingService実装 【2025-06-30 17:30完了】
+- **ファイル数**: 4 サービスクラス基盤作成
+- **Git コミット**: feat(phase2): コアサービスクラス 4 個を作成 (576b910)
+
+### ✅ Phase 2.2 完了: BookingService 実装 【2025-06-30 17:30 完了】
 
 #### 🎯 実装内容
+
 - **BookingService.php** (完全実装) - 予約管理の中核サービス
-  - createBooking() - 予約作成・Hold Token統合・通知連携
+  - createBooking() - 予約作成・Hold Token 統合・通知連携
   - checkTimeConflict() - マルチテナント対応競合検出
   - calculateTotalPrice() - 動的料金計算（ベース+オプション+リソース差額）
   - validateAndReleaseHoldToken() - 仮押さえトークン管理
@@ -355,113 +402,133 @@
   - generateBookingNumber() - TG{YYYYMMDD}{店舗}{連番}形式
 
 #### 📊 実装統計
-- **追加行数**: 432行追加
-- **削除行数**: 23行削除
-- **総メソッド数**: 7メソッド完全実装
-- **Gitコミット**: feat(booking): BookingService主要メソッド実装完了 (dd84401)
+
+- **追加行数**: 432 行追加
+- **削除行数**: 23 行削除
+- **総メソッド数**: 7 メソッド完全実装
+- **Git コミット**: feat(booking): BookingService 主要メソッド実装完了 (dd84401)
 
 #### 🎯 技術特徴
+
 - ✅ **DB Transaction**: 予約作成の完全性保証
-- ✅ **マルチテナント対応**: store_id分離設計
-- ✅ **Hold Token統合**: 10分間排他制御システム
+- ✅ **マルチテナント対応**: store_id 分離設計
+- ✅ **Hold Token 統合**: 10 分間排他制御システム
 - ✅ **営業時間チェック**: 通常営業時間 + 特別営業時間対応
 - ✅ **動的料金計算**: ベース料金 + オプション + リソース差額
 - ✅ **詳細ログ出力**: 全工程の詳細記録
 
-### ✅ Phase 2.3 完了: AvailabilityService実装 【2025-06-30 17:30完了】
+### ✅ Phase 2.3 完了: AvailabilityService 実装 【2025-06-30 17:30 完了】
 
 #### 🎯 実装内容
+
 - **AvailabilityService.php** (完全実装) - 空き時間判定サービス
   - getAvailableSlots() - 空き時間枠検索（営業時間・既存予約考慮）
   - isResourceAvailable() - リソース可用性チェック
-  - isWithinBusinessHours() - 営業時間検証（BusinessCalendar対応）
+  - isWithinBusinessHours() - 営業時間検証（BusinessCalendar 対応）
   - getAvailabilityCalendar() - 月間可用性カレンダー生成
 
 #### 📊 実装統計
-- **追加行数**: 419行追加
-- **削除行数**: 37行削除
-- **総メソッド数**: 4メソッド完全実装
-- **Gitコミット**: feat(availability): AvailabilityService 4メソッド実装完了 (e2b2269)
+
+- **追加行数**: 419 行追加
+- **削除行数**: 37 行削除
+- **総メソッド数**: 4 メソッド完全実装
+- **Git コミット**: feat(availability): AvailabilityService 4 メソッド実装完了 (e2b2269)
 
 #### 🎯 技術特徴
+
 - ✅ **DB Transaction**: 空き時間判定の完全性保証
-- ✅ **マルチテナント対応**: store_id分離設計
-- ✅ **営業時間検証**: BusinessCalendar対応
+- ✅ **マルチテナント対応**: store_id 分離設計
+- ✅ **営業時間検証**: BusinessCalendar 対応
 - ✅ **可用性判定**: リソース稼働時間に基づく
-- ✅ **Cache活用**: 15分TTLで性能最適化
+- ✅ **Cache 活用**: 15 分 TTL で性能最適化
 
-### ✅ Phase 2.4 完了: HoldTokenService実装 【2025-06-30 18:00完了】
-**10分間仮押さえシステム完全実装**
+### ✅ Phase 2.4 完了: HoldTokenService 実装 【2025-06-30 18:00 完了】
 
-#### 実装メソッド一覧（9個完了）
+**10 分間仮押さえシステム完全実装**
+
+#### 実装メソッド一覧（9 個完了）
+
 1. **createHoldToken()** - 仮押さえトークン生成
-   - 暗号学的安全な32文字トークン生成
-   - Redis TTL 600秒（10分）自動期限管理
+
+   - 暗号学的安全な 32 文字トークン生成
+   - Redis TTL 600 秒（10 分）自動期限管理
    - 時間競合チェック・マルチテナント分離
    - 詳細ログ出力・エラーハンドリング完備
 
 2. **validateHoldToken()** - トークン検証
-   - 形式・存在・期限の3段階チェック
+
+   - 形式・存在・期限の 3 段階チェック
    - 期限切れトークンの自動削除
    - 残り時間計算・データ整合性確認
 
 3. **extendHoldToken()** - トークン延長
+
    - 予約フォーム入力時間延長対応
-   - TTL更新・延長履歴記録
+   - TTL 更新・延長履歴記録
 
 4. **releaseHoldToken()** - 手動解放
+
    - 予約確定・キャンセル時の即座解放
-   - Redis削除・解放ログ記録
+   - Redis 削除・解放ログ記録
 
 5. **getHoldTokenData()** - データ取得
+
    - トークン情報詳細取得・残り時間計算
-   - 期限切れ時null返却
+   - 期限切れ時 null 返却
 
 6. **cleanupExpiredTokens()** - 自動削除
+
    - バッチ処理による期限切れトークン一括削除
    - 削除カウント・統計情報出力
 
 7. **getStoreHoldTokens()** - 店舗別一覧
+
    - 管理画面用仮押さえ状況確認
-   - store_id分離・トークン一部マスク表示
+   - store_id 分離・トークン一部マスク表示
 
 8. **getHoldTokenStats()** - 統計基盤
+
    - 統計情報取得基盤（今後拡張予定）
    - アクティブトークン数集計
 
 9. **hasTimeConflict()** - 競合チェック
-   - 既存Hold Tokenとの時間重複検証
+   - 既存 Hold Token との時間重複検証
    - リソース別・日付別競合検出
 
 #### 技術詳細
-- **ファイル**: backend/app/Services/HoldTokenService.php (約600行追加)
-- **依存関係**: Redis, Carbon, Log統合
-- **Redis統合**: TTL付きキー管理・パターンマッチ検索
+
+- **ファイル**: backend/app/Services/HoldTokenService.php (約 600 行追加)
+- **依存関係**: Redis, Carbon, Log 統合
+- **Redis 統合**: TTL 付きキー管理・パターンマッチ検索
 - **セキュリティ**: 暗号学的安全トークン + トークン一部マスク表示
-- **マルチテナント**: store_id完全分離・競合回避設計
-- **エラーハンドリング**: 全メソッドtry-catch + 詳細ログ出力
+- **マルチテナント**: store_id 完全分離・競合回避設計
+- **エラーハンドリング**: 全メソッド try-catch + 詳細ログ出力
 
-#### tugical仕様準拠
-- **Hold Token System**: 10分間排他制御（tugical_requirements_specification_v1.0.md準拠）
+#### tugical 仕様準拠
+
+- **Hold Token System**: 10 分間排他制御（tugical_requirements_specification_v1.0.md 準拠）
 - **Redis TTL**: 自動期限管理・パフォーマンス最適化
-- **競合回避**: LIFF予約フローでの同時予約完全防止
-- **.cursorrules準拠**: 日本語コメント100%・Multi-tenant設計
+- **競合回避**: LIFF 予約フローでの同時予約完全防止
+- **.cursorrules 準拠**: 日本語コメント 100%・Multi-tenant 設計
 
-#### Git情報
-- **コミット**: feat(holdtoken): Phase 2.4 HoldTokenService実装完了
+#### Git 情報
+
+- **コミット**: feat(holdtoken): Phase 2.4 HoldTokenService 実装完了
 - **ブランチ**: develop
-- **実装行数**: 約600行追加
+- **実装行数**: 約 600 行追加
 
-### ✅ **Phase 2.5 完了: NotificationService実装** 【2025-06-30 20:30完了】
-**LINE通知システム完全実装 + モデル構文エラー修正**
+### ✅ **Phase 2.5 完了: NotificationService 実装** 【2025-06-30 20:30 完了】
+
+**LINE 通知システム完全実装 + モデル構文エラー修正**
 
 #### 🎯 実装内容
-- **NotificationService.php** (完全実装) - LINE通知統合サービス
+
+- **NotificationService.php** (完全実装) - LINE 通知統合サービス
   - sendBookingConfirmation() - 予約確定通知（テンプレート + LINE API）
   - sendBookingReminder() - リマインダー通知
   - sendBookingCancellation() - キャンセル通知
   - sendBookingUpdate() - 予約変更通知
-  - sendLineMessage() - LINE Messaging API統合
+  - sendLineMessage() - LINE Messaging API 統合
   - renderNotificationTemplate() - 業種別テンプレートレンダリング
   - sendEmailNotification() - メール通知（フォールバック）
   - sendBulkNotification() - 一括配信機能
@@ -469,10 +536,11 @@
   - recordNotification() - 通知履歴記録
   - retryFailedNotification() - 自動再送機能
   - getNotificationStats() - 統計情報取得
-  - handleLineWebhook() - LINE Webhook受信処理
+  - handleLineWebhook() - LINE Webhook 受信処理
 
 #### 🔧 モデル構文エラー修正
-- **backend/app/Models/Booking.php** 
+
+- **backend/app/Models/Booking.php**
   - インスタンスメソッド getStatusInfo() → getStatusInfoData() にリネーム
   - canCancel/canModify/canComplete 内呼び出し更新
 - **backend/app/Models/Notification.php**
@@ -480,141 +548,162 @@
   - PHP Fatal Error (redeclare) 解消
 
 #### 📊 実装統計
-- **追加行数**: 約400行追加
-- **総メソッド数**: 13メソッド完全実装
-- **エラー修正**: 2モデルの致命的構文エラー解消
+
+- **追加行数**: 約 400 行追加
+- **総メソッド数**: 13 メソッド完全実装
+- **エラー修正**: 2 モデルの致命的構文エラー解消
 - **構文チェック**: 全サービス・全モデル「No syntax errors detected」確認済み
 
 #### 🎯 技術特徴
-- ✅ **LINE API統合**: HTTP Client + Token認証完備
+
+- ✅ **LINE API 統合**: HTTP Client + Token 認証完備
 - ✅ **テンプレートシステム**: 業種別デフォルト + 店舗カスタマイズ対応
 - ✅ **変数置換**: {customer_name} 等の動的変数展開
 - ✅ **リッチメッセージ**: TEXT/RICH メッセージタイプ対応
-- ✅ **自動再送**: 指数バックオフ (30秒→5分→30分)
-- ✅ **通知履歴**: 全配信結果をNotificationテーブルに記録
-- ✅ **マルチテナント**: store_id完全分離・セキュア設計
-- ✅ **エラーハンドリング**: 全メソッドtry-catch + 詳細ログ
+- ✅ **自動再送**: 指数バックオフ (30 秒 →5 分 →30 分)
+- ✅ **通知履歴**: 全配信結果を Notification テーブルに記録
+- ✅ **マルチテナント**: store_id 完全分離・セキュア設計
+- ✅ **エラーハンドリング**: 全メソッド try-catch + 詳細ログ
 - ✅ **統計機能**: 配信成功率・チャネル別・タイプ別集計
 
-#### tugical仕様準拠
-- **Notification Templates**: 5業種 × 7通知タイプ対応
-- **LINE連携**: 店舗別アクセストークン管理
+#### tugical 仕様準拠
+
+- **Notification Templates**: 5 業種 × 7 通知タイプ対応
+- **LINE 連携**: 店舗別アクセストークン管理
 - **通知フロー**: BookingService → NotificationService 完全統合
-- **.cursorrules準拠**: 日本語コメント100%・Multi-tenant設計完備
+- **.cursorrules 準拠**: 日本語コメント 100%・Multi-tenant 設計完備
 
 ---
 
-## ✅ **Phase 3: APIレイヤー実装** 【完了】
+## ✅ **Phase 3: API レイヤー実装** 【完了】
 
-### ✅ **Phase 3.1 完了: BookingController実装** 【2025-06-30 21:30完了】
+### ✅ **Phase 3.1 完了: BookingController 実装** 【2025-06-30 21:30 完了】
 
 #### 🎯 実装内容
-- **BookingController.php** (完全実装) - 管理者向け予約CRUD API
+
+- **BookingController.php** (完全実装) - 管理者向け予約 CRUD API
+
   - index() - 予約一覧取得（フィルタリング・ページング・ソート）
-  - store() - 予約作成（BookingService統合・Hold Token対応）
-  - show() - 予約詳細取得（関連データEager Loading）
+  - store() - 予約作成（BookingService 統合・Hold Token 対応）
+  - show() - 予約詳細取得（関連データ Eager Loading）
   - update() - 予約更新（部分更新・競合チェック・通知連携）
   - destroy() - 予約キャンセル（ソフトデリート・理由記録）
   - updateStatus() - ステータス変更（確定・完了・無断キャンセル）
 
 - **CreateBookingRequest.php** (完全実装) - 予約作成バリデーション
-  - 15フィールド包括バリデーション（必須・オプション）
+
+  - 15 フィールド包括バリデーション（必須・オプション）
   - マルチテナント検証（顧客・メニュー・リソース所属確認）
   - ビジネスロジック検証（時間妥当性・オプション関連性）
   - 日本語エラーメッセージ（全フィールド対応）
 
 - **UpdateBookingRequest.php** (完全実装) - 予約更新バリデーション
+
   - 部分更新対応（sometimes ルール）
   - ステータス遷移制約チェック
   - 関連性維持検証
 
-- **BookingResource.php** (完全実装) - APIレスポンス統一
+- **BookingResource.php** (完全実装) - API レスポンス統一
+
   - 関連データ適切展開（customer, menu, resource, options）
   - 権限別情報表示制御
   - 料金内訳詳細計算
   - アクション可能性判定
 
-- **カスタム例外クラス** (3種類実装)
+- **カスタム例外クラス** (3 種類実装)
   - BookingConflictException（HTTP 409）
   - HoldTokenExpiredException（HTTP 410）
   - OutsideBusinessHoursException（HTTP 422）
 
 #### 📊 実装統計
-- **追加行数**: 約1,960行追加
-- **新規ファイル**: 7ファイル作成
-- **APIエンドポイント**: 6エンドポイント実装
-- **エラーハンドリング**: 3種類カスタム例外 + 包括的エラー処理
+
+- **追加行数**: 約 1,960 行追加
+- **新規ファイル**: 7 ファイル作成
+- **API エンドポイント**: 6 エンドポイント実装
+- **エラーハンドリング**: 3 種類カスタム例外 + 包括的エラー処理
 
 #### 🎯 技術特徴
-- ✅ **API仕様準拠**: tugical_api_specification_v1.0.md 100%準拠
-- ✅ **BookingService統合**: 既存ビジネスロジック完全活用
-- ✅ **マルチテナント**: store_id自動分離・セキュア設計
-- ✅ **バリデーション**: 15フィールド包括・日本語メッセージ
+
+- ✅ **API 仕様準拠**: tugical_api_specification_v1.0.md 100%準拠
+- ✅ **BookingService 統合**: 既存ビジネスロジック完全活用
+- ✅ **マルチテナント**: store_id 自動分離・セキュア設計
+- ✅ **バリデーション**: 15 フィールド包括・日本語メッセージ
 - ✅ **エラーハンドリング**: カスタム例外・詳細ログ・ユーザーフレンドリー
 - ✅ **レスポンス統一**: BookingResource・関連データ最適化
-- ✅ **ルーティング**: RESTful設計・Sanctum認証・バージョニング
+- ✅ **ルーティング**: RESTful 設計・Sanctum 認証・バージョニング
 
-#### Git情報
-- **コミット**: feat(phase3): BookingController API実装完了 (5e927c8)
+#### Git 情報
+
+- **コミット**: feat(phase3): BookingController API 実装完了 (5e927c8)
 - **ブランチ**: develop
-- **実装行数**: 約1,960行追加、9ファイル変更
+- **実装行数**: 約 1,960 行追加、9 ファイル変更
 
-### ✅ **Phase 3.2 完了: AvailabilityController & HoldTokenController実装** 【2025-06-30 22:30完了】
+### ✅ **Phase 3.2 完了: AvailabilityController & HoldTokenController 実装** 【2025-06-30 22:30 完了】
 
 #### 🎯 実装内容
-- **AvailabilityController.php** (完全実装) - 空き時間・可用性管理API
+
+- **AvailabilityController.php** (完全実装) - 空き時間・可用性管理 API
+
   - index() - 空き時間枠検索（リアルタイム可用性判定・営業時間考慮）
-  - calendar() - 月間可用性カレンダー生成（30-90日対応）
+  - calendar() - 月間可用性カレンダー生成（30-90 日対応）
   - resourceCheck() - リソース可用性チェック（特定時間での利用可能性）
-  - AvailabilityService完全統合・キャッシュ活用・マルチテナント対応
+  - AvailabilityService 完全統合・キャッシュ活用・マルチテナント対応
 
-- **HoldTokenController.php** (完全実装) - Hold Token（仮押さえ）管理API
-  - store() - Hold Token作成（10分間仮押さえ・競合チェック）
-  - show() - Hold Token詳細取得（残り時間・マルチテナント検証）
-  - destroy() - Hold Token解放（予約完了・キャンセル時）
-  - extend() - Hold Token延長（最大30分延長対応）
-  - index() - 店舗別Hold Token一覧（管理者向け）
+- **HoldTokenController.php** (完全実装) - Hold Token（仮押さえ）管理 API
 
-- **CreateHoldTokenRequest.php** (完全実装) - Hold Token作成バリデーション
-  - 5フィールド包括バリデーション（menu_id, resource_id, booking_date, start_time, customer_id）
+  - store() - Hold Token 作成（10 分間仮押さえ・競合チェック）
+  - show() - Hold Token 詳細取得（残り時間・マルチテナント検証）
+  - destroy() - Hold Token 解放（予約完了・キャンセル時）
+  - extend() - Hold Token 延長（最大 30 分延長対応）
+  - index() - 店舗別 Hold Token 一覧（管理者向け）
+
+- **CreateHoldTokenRequest.php** (完全実装) - Hold Token 作成バリデーション
+
+  - 5 フィールド包括バリデーション（menu_id, resource_id, booking_date, start_time, customer_id）
   - マルチテナント検証（メニュー・リソース・顧客の店舗所属確認）
   - 営業時間基本チェック・メニューリソース組み合わせ検証
   - 日本語エラーメッセージ・詳細ログ出力
 
-- **APIルート追加**
-  - 8エンドポイント追加（GET/POST/DELETE/PATCH）
+- **API ルート追加**
+  - 8 エンドポイント追加（GET/POST/DELETE/PATCH）
   - routes/api.php に完全統合・ルート名設定
 
 #### 📊 実装統計
-- **追加行数**: 約1,400行追加
-- **新規ファイル**: 3ファイル作成
-- **APIエンドポイント**: 8エンドポイント実装
+
+- **追加行数**: 約 1,400 行追加
+- **新規ファイル**: 3 ファイル作成
+- **API エンドポイント**: 8 エンドポイント実装
 - **構文チェック**: 全ファイル「No syntax errors detected」
 
 #### 🎯 技術特徴
-- ✅ **API仕様準拠**: tugical_api_specification_v1.0.md 100%準拠
-- ✅ **サービス統合**: AvailabilityService/HoldTokenService完全統合
-- ✅ **マルチテナント**: store_id完全分離・クロステナントアクセス防止
-- ✅ **エラーハンドリング**: HTTP 409/410/422対応・適切なステータスコード
+
+- ✅ **API 仕様準拠**: tugical_api_specification_v1.0.md 100%準拠
+- ✅ **サービス統合**: AvailabilityService/HoldTokenService 完全統合
+- ✅ **マルチテナント**: store_id 完全分離・クロステナントアクセス防止
+- ✅ **エラーハンドリング**: HTTP 409/410/422 対応・適切なステータスコード
 - ✅ **バリデーション**: 包括的チェック・日本語メッセージ・ログ出力
 - ✅ **パフォーマンス**: キャッシュ活用・最適化クエリ
 - ✅ **セキュリティ**: 認証・認可・テナント分離完備
 
-#### tugical仕様準拠
-- **Hold Token System**: 10分間排他制御（tugical_requirements_specification_v1.0.md準拠）
+#### tugical 仕様準拠
+
+- **Hold Token System**: 10 分間排他制御（tugical_requirements_specification_v1.0.md 準拠）
 - **可用性判定**: 営業時間・リソース稼働時間・既存予約を全考慮
-- ✅ **競合回避**: LIFF予約フローでの同時予約完全防止
-- **.cursorrules準拠**: 日本語コメント100%・Multi-tenant設計完備
+- ✅ **競合回避**: LIFF 予約フローでの同時予約完全防止
+- **.cursorrules 準拠**: 日本語コメント 100%・Multi-tenant 設計完備
 
-#### Git情報
-- **コミット**: feat(phase3): Phase 3.2 AvailabilityController & HoldTokenController実装完了 (40bbf41)
+#### Git 情報
+
+- **コミット**: feat(phase3): Phase 3.2 AvailabilityController & HoldTokenController 実装完了 (40bbf41)
 - **ブランチ**: develop
-- **実装行数**: 約1,400行追加、6ファイル変更
+- **実装行数**: 約 1,400 行追加、6 ファイル変更
 
-### ✅ **Phase 3.3 完了: NotificationController & NotificationTemplateController実装** 【2025-06-30 23:30完了】
+### ✅ **Phase 3.3 完了: NotificationController & NotificationTemplateController 実装** 【2025-06-30 23:30 完了】
 
 #### 🎯 実装内容
-- **NotificationController.php** (完全実装) - 通知管理API
+
+- **NotificationController.php** (完全実装) - 通知管理 API
+
   - index() - 通知履歴一覧取得（フィルタリング・ページング・統計情報）
   - show() - 通知詳細取得（配信状況・メタデータ）
   - send() - 手動通知送信（即座送信・スケジュール送信対応）
@@ -622,87 +711,99 @@
   - retry() - 通知再送（失敗通知の再配信）
   - stats() - 通知統計情報取得（成功率・配信傾向分析）
 
-- **NotificationTemplateController.php** (完全実装) - 通知テンプレート管理API
+- **NotificationTemplateController.php** (完全実装) - 通知テンプレート管理 API
+
   - index() - テンプレート一覧取得（業種別・タイプ別フィルタリング）
   - show() - テンプレート詳細取得（使用統計・効果測定）
   - store() - テンプレート作成（業種別デフォルト・重複チェック）
   - update() - テンプレート更新（部分更新・履歴管理）
   - destroy() - テンプレート削除（使用中チェック・安全削除）
-  - preview() - テンプレートプレビュー生成（変数置換・LINEメッセージ形式）
-  - defaults() - デフォルトテンプレート取得（業種別・5×7パターン）
+  - preview() - テンプレートプレビュー生成（変数置換・LINE メッセージ形式）
+  - defaults() - デフォルトテンプレート取得（業種別・5×7 パターン）
 
 - **SendNotificationRequest.php** (完全実装) - 通知送信バリデーション
-  - 8フィールド包括バリデーション（customer_id, type, message, etc.）
-  - マルチテナント検証・LINE連携確認・スケジュール送信対応
+
+  - 8 フィールド包括バリデーション（customer_id, type, message, etc.）
+  - マルチテナント検証・LINE 連携確認・スケジュール送信対応
   - 営業時間外送信警告・緊急度制御・日本語エラーメッセージ
 
-- **NotificationResource.php** (完全実装) - 通知データAPIリソース
+- **NotificationResource.php** (完全実装) - 通知データ API リソース
+
   - 包括的データ変換（基本情報・配信情報・関連データ・統計情報）
   - 権限別情報表示制御・機密情報マスク・進捗率計算
   - 配信状況詳細・再送可能性判定・アクション可能性制御
 
-- **NotificationTemplateResource.php** (完全実装) - テンプレートAPIリソース
+- **NotificationTemplateResource.php** (完全実装) - テンプレート API リソース
   - 詳細テンプレート情報（内容・変数・業種設定・使用統計）
   - 効果測定データ・パフォーマンス評価・プレビュー機能
   - 権限制御・編集可能性判定・コンプライアンス情報
 
 #### 📊 実装統計
-- **追加行数**: 約3,500行追加
-- **新規ファイル**: 5ファイル作成
-- **APIエンドポイント**: 13エンドポイント実装（通知6＋テンプレート7）
+
+- **追加行数**: 約 3,500 行追加
+- **新規ファイル**: 5 ファイル作成
+- **API エンドポイント**: 13 エンドポイント実装（通知 6 ＋テンプレート 7）
 - **構文チェック**: 全ファイル「No syntax errors detected」
 
 #### 🎯 技術特徴
-- ✅ **API仕様準拠**: tugical_api_specification_v1.0.md 100%準拠
-- **NotificationService統合**: 既存ビジネスロジック完全活用
-- ✅ **マルチテナント**: store_id完全分離・クロステナントアクセス防止
+
+- ✅ **API 仕様準拠**: tugical_api_specification_v1.0.md 100%準拠
+- **NotificationService 統合**: 既存ビジネスロジック完全活用
+- ✅ **マルチテナント**: store_id 完全分離・クロステナントアクセス防止
 - ✅ **バリデーション**: 包括的チェック・日本語メッセージ・詳細ログ
 - ✅ **統計機能**: 配信成功率・効果測定・パフォーマンス評価
 - ✅ **テンプレート機能**: 業種別デフォルト・変数置換・プレビュー
 - ✅ **権限制御**: 機密情報保護・編集権限管理・安全削除
 
-#### tugical仕様準拠
-- **通知テンプレート**: 5業種×7通知タイプデフォルト対応
-- **LINE通知システム**: 手動送信・自動送信・一括配信・再送機能
-- **統計・分析**: 配信成功率・効果測定・パフォーマンス監視
-- **.cursorrules準拠**: 日本語コメント100%・Multi-tenant設計完備
+#### tugical 仕様準拠
 
-#### Git情報
-- **コミット**: feat(phase3): Phase 3.3 NotificationController & NotificationTemplateController実装完了
+- **通知テンプレート**: 5 業種 ×7 通知タイプデフォルト対応
+- **LINE 通知システム**: 手動送信・自動送信・一括配信・再送機能
+- **統計・分析**: 配信成功率・効果測定・パフォーマンス監視
+- **.cursorrules 準拠**: 日本語コメント 100%・Multi-tenant 設計完備
+
+#### Git 情報
+
+- **コミット**: feat(phase3): Phase 3.3 NotificationController & NotificationTemplateController 実装完了
 - **ブランチ**: develop
-- **実装行数**: 約3,500行追加、8ファイル変更
+- **実装行数**: 約 3,500 行追加、8 ファイル変更
 
 ### 📋 Phase 3 実装予定順序
 
-#### ✅ 1. **BookingController実装** 【完了】
+#### ✅ 1. **BookingController 実装** 【完了】
+
 - [x] BookingController + API routes (CRUD + 状態管理) ✅
 - [x] CreateBookingRequest/UpdateBookingRequest ✅
 - [x] BookingResource ✅
 - [x] カスタム例外クラス ✅
 
-#### ✅ 2. **空き時間・Hold TokenController実装** 【完了】
-- [x] AvailabilityController (空き時間検索API) ✅
-- [x] HoldTokenController (仮押さえ管理API) ✅
-- [x] CreateHoldTokenRequest (バリデーション) ✅
-- [x] APIルート統合 ✅
+#### ✅ 2. **空き時間・Hold TokenController 実装** 【完了】
 
-#### ✅ 3. **NotificationController実装** 【完了】
-- [x] NotificationController (通知管理・統計API) ✅
-- [x] NotificationTemplateController (テンプレート管理API) ✅
+- [x] AvailabilityController (空き時間検索 API) ✅
+- [x] HoldTokenController (仮押さえ管理 API) ✅
+- [x] CreateHoldTokenRequest (バリデーション) ✅
+- [x] API ルート統合 ✅
+
+#### ✅ 3. **NotificationController 実装** 【完了】
+
+- [x] NotificationController (通知管理・統計 API) ✅
+- [x] NotificationTemplateController (テンプレート管理 API) ✅
 - [x] SendNotificationRequest (バリデーション) ✅
 - [x] NotificationResource/NotificationTemplateResource ✅
-- [x] APIルート統合 ✅
+- [x] API ルート統合 ✅
 
-#### 🎯 4. **API統合テスト** 【次の焦点】
+#### 🎯 4. **API 統合テスト** 【次の焦点】
+
 - [ ] **Postman Collection**: 全エンドポイント検証
-- [ ] **認証フロー**: Sanctum Token + CORS設定
-- [ ] **LIFF API**: LINE SDK統合テスト
+- [ ] **認証フロー**: Sanctum Token + CORS 設定
+- [ ] **LIFF API**: LINE SDK 統合テスト
 - [ ] **エラーハンドリング**: 統一エラーレスポンス
 
 #### 5. **パフォーマンス最適化**
+
 - [ ] **Redis Cache**: 空き時間・通知テンプレート
 - [ ] **Queue System**: 非同期通知・再送処理
-- [ ] **Rate Limiting**: プラン別API制限
+- [ ] **Rate Limiting**: プラン別 API 制限
 - [ ] **Database Index**: クエリ最適化
 
 ---
@@ -746,11 +847,12 @@ npm run dev
 # 4. UI/UX実装
 ```
 
-**推定作業時間**: 
-- API統合テスト: 2-3時間
-- Admin Dashboard実装: 8-10時間  
-- LIFF App実装: 6-8時間
-- 統合テスト・調整: 4-6時間
+**推定作業時間**:
+
+- API 統合テスト: 2-3 時間
+- Admin Dashboard 実装: 8-10 時間
+- LIFF App 実装: 6-8 時間
+- 統合テスト・調整: 4-6 時間
 
 ---
 
@@ -765,78 +867,86 @@ npm run dev
 
 ## 📈 **Phase 3 完了サマリー**
 
-| Controller | 実装状況 | APIエンドポイント数 | 実装行数 | 主要機能 | 構文チェック |
-|---------|---------|---------|---------|---------|-------------|
-| **BookingController** | ✅ 完了 | 6 | 約650行 | 予約CRUD・ステータス管理 | ✅ エラーなし |
-| **AvailabilityController** | ✅ 完了 | 3 | 約500行 | 空き時間検索・カレンダー | ✅ エラーなし |
-| **HoldTokenController** | ✅ 完了 | 5 | 約700行 | 仮押さえ管理・延長・解放 | ✅ エラーなし |
-| **NotificationController** | ✅ 完了 | 6 | 約1,000行 | 通知管理・統計・再送 | ✅ エラーなし |
-| **NotificationTemplateController** | ✅ 完了 | 7 | 約1,200行 | テンプレート管理・プレビュー | ✅ エラーなし |
-| **Request Classes** | ✅ 完了 | - | 約800行 | バリデーション・エラーハンドリング | ✅ エラーなし |
-| **Resource Classes** | ✅ 完了 | - | 約1,400行 | APIレスポンス統一・権限制御 | ✅ エラーなし |
+| Controller                         | 実装状況 | API エンドポイント数 | 実装行数    | 主要機能                           | 構文チェック  |
+| ---------------------------------- | -------- | -------------------- | ----------- | ---------------------------------- | ------------- |
+| **BookingController**              | ✅ 完了  | 6                    | 約 650 行   | 予約 CRUD・ステータス管理          | ✅ エラーなし |
+| **AvailabilityController**         | ✅ 完了  | 3                    | 約 500 行   | 空き時間検索・カレンダー           | ✅ エラーなし |
+| **HoldTokenController**            | ✅ 完了  | 5                    | 約 700 行   | 仮押さえ管理・延長・解放           | ✅ エラーなし |
+| **NotificationController**         | ✅ 完了  | 6                    | 約 1,000 行 | 通知管理・統計・再送               | ✅ エラーなし |
+| **NotificationTemplateController** | ✅ 完了  | 7                    | 約 1,200 行 | テンプレート管理・プレビュー       | ✅ エラーなし |
+| **Request Classes**                | ✅ 完了  | -                    | 約 800 行   | バリデーション・エラーハンドリング | ✅ エラーなし |
+| **Resource Classes**               | ✅ 完了  | -                    | 約 1,400 行 | API レスポンス統一・権限制御       | ✅ エラーなし |
 
-**総実装行数**: 約6,900行  
-**実装エンドポイント数**: 27エンドポイント  
-**構文エラー**: 0件 ✅  
+**総実装行数**: 約 6,900 行  
+**実装エンドポイント数**: 27 エンドポイント  
+**構文エラー**: 0 件 ✅  
 **ルート登録**: 100%正常 ✅
 
 ---
 
 **最終更新**: 2025-07-03 06:14  
-**ステータス**: ✅ Phase 3 完了, 🚀 Phase 4 準備完了 
+**ステータス**: ✅ Phase 3 完了, 🚀 Phase 4 準備完了
 
 ## 🚀 **Phase 4: フロントエンド実装** 【実行中】
 
-### ✅ **Phase 4.1 完了: API統合テスト実装** 【2025-07-02 06:20完了】
+### ✅ **Phase 4.1 完了: API 統合テスト実装** 【2025-07-02 06:20 完了】
 
 #### 🎯 実装内容
-- **AuthController.php** (完全実装) - tugical認証API
-  - login() - メール・パスワード・店舗ID認証
-  - logout() - Sanctum Token削除・ログアウト履歴
+
+- **AuthController.php** (完全実装) - tugical 認証 API
+
+  - login() - メール・パスワード・店舗 ID 認証
+  - logout() - Sanctum Token 削除・ログアウト履歴
   - user() - ユーザー情報・権限・店舗情報取得
   - 役割別権限マッピング（owner/manager/staff/reception）
   - プラン別機能制限（free/standard/pro/enterprise）
 
 - **LoginRequest.php** (完全実装) - 認証バリデーション
-  - 3フィールド包括バリデーション（email, password, store_id）
+
+  - 3 フィールド包括バリデーション（email, password, store_id）
   - セキュリティログ記録・失敗履歴追跡
   - 日本語エラーメッセージ・データ正規化
 
-- **UserResource.php** (完全実装) - APIレスポンス統一
+- **UserResource.php** (完全実装) - API レスポンス統一
+
   - 権限情報・セキュリティ情報・アクティビティ情報
   - 機密情報除外・適切なデータ変換
 
-- **Userテーブル拡張** - tugical認証対応
+- **User テーブル拡張** - tugical 認証対応
+
   - store_id, role, profile, preferences フィールド追加
   - アクティビティ追跡・セキュリティ情報管理
 
-- **TestUserSeeder.php** (完全実装) - API統合テスト用データ
-  - 4役割テストユーザー作成（owner/manager/staff/reception）
+- **TestUserSeeder.php** (完全実装) - API 統合テスト用データ
+  - 4 役割テストユーザー作成（owner/manager/staff/reception）
   - 認証フロー検証・権限テスト対応
 
 #### 📊 実装統計
-- **追加行数**: 約1,100行追加
-- **新規ファイル**: 4ファイル作成
-- **APIエンドポイント**: 3エンドポイント実装
-- **テスト完了**: 全認証API動作確認済み
+
+- **追加行数**: 約 1,100 行追加
+- **新規ファイル**: 4 ファイル作成
+- **API エンドポイント**: 3 エンドポイント実装
+- **テスト完了**: 全認証 API 動作確認済み
 
 #### 🎯 技術特徴
-- ✅ **API仕様準拠**: tugical_api_specification_v1.0.md 100%準拠
-- ✅ **Laravel Sanctum**: Bearer Token認証・セキュア実装
-- ✅ **マルチテナント**: store_id完全分離・クロステナントアクセス防止
+
+- ✅ **API 仕様準拠**: tugical_api_specification_v1.0.md 100%準拠
+- ✅ **Laravel Sanctum**: Bearer Token 認証・セキュア実装
+- ✅ **マルチテナント**: store_id 完全分離・クロステナントアクセス防止
 - ✅ **権限管理**: 役割ベースアクセス制御（RBAC）実装
 - ✅ **セキュリティ**: ログイン履歴・失敗追跡・アカウント制御
 - ✅ **プラン制限**: 店舗プラン別機能制限実装
 - ✅ **エラーハンドリング**: 統一エラーレスポンス・詳細ログ
 
-#### API動作確認完了
+#### API 動作確認完了
+
 ```bash
 # ログイン成功
 curl -X POST http://localhost/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"owner@tugical.test","password":"password123","store_id":1}'
 
-# ユーザー情報取得成功  
+# ユーザー情報取得成功
 curl -X GET http://localhost/api/v1/auth/user \
   -H "Authorization: Bearer {token}"
 
@@ -846,84 +956,94 @@ curl -X POST http://localhost/api/v1/auth/logout \
 ```
 
 #### テスト用ログイン情報
+
 ```
 🏪 店舗（store_id: 1）
 👑 オーナー: owner@tugical.test / password123
-👔 マネージャー: manager@tugical.test / password123  
+👔 マネージャー: manager@tugical.test / password123
 👨‍💼 スタッフ: staff@tugical.test / password123
 📞 受付: reception@tugical.test / password123
 ```
 
-#### tugical仕様準拠
-- **認証フロー**: tugical_api_specification_v1.0.md Section 1完全準拠
+#### tugical 仕様準拠
+
+- **認証フロー**: tugical_api_specification_v1.0.md Section 1 完全準拠
 - **権限体系**: tugical_requirements_specification_v1.0.md 役割定義準拠
-- **プラン制限**: 4プラン（free/standard/pro/enterprise）機能制限
-- **.cursorrules準拠**: 日本語コメント100%・Multi-tenant設計完備
+- **プラン制限**: 4 プラン（free/standard/pro/enterprise）機能制限
+- **.cursorrules 準拠**: 日本語コメント 100%・Multi-tenant 設計完備
 
-#### Git情報
-- **コミット**: feat(phase4): Phase 4.1 API統合テスト実装完了
+#### Git 情報
+
+- **コミット**: feat(phase4): Phase 4.1 API 統合テスト実装完了
 - **ブランチ**: develop
-- **実装行数**: 約1,100行追加、8ファイル変更
+- **実装行数**: 約 1,100 行追加、8 ファイル変更
 
-### 🔄 **Phase 4.2 進行中: Admin Dashboard実装** 【2025-07-02 06:30実装中】
+### 🔄 **Phase 4.2 進行中: Admin Dashboard 実装** 【2025-07-02 06:30 実装中】
 
 #### ✅ 実装完了内容
-- **React + Vite環境構築** ✅ - TypeScript・Tailwind CSS・Framer Motion完全セットアップ
+
+- **React + Vite 環境構築** ✅ - TypeScript・Tailwind CSS・Framer Motion 完全セットアップ
 - **認証統合** ✅ - Sanctum Token・ログイン画面・権限制御実装
 - **基盤コンポーネント** ✅ - Button・Card・LoadingScreen・ToastContainer
 - **レイアウトシステム** ✅ - DashboardLayout・認証ガード・ルーティング
-- **状態管理** ✅ - Zustand (authStore・uiStore)・API Client完全実装
+- **状態管理** ✅ - Zustand (authStore・uiStore)・API Client 完全実装
 - **ダッシュボード画面** ✅ - 統計カード・今日の予約・アクティビティタイムライン
-- **基本ページ構造** ✅ - 6ページの基盤実装（予約・顧客・リソース・メニュー・設定）
+- **基本ページ構造** ✅ - 6 ページの基盤実装（予約・顧客・リソース・メニュー・設定）
 
 #### 📊 実装統計
-- **追加行数**: 約3,000行追加
-- **新規ファイル**: 20ファイル作成
+
+- **追加行数**: 約 3,000 行追加
+- **新規ファイル**: 20 ファイル作成
 - **コンポーネント**: 15+個実装
 - **開発サーバー**: ✅ http://localhost:5173/ 起動確認済み
 
 #### 🎯 技術特徴
-- ✅ **tugical_ui_design_system_v1.0.md準拠**: ブランドカラー・フォント・アニメーション
+
+- ✅ **tugical_ui_design_system_v1.0.md 準拠**: ブランドカラー・フォント・アニメーション
 - ✅ **TypeScript**: 100%型安全・包括的インターフェース定義
-- ✅ **API統合**: 全エンドポイント対応・エラーハンドリング完備
-- ✅ **認証フロー**: JWT Token管理・自動リフレッシュ・権限制御
-- ✅ **マルチテナント**: store_id分離・クロステナントアクセス防止
-- ✅ **レスポンシブ**: Mobile-first・Tailwind CSS活用
+- ✅ **API 統合**: 全エンドポイント対応・エラーハンドリング完備
+- ✅ **認証フロー**: JWT Token 管理・自動リフレッシュ・権限制御
+- ✅ **マルチテナント**: store_id 分離・クロステナントアクセス防止
+- ✅ **レスポンシブ**: Mobile-first・Tailwind CSS 活用
 - ✅ **パフォーマンス**: Lazy Loading・最適化レンダリング
 
 #### 🚨 現在の課題・次回対応事項
-- **Lintエラー修正**: api.ts・index.ts・App.tsx の構文エラー解消
-- **詳細機能実装**: 各ページのCRUD操作・フィルタリング・検索機能
-- **API実接続**: Mock Data → 実API呼び出し切り替え
+
+- **Lint エラー修正**: api.ts・index.ts・App.tsx の構文エラー解消
+- **詳細機能実装**: 各ページの CRUD 操作・フィルタリング・検索機能
+- **API 実接続**: Mock Data → 実 API 呼び出し切り替え
 - **エラーハンドリング**: 包括的エラー表示・ユーザーフィードバック強化
 
 #### 参考モックスクリーン（実装必須）
-| 画面 | URL | 実装状況 | 次回作業 |
-|------|-----|---------|---------|
-| Dashboard | https://claude.ai/public/artifacts/8ac4aa2e-a426-4917-8a13-1609b4f71ada | ✅ 基盤完了 | API統合・リアルタイム更新 |
-| 予約管理 | https://claude.ai/public/artifacts/34e6d2d3-c69b-4ed8-badb-b9a3a62dbcc1 | 🔄 構造のみ | 一覧・フィルター・検索実装 |
-| 予約承認 | https://claude.ai/public/artifacts/22e1cddc-d67a-44ac-8e66-732d94322282 | ❌ 未実装 | 手動承認・3候補対応 |
-| 顧客管理 | https://claude.ai/public/artifacts/85aaf66c-2f71-4d38-9cf8-5dba7ca269c9 | 🔄 構造のみ | 一覧・詳細・ランク管理 |
-| スタッフ管理 | https://claude.ai/public/artifacts/dd4cda4c-c19f-495c-ace1-670a2dc7f6eb | 🔄 構造のみ | リソース・稼働時間設定 |
-| メニュー管理 | https://claude.ai/public/artifacts/a401a015-aa53-484c-b095-b43a7942132f | 🔄 構造のみ | メニュー・オプション管理 |
+
+| 画面         | URL                                                                     | 実装状況    | 次回作業                   |
+| ------------ | ----------------------------------------------------------------------- | ----------- | -------------------------- |
+| Dashboard    | https://claude.ai/public/artifacts/8ac4aa2e-a426-4917-8a13-1609b4f71ada | ✅ 基盤完了 | API 統合・リアルタイム更新 |
+| 予約管理     | https://claude.ai/public/artifacts/34e6d2d3-c69b-4ed8-badb-b9a3a62dbcc1 | 🔄 構造のみ | 一覧・フィルター・検索実装 |
+| 予約承認     | https://claude.ai/public/artifacts/22e1cddc-d67a-44ac-8e66-732d94322282 | ❌ 未実装   | 手動承認・3 候補対応       |
+| 顧客管理     | https://claude.ai/public/artifacts/85aaf66c-2f71-4d38-9cf8-5dba7ca269c9 | 🔄 構造のみ | 一覧・詳細・ランク管理     |
+| スタッフ管理 | https://claude.ai/public/artifacts/dd4cda4c-c19f-495c-ace1-670a2dc7f6eb | 🔄 構造のみ | リソース・稼働時間設定     |
+| メニュー管理 | https://claude.ai/public/artifacts/a401a015-aa53-484c-b095-b43a7942132f | 🔄 構造のみ | メニュー・オプション管理   |
 
 #### 🎯 次回作業予定（優先順位）
-1. **Lintエラー修正** (30分) - TypeScript/ESLint問題解消
-2. ~~**予約管理ページ詳細実装**~~ ✅ 完了（2025-07-02 08:10）- BookingCard・フィルタリング・検索
-3. **顧客管理ページ実装** (2-3時間) - CustomerCard・詳細モーダル
-4. **API実接続** (2時間) - Mock → 実API切り替え
-5. **リアルタイム更新** (1-2時間) - WebSocket/SSE統合
 
-#### 残り推定作業時間: 6-9時間 
+1. **Lint エラー修正** (30 分) - TypeScript/ESLint 問題解消
+2. ~~**予約管理ページ詳細実装**~~ ✅ 完了（2025-07-02 08:10）- BookingCard・フィルタリング・検索
+3. **顧客管理ページ実装** (2-3 時間) - CustomerCard・詳細モーダル
+4. **API 実接続** (2 時間) - Mock → 実 API 切り替え
+5. **リアルタイム更新** (1-2 時間) - WebSocket/SSE 統合
+
+#### 残り推定作業時間: 6-9 時間
 
 ### 2025-07-03 10:42 (tugiMacMini.local)
+
 - フロントエンド開発環境を本番と同じ `/admin/` ベースに統一
-    - `frontend/vite.config.ts` に `base: '/admin/'` を追加、開発ポートを 3000 に変更
-    - `BrowserRouter basename="/admin"` に変更（`src/App.tsx`）
+  - `frontend/vite.config.ts` に `base: '/admin/'` を追加、開発ポートを 3000 に変更
+  - `BrowserRouter basename="/admin"` に変更（`src/App.tsx`）
 - docker 開発環境調整
-    - `docker-compose.yml` に frontend サービスを正式追加し、依存パッケージ自動インストール & ホットリロード対応
-    - Nginx 開発設定を修正（proxy_pass ループ解消・WebSocket/HMR 対応）
-    - `/` → 302 `/admin/` リダイレクトは残しつつ、/admin/ で正しく表示・HMR 動作を確認
+  - `docker-compose.yml` に frontend サービスを正式追加し、依存パッケージ自動インストール & ホットリロード対応
+  - Nginx 開発設定を修正（proxy_pass ループ解消・WebSocket/HMR 対応）
+  - `/` → 302 `/admin/` リダイレクトは残しつつ、/admin/ で正しく表示・HMR 動作を確認
 - 変更ファイル: docker-compose.yml, docker/nginx/sites/development.conf, frontend/vite.config.ts, frontend/src/App.tsx
 - コミット: 3913d9043c3006e0aaf47b741ea1755959e5dca5
 - 残タスク: 顧客管理ページ CRUD & 詳細モーダル実装 (進行中)
@@ -931,6 +1051,7 @@ curl -X POST http://localhost/api/v1/auth/logout \
 ### ✅ Phase 4.3 完了: 顧客管理ページ実装 【2025-07-04 10:58 完了】
 
 #### 🎯 実装内容
+
 - **CustomerCard.tsx** コンポーネント作成
   - compact/detailed モード対応
   - ロイヤリティランクバッジ表示
@@ -945,21 +1066,24 @@ curl -X POST http://localhost/api/v1/auth/logout \
   - マイグレーション作成・実行
 
 #### 📊 実装統計
-- **追加行数**: 約600行追加
-- **新規ファイル**: 2ファイル (CustomerCard, migration)
+
+- **追加行数**: 約 600 行追加
+- **新規ファイル**: 2 ファイル (CustomerCard, migration)
 - **既存ファイル変更**: CustomersPage.tsx
 - **データベース変更**: customers テーブルに deleted_at 追加
 
 #### 🎯 技術特徴
-- ✅ **UI仕様準拠**: tugical_ui_design_system_v1.0.md 準拠
+
+- ✅ **UI 仕様準拠**: tugical_ui_design_system_v1.0.md 準拠
 - ✅ **TypeScript**: 完全型安全実装
-- ✅ **API統合**: 検索・フィルタ・ページネーション
+- ✅ **API 統合**: 検索・フィルタ・ページネーション
 - ✅ **エラーハンドリング**: LoadingScreen・エラー表示
 - ✅ **ソフトデリート**: deleted_at カラム追加
 
-### ✅ Phase 4.4 完了: 顧客一覧API修正とテストデータ作成 【2025-07-04 11:08 完了】
+### ✅ Phase 4.4 完了: 顧客一覧 API 修正とテストデータ作成 【2025-07-04 11:08 完了】
 
 #### 🎯 実装内容
+
 - **API レスポンス修正**
   - CustomerController でページネーション形式を修正
   - PaginatedResponse 形式に統一
@@ -969,25 +1093,28 @@ curl -X POST http://localhost/api/v1/auth/logout \
   - ロイヤリティランク enum 値を修正（new/regular/vip/premium）
 - **テストデータ作成**
   - TestUserSeeder でテナント・店舗作成追加
-  - CustomerSeeder で10件の顧客データ作成
+  - CustomerSeeder で 10 件の顧客データ作成
   - 各ロイヤリティランクの顧客を配置
 
 #### 📊 実装統計
-- **修正ファイル数**: 6ファイル
-- **新規マイグレーション**: 1ファイル (stores deleted_at)
-- **修正行数**: 約300行
-- **テストデータ**: 顧客10件（プラチナ2、ゴールド2、シルバー2、ブロンズ2、非アクティブ2）
+
+- **修正ファイル数**: 6 ファイル
+- **新規マイグレーション**: 1 ファイル (stores deleted_at)
+- **修正行数**: 約 300 行
+- **テストデータ**: 顧客 10 件（プラチナ 2、ゴールド 2、シルバー 2、ブロンズ 2、非アクティブ 2）
 
 #### 🎯 技術特徴
+
 - ✅ **暗号化対応**: phone/email/address フィールドの自動暗号化・復号化
 - ✅ **マルチテナント**: store_id による完全分離
 - ✅ **ソフトデリート**: customers/stores テーブル対応
 - ✅ **ページネーション**: 統一レスポンス形式
 - ✅ **型安全**: TypeScript 側で適切に型処理
 
-### ✅ Phase 4.5 完了: CustomerController CRUD実装とログイン画面改善 【2025-07-04 12:38 完了】
+### ✅ Phase 4.5 完了: CustomerController CRUD 実装とログイン画面改善 【2025-07-04 12:38 完了】
 
 #### 🎯 実装内容
+
 - **CustomerController CRUD メソッド追加**
   - show/store/update/destroy メソッド実装
   - マルチテナント対応（store_id チェック）
@@ -1004,22 +1131,24 @@ curl -X POST http://localhost/api/v1/auth/logout \
   - localStorage によるクレデンシャル保存
 
 #### 📊 実装統計
-- **新規ファイル**: 3ファイル (CreateCustomerRequest, UpdateCustomerRequest, CustomerDetailModal)
-- **修正ファイル**: 7ファイル
-- **追加行数**: 約800行
+
+- **新規ファイル**: 3 ファイル (CreateCustomerRequest, UpdateCustomerRequest, CustomerDetailModal)
+- **修正ファイル**: 7 ファイル
+- **追加行数**: 約 800 行
 
 ### ✅ Phase 4.6 完了: 顧客詳細モーダル実装 【2025-07-04 12:51 完了】
 
 #### 🎯 実装内容
+
 - **汎用モーダルコンポーネント作成**
   - Modal.tsx - Framer Motion アニメーション対応
-  - ESCキー・オーバーレイクリック対応
+  - ESC キー・オーバーレイクリック対応
   - レスポンシブ・アクセシビリティ対応
 - **顧客詳細モーダル実装**
   - CustomerDetailModal.tsx - 顧客詳細表示・編集・削除
   - インライン編集モード切り替え
   - 統計情報表示（予約数、売上、最終予約）
-- **UIストア拡張**
+- **UI ストア拡張**
   - useToast フック追加
   - Toast 通知統合
 - **CustomersPage 統合**
@@ -1028,19 +1157,22 @@ curl -X POST http://localhost/api/v1/auth/logout \
   - ページネーション修正
 
 #### 📊 実装統計
-- **新規ファイル**: 2ファイル (Modal.tsx, CustomerDetailModal.tsx)
-- **修正ファイル**: 3ファイル
-- **追加行数**: 約600行
+
+- **新規ファイル**: 2 ファイル (Modal.tsx, CustomerDetailModal.tsx)
+- **修正ファイル**: 3 ファイル
+- **追加行数**: 約 600 行
 - **ビルドサイズ**: CustomersPage 40.79KB (gzip: 7.31KB)
 
 #### 🎯 技術特徴
+
 - ✅ **モーダルアニメーション**: Framer Motion による滑らかな表示
-- ✅ **編集モード**: インライン編集でUX向上
+- ✅ **編集モード**: インライン編集で UX 向上
 - ✅ **型安全**: TypeScript 完全対応
 - ✅ **エラーハンドリング**: Toast 通知統合
 - ✅ **レスポンシブ**: モバイル対応
 
 #### 🐛 修正: 顧客管理ページレイアウト 【2025-07-04 12:54 修正】
+
 - **問題**: 顧客カード一覧のレイアウトが崩れていた
 - **原因**: 件数表示と顧客カードグリッドの間隔不足
 - **修正内容**:
@@ -1049,6 +1181,7 @@ curl -X POST http://localhost/api/v1/auth/logout \
   - 電話番号、予約回数、売上金額を compact モードでも表示
 
 #### 🐛 修正: DashboardLayout 二重適用 【2025-07-04 12:58 修正】
+
 - **問題**: ヘッダーとサイドバーが二重に表示される
 - **原因**: App.tsx と CustomersPage の両方で DashboardLayout を適用
 - **修正内容**:
@@ -1059,7 +1192,9 @@ curl -X POST http://localhost/api/v1/auth/logout \
 ### ✅ Phase 4.7 完了: 予約管理ページ実装 【2025-07-04 14:15 完了】
 
 #### 🎯 実装内容
+
 - **BookingCard.tsx** コンポーネント作成
+
   - 予約情報の詳細表示
   - ステータス別スタイリング（pending/confirmed/cancelled/completed/no_show）
   - 顧客ロイヤリティランク表示
@@ -1068,13 +1203,14 @@ curl -X POST http://localhost/api/v1/auth/logout \
   - アクションボタン（確定・キャンセル・完了・変更）
 
 - **BookingsPage.tsx** 完全実装
+
   - 予約一覧表示（グリッドレイアウト）
   - 検索機能（顧客名・予約番号）
   - ステータスフィルター（全て・申込み中・確定・完了・キャンセル・無断キャンセル）
   - 日付フィルター
   - ページネーション（前へ・次へ・ページ番号）
   - リフレッシュ機能
-  - エラーハンドリング（Toast通知）
+  - エラーハンドリング（Toast 通知）
 
 - **型定義の拡張**
   - BookingCustomer に loyalty_rank 追加
@@ -1082,50 +1218,57 @@ curl -X POST http://localhost/api/v1/auth/logout \
   - FilterOptions に date/sort 追加
 
 #### 📊 実装統計
-- **新規ファイル**: 1ファイル (BookingCard.tsx)
-- **修正ファイル**: 3ファイル (BookingsPage, types/index.ts, uiStore)
-- **追加行数**: 約700行
+
+- **新規ファイル**: 1 ファイル (BookingCard.tsx)
+- **修正ファイル**: 3 ファイル (BookingsPage, types/index.ts, uiStore)
+- **追加行数**: 約 700 行
 - **ビルドサイズ**: BookingsPage 19.77KB (gzip: 4.29KB)
 
 #### 🎯 技術特徴
-- ✅ **UI仕様準拠**: tugical_ui_design_system_v1.0.md 準拠
+
+- ✅ **UI 仕様準拠**: tugical_ui_design_system_v1.0.md 準拠
 - ✅ **TypeScript**: 完全型安全実装
-- ✅ **API統合**: bookingApi.getList 完全統合
+- ✅ **API 統合**: bookingApi.getList 完全統合
 - ✅ **フィルタリング**: 検索・ステータス・日付の複合フィルター
 - ✅ **ページネーション**: meta 情報を活用した適切な表示
 - ✅ **エラーハンドリング**: useToast フックによる通知
 - ✅ **レスポンシブ**: グリッドレイアウトでモバイル対応
 
-### ✅ Phase 4.8 完了: 顧客管理完全CRUD実装 【2025-07-04 13:15 完了】
+### ✅ Phase 4.8 完了: 顧客管理完全 CRUD 実装 【2025-07-04 13:15 完了】
 
 #### 🎯 実装内容
+
 - **CustomerCreateModal.tsx** 新規作成
+
   - 新規顧客登録フォーム
   - フロントエンドバリデーション
   - エラーハンドリング
-  - 成功時のToast通知
+  - 成功時の Toast 通知
   - フォームリセット機能
 
 - **CustomersPage.tsx** 更新
   - 新規顧客登録ボタンの実装
-  - CustomerCreateModalの統合
+  - CustomerCreateModal の統合
   - 作成後の顧客リスト自動更新
 
 #### 📝 顧客管理機能の完成状態
+
 - ✅ 顧客一覧表示（検索・フィルタリング・ページネーション）
 - ✅ 顧客詳細表示（CustomerDetailModal）
 - ✅ 顧客編集機能（インライン編集）
 - ✅ 顧客削除機能（確認ダイアログ付き）
 - ✅ 新規顧客登録（CustomerCreateModal）
-- ✅ マルチテナント対応（store_id分離）
+- ✅ マルチテナント対応（store_id 分離）
 - ✅ 個人情報暗号化（phone, email, address）
 
 ### 2025-07-03 10:42 (tugiMacMini.local)
+
 - フロントエンド開発環境を本番と同じ `/admin/` ベースに統一
 
 ### 2025-07-04 13:54 (tugiMacAir.local)
+
 - **顧客削除機能修正**
-  - エラー: `Column not found: 'bookings.deleted_at'` 
+  - エラー: `Column not found: 'bookings.deleted_at'`
   - 原因: Booking モデルが SoftDeletes を使用しているが、deleted_at カラムが存在しなかった
   - 修正: `add_deleted_at_to_bookings_table` マイグレーションを作成・実行
 - **確認ダイアログ実装**
@@ -1138,6 +1281,7 @@ curl -X POST http://localhost/api/v1/auth/logout \
   - 現在の実装で十分なユーザビリティを実現
 
 ### 2025-07-04 13:57 (tugiMacAir.local)
+
 - **顧客作成エラー修正**
   - エラー: `Field 'line_user_id' doesn't have a default value`
   - 原因: customers テーブルの line_user_id カラムが NOT NULL で定義されているが、管理画面から作成時は LINE 連携なし
@@ -1145,6 +1289,7 @@ curl -X POST http://localhost/api/v1/auth/logout \
   - 結果: 管理画面から顧客を手動作成できるように改善
 
 ### 2025-07-04 14:06 (tugiMacAir.local)
+
 - **顧客マッチング機能の設計**
   - 管理画面で手動登録した顧客が後から LINE 連携する場合の統合処理を設計
   - 実装案:
@@ -1156,21 +1301,23 @@ curl -X POST http://localhost/api/v1/auth/logout \
   - 実装時期: LIFF 開発フェーズで実装予定
 
 ### 2025-07-04 14:18 (tugiMacAir.local)
-- **メニュー管理API実装完了**
+
+- **メニュー管理 API 実装完了**
   - MenuController CRUD 実装（index/show/store/update/destroy）
   - 高度なフィルタリング機能（検索、カテゴリ、価格帯、時間帯、アクティブ状態）
   - CreateMenuRequest/UpdateMenuRequest バリデーションクラス作成
-  - MenuResource/MenuOptionResource API出力形式統一
+  - MenuResource/MenuOptionResource API 出力形式統一
   - 業種別カテゴリ取得、表示順序更新機能
-  - メニューオプション統合管理（4つの価格タイプ、在庫管理対応）
+  - メニューオプション統合管理（4 つの価格タイプ、在庫管理対応）
   - routes/api.php にメニュー関連ルート追加
-  - フロントエンド型定義拡張（Menu/MenuOption/CreateMenuRequest等）
-  - APIクライアント関数追加（menuApi.getList/get/create/update/delete等）
-- **次のステップ**: フロントエンドMenusPageコンポーネント実装
+  - フロントエンド型定義拡張（Menu/MenuOption/CreateMenuRequest 等）
+  - API クライアント関数追加（menuApi.getList/get/create/update/delete 等）
+- **次のステップ**: フロントエンド MenusPage コンポーネント実装
 
 ---
 
 ## 最新更新情報
+
 - **更新日時**: 2025-07-04 14:34:38
 - **作業端末**: tugiMacAir.local
 - **現在ブランチ**: develop
@@ -1178,60 +1325,68 @@ curl -X POST http://localhost/api/v1/auth/logout \
 ## Phase 4.8: MenusPage pagination.total エラー修正 ✅ 完了
 
 ### 問題の発見と解決
+
 - **問題**: フロントエンドで `TypeError: undefined is not an object (evaluating 'pagination.total')` エラー
-- **原因**: APIレスポンス構造とフロントエンド型定義の不一致
+- **原因**: API レスポンス構造とフロントエンド型定義の不一致
 - **解決方法**:
   1. バックエンド認証ミドルウェア修正（`backend/app/Http/Middleware/Authenticate.php`）
-  2. APIクライアント型定義修正（`frontend/src/services/api.ts`）
-  3. MenusPageでのレスポンス処理修正（`frontend/src/pages/menus/MenusPage.tsx`）
+  2. API クライアント型定義修正（`frontend/src/services/api.ts`）
+  3. MenusPage でのレスポンス処理修正（`frontend/src/pages/menus/MenusPage.tsx`）
 
 ### 技術的詳細
-- **APIレスポンス構造**: `{ data: { menus: [], pagination: {} } }`
+
+- **API レスポンス構造**: `{ data: { menus: [], pagination: {} } }`
 - **修正前**: `response.data.data.pagination` でアクセス
 - **修正後**: `response.pagination` で直接アクセス
 - **認証修正**: `login` ルート未定義エラーを解決
 
 ### 変更ファイル
+
 1. `backend/app/Http/Middleware/Authenticate.php` - 認証リダイレクト修正
 2. `frontend/src/services/api.ts` - menuApi.getList() 型定義修正
 3. `frontend/src/pages/menus/MenusPage.tsx` - レスポンス処理修正
 
 ### 検証結果
+
 - ✅ フロントエンドビルド成功
-- ✅ APIエンドポイント正常動作確認
+- ✅ API エンドポイント正常動作確認
 - ✅ 認証フロー正常動作確認
-- ✅ メニュー一覧API正常レスポンス確認
+- ✅ メニュー一覧 API 正常レスポンス確認
 
 ### 次のステップ
+
 1. **テストデータ作成**: サンプルメニューとオプションの追加
-2. **メニュー作成/編集モーダル**: CRUD操作UI実装
+2. **メニュー作成/編集モーダル**: CRUD 操作 UI 実装
 3. **リソース管理実装**: ResourceController + ResourcesPage
 
 ## 過去の実装履歴
 
 ### Phase 4.7: Menu Management UI Implementation ✅ 完了
+
 - **期間**: 2025-07-04
-- **実装内容**: MenusPage完全実装
+- **実装内容**: MenusPage 完全実装
   - グリッド/リスト表示切り替え
   - 高度な検索・フィルタリング機能
   - ページネーション対応
   - MenuCard/MenuTableRow コンポーネント
-  - TypeScript型定義完備
+  - TypeScript 型定義完備
 
 ### Phase 4.6: Menu Management API Implementation ✅ 完了
+
 - **期間**: 2025-07-04
-- **実装内容**: MenuController完全実装
-  - CRUD操作（index/show/store/update/destroy）
+- **実装内容**: MenuController 完全実装
+  - CRUD 操作（index/show/store/update/destroy）
   - 高度なフィルタリング（検索/カテゴリ/価格帯/時間帯）
   - 業種別カテゴリ対応
   - バリデーション（CreateMenuRequest/UpdateMenuRequest）
-  - 4つの価格タイプ対応
+  - 4 つの価格タイプ対応
   - 在庫管理機能
   - 表示順序管理
 
 ### Phase 4.5: Customer CRUD Implementation ✅ 完了
+
 - **期間**: 2025-07-04
-- **実装内容**: CustomerController CRUD完全実装
+- **実装内容**: CustomerController CRUD 完全実装
   - show/store/update/destroy メソッド
   - マルチテナント対応（store_id チェック）
   - トランザクション処理
@@ -1241,15 +1396,17 @@ curl -X POST http://localhost/api/v1/auth/logout \
   - TypeScript 型定義完備
 
 ### Phase 4.4: Database Schema Fixes ✅ 完了
+
 - **期間**: 2025-07-04
-- **実装内容**: 
-  - SoftDeletes対応（bookings/customers/menus/menu_options テーブル）
+- **実装内容**:
+  - SoftDeletes 対応（bookings/customers/menus/menu_options テーブル）
   - deleted_at カラム追加マイグレーション
   - nullable line_user_id 対応
 
 ### Phase 4.3: Customer Management Implementation ✅ 完了
+
 - **期間**: 2025-07-04
-- **実装内容**: CustomersPage完全実装
+- **実装内容**: CustomersPage 完全実装
   - CustomerController index メソッド
   - 検索・フィルタリング機能
   - ページネーション対応
@@ -1257,74 +1414,84 @@ curl -X POST http://localhost/api/v1/auth/logout \
   - loyalty_rank 管理
 
 ### Phase 4.2: Dashboard Enhancement ✅ 完了
+
 - **期間**: 2025-07-03
-- **実装内容**: DashboardPage機能追加
+- **実装内容**: DashboardPage 機能追加
   - 統計カード表示
   - 最近のアクティビティ
   - 予約状況サマリー
   - レスポンシブデザイン
 
 ### Phase 4.1: Authentication & Layout ✅ 完了
+
 - **期間**: 2025-07-02
 - **実装内容**: 認証システム・レイアウト基盤
-  - AuthController・LoginRequest実装
+  - AuthController・LoginRequest 実装
   - DashboardLayout・ナビゲーション
   - LoginPage・認証状態管理
-  - Tailwind CSS設定・デザインシステム
+  - Tailwind CSS 設定・デザインシステム
 
 ### Phase 3: Backend API Foundation ✅ 完了
+
 - **期間**: 2025-06-30 - 2025-07-01
-- **実装内容**: Laravel API基盤
-  - 全Controller・Service・Repository実装
+- **実装内容**: Laravel API 基盤
+  - 全 Controller・Service・Repository 実装
   - マルチテナント対応
   - バリデーション・エラーハンドリング
-  - API仕様準拠レスポンス形式
+  - API 仕様準拠レスポンス形式
 
 ### Phase 2: Database Implementation ✅ 完了
+
 - **期間**: 2025-06-29 - 2025-06-30
 - **実装内容**: データベース設計・実装
   - 全テーブルマイグレーション
   - Model・リレーション定義
-  - Seeder・Factory作成
+  - Seeder・Factory 作成
   - マルチテナント対応
 
 ### Phase 1: Project Setup ✅ 完了
+
 - **期間**: 2025-06-28 - 2025-06-29
 - **実装内容**: プロジェクト基盤構築
-  - Docker環境構築
-  - Laravel・React・Vite環境
+  - Docker 環境構築
+  - Laravel・React・Vite 環境
   - 基本設定・ディレクトリ構造
 
 ## 現在の開発状況
 
 ### 完了済み機能
-- ✅ Docker開発環境
+
+- ✅ Docker 開発環境
 - ✅ データベース設計・実装
-- ✅ Laravel API基盤
+- ✅ Laravel API 基盤
 - ✅ 認証システム
 - ✅ 管理画面レイアウト
 - ✅ ダッシュボード機能
 - ✅ 顧客管理機能
-- ✅ メニュー管理API
-- ✅ メニュー管理UI
+- ✅ メニュー管理 API
+- ✅ メニュー管理 UI
 
 ### 進行中の機能
+
 - 🔄 メニュー管理機能（CRUD モーダル実装残り）
 
 ### 次回実装予定
-1. **メニューテストデータ作成** - サンプルデータでUI確認
-2. **メニュー作成/編集モーダル** - CRUD操作UI完成
+
+1. **メニューテストデータ作成** - サンプルデータで UI 確認
+2. **メニュー作成/編集モーダル** - CRUD 操作 UI 完成
 3. **リソース管理機能** - ResourceController + ResourcesPage
 4. **予約カレンダー機能** - 月表示/週表示/日表示
-5. **リアルタイム更新** - WebSocket/SSE実装
+5. **リアルタイム更新** - WebSocket/SSE 実装
 
 ### 技術的課題・改善点
+
 1. **バンドルサイズ最適化**: 626.67 kB → 動的インポート・チャンク分割検討
-2. **型定義統一**: APIレスポンス型とフロントエンド型の完全一致
+2. **型定義統一**: API レスポンス型とフロントエンド型の完全一致
 3. **エラーハンドリング強化**: ユーザーフレンドリーなエラー表示
 4. **パフォーマンス最適化**: 大量データ対応・仮想スクロール検討
 
 ## 開発環境状況
+
 - **Backend**: Laravel 10 + PHP 8.2 + MariaDB 10.11
 - **Frontend**: React 18 + TypeScript + Vite 5 + Tailwind CSS
 - **Container**: Docker Compose（app/nginx/database/redis/frontend）
@@ -1332,6 +1499,7 @@ curl -X POST http://localhost/api/v1/auth/logout \
 - **Database**: tugical_database_design_v1.0.md 準拠
 
 ## チーム・進捗管理
+
 - **リポジトリ**: https://github.com/tugilo/tugical
 - **ブランチ戦略**: develop → main（プルリクエスト経由）
 - **ドキュメント**: docs/ ディレクトリで仕様書管理
@@ -1340,6 +1508,7 @@ curl -X POST http://localhost/api/v1/auth/logout \
 ---
 
 ## 最新更新情報
+
 - **更新日時**: 2025-07-04 14:48:04
 - **作業端末**: tugiMacAir.local
 - **現在ブランチ**: develop
@@ -1347,33 +1516,38 @@ curl -X POST http://localhost/api/v1/auth/logout \
 ## Phase 4.9: メニューテストデータ作成 ✅ 完了
 
 ### 実装内容
-- **MenuSeeder作成**: 美容室向けサンプルメニューとオプション
-- **テストデータ**: 6種類のメニュー（カット、カラー、パーマ、ストレート、ヘッドスパ、旧メニュー）
+
+- **MenuSeeder 作成**: 美容室向けサンプルメニューとオプション
+- **テストデータ**: 6 種類のメニュー（カット、カラー、パーマ、ストレート、ヘッドスパ、旧メニュー）
 - **オプション**: 各メニューに適切なオプション（シャンプー、トリートメント、プレミアム等）
 
 ### 技術的解決
-1. **マイグレーション構造対応**: 実際のテーブル構造に合わせてSeeder修正
-2. **Menuモデル修正**: fillableプロパティとcastsを実際のカラムに合わせて修正
-3. **MenuOptionモデル修正**: TenantScope削除（Menuに従属するため不要）
-4. **bootedメソッド**: 一時的にコメントアウトしてSeeder実行可能に
+
+1. **マイグレーション構造対応**: 実際のテーブル構造に合わせて Seeder 修正
+2. **Menu モデル修正**: fillable プロパティと casts を実際のカラムに合わせて修正
+3. **MenuOption モデル修正**: TenantScope 削除（Menu に従属するため不要）
+4. **booted メソッド**: 一時的にコメントアウトして Seeder 実行可能に
 
 ### 作成されたテストデータ
-- カット (¥4,500, 60分) + シャンプー・トリートメント、ヘッドスパ
-- カラー (¥6,800, 90分) + プレミアムカラー、ヘアトリートメント
-- パーマ (¥8,500, 120分) + デジタルパーマ
-- ストレート (¥12,000, 180分, 要承認)
-- ヘッドスパコース (¥3,500, 45分) + アロマオイル、頭皮トリートメント
+
+- カット (¥4,500, 60 分) + シャンプー・トリートメント、ヘッドスパ
+- カラー (¥6,800, 90 分) + プレミアムカラー、ヘアトリートメント
+- パーマ (¥8,500, 120 分) + デジタルパーマ
+- ストレート (¥12,000, 180 分, 要承認)
+- ヘッドスパコース (¥3,500, 45 分) + アロマオイル、頭皮トリートメント
 - 旧セットメニュー (非アクティブ)
 
 ### 変更ファイル
+
 1. `backend/database/seeders/MenuSeeder.php` - 新規作成
-2. `backend/database/seeders/DatabaseSeeder.php` - MenuSeeder追加
-3. `backend/app/Models/Menu.php` - fillable/casts修正、booted一時無効化
-4. `backend/app/Models/MenuOption.php` - fillable/casts修正、TenantScope削除、booted一時無効化
+2. `backend/database/seeders/DatabaseSeeder.php` - MenuSeeder 追加
+3. `backend/app/Models/Menu.php` - fillable/casts 修正、booted 一時無効化
+4. `backend/app/Models/MenuOption.php` - fillable/casts 修正、TenantScope 削除、booted 一時無効化
 5. `docs/PROGRESS.md` - 進捗更新
 
 ### 検証済み
-- Seeder実行成功
+
+- Seeder 実行成功
 - API `/api/v1/menus` 正常レスポンス
 - フロントエンドビルド成功
 - メニューデータ表示確認
@@ -1389,13 +1563,16 @@ curl -X POST http://localhost/api/v1/auth/logout \
 ## Phase 4.10: メニュー作成モーダル実装 ✅ 完了
 
 ### 実装内容
+
 - **Modal.tsx**: 汎用モーダルコンポーネント作成
-  - ESCキー対応、オーバーレイクリック、サイズ調整
+
+  - ESC キー対応、オーバーレイクリック、サイズ調整
   - アニメーション統合（Framer Motion）
   - 統一デザインシステム準拠
 
 - **FormField.tsx**: 統一フォームフィールドコンポーネント
-  - text, number, textarea, select対応
+
+  - text, number, textarea, select 対応
   - エラー表示、バリデーション状態管理
   - ラベル、必須マーク、プレースホルダー対応
 
@@ -1403,22 +1580,25 @@ curl -X POST http://localhost/api/v1/auth/logout \
   - 包括的バリデーション（時間、料金、必須項目）
   - 業種別カテゴリ選択（美容室対応）
   - 性別制限、承認設定、アクティブ状態管理
-  - API統合とエラーハンドリング
-  - Toast通知統合
+  - API 統合とエラーハンドリング
+  - Toast 通知統合
 
 ### 型定義修正
-- **CreateMenuRequest**: advance_booking_hours, gender_restriction 追加
-- **ToastNotification**: title必須プロパティ対応
-- **FormField**: nullable値対応（|| デフォルト値）
 
-### MenusPage統合
+- **CreateMenuRequest**: advance_booking_hours, gender_restriction 追加
+- **ToastNotification**: title 必須プロパティ対応
+- **FormField**: nullable 値対応（|| デフォルト値）
+
+### MenusPage 統合
+
 - 作成モーダル状態管理追加
 - 「新規メニュー」ボタンからモーダル表示
 - 作成成功時のリロード処理
-- 統一UI/UX体験
+- 統一 UI/UX 体験
 
 ### 技術的成果
-- **TypeScript型安全性**: 完全な型チェック通過
+
+- **TypeScript 型安全性**: 完全な型チェック通過
 - **フロントエンドビルド**: 成功（2.57s）
 - **バンドルサイズ**: MenusPage 38.21 kB（gzip: 7.33 kB）
 - **統一デザイン**: tugical UI デザインシステム準拠
@@ -1428,25 +1608,29 @@ curl -X POST http://localhost/api/v1/auth/logout \
 ## 完了済みフェーズ
 
 ### Phase 4.9: メニューテストデータ作成 ✅ 完了
-- MenuSeeder.php: 6種類のサンプルメニュー作成
+
+- MenuSeeder.php: 6 種類のサンプルメニュー作成
 - 美容室業界テンプレート（カット、カラー、パーマ、ストレート、ヘッドスパ）
 - オプション付きメニュー、非アクティブメニュー例
-- Model修正（SoftDeletes対応、TenantScope調整）
+- Model 修正（SoftDeletes 対応、TenantScope 調整）
 
-### Phase 4.8: API統合修正 ✅ 完了
+### Phase 4.8: API 統合修正 ✅ 完了
+
 - ルートキャッシュクリア問題解決
-- SoftDeletes対応（deleted_at カラム追加）
+- SoftDeletes 対応（deleted_at カラム追加）
 - 認証ミドルウェア修正
 - フロントエンドページネーション修正
 
-### Phase 4.7: メニュー管理UI実装 ✅ 完了
+### Phase 4.7: メニュー管理 UI 実装 ✅ 完了
+
 - MenusPage: グリッド/リスト表示切り替え
 - 高度な検索・フィルター機能
 - MenuCard/MenuTableRow コンポーネント
 - ページネーション、統計表示
 
-### Phase 4.6: メニュー管理API実装 ✅ 完了
-- MenuController: 完全CRUD + 高度フィルタリング
+### Phase 4.6: メニュー管理 API 実装 ✅ 完了
+
+- MenuController: 完全 CRUD + 高度フィルタリング
 - CreateMenuRequest/UpdateMenuRequest バリデーション
 - MenuResource/MenuOptionResource
 - 業種別カテゴリ API
@@ -1456,40 +1640,46 @@ curl -X POST http://localhost/api/v1/auth/logout \
 ## 次の実装予定
 
 ### Phase 4.11: メニュー編集モーダル実装 🔄 次回予定
+
 - **MenuEditModal.tsx**: 既存メニュー編集フォーム
 - **MenuOptionManager**: オプション追加・編集・削除
 - **MenuDetailModal**: メニュー詳細表示
 - **一括操作**: 複数メニューの状態変更
 
 ### Phase 4.12: リソース管理実装
+
 - **ResourceController**: スタッフ/部屋/設備統合管理
-- **ResourcesPage**: 統一リソース管理UI
+- **ResourcesPage**: 統一リソース管理 UI
 - **ResourceForm**: リソース作成・編集フォーム
 - **勤務時間管理**: 曜日別稼働時間設定
 
 ### Phase 4.13: 予約カレンダー実装
+
 - **BookingCalendar**: 月/週/日表示切り替え
 - **TimeSlotGrid**: 時間枠表示・選択
 - **DragAndDrop**: 予約移動・時間変更
-- **リアルタイム更新**: WebSocket統合
+- **リアルタイム更新**: WebSocket 統合
 
 ---
 
 ## 技術メトリクス
 
 ### コード品質
+
 - **TypeScript**: 型安全性 100%
-- **テストカバレッジ**: Phase 4完了後に実装予定
+- **テストカバレッジ**: Phase 4 完了後に実装予定
 - **ESLint/Prettier**: 統一コーディング規約
 - **パフォーマンス**: Lighthouse スコア目標 90+
 
-### バンドルサイズ（gzip後）
+### バンドルサイズ（gzip 後）
+
 - **MenusPage**: 38.21 kB → 7.33 kB
-- **CustomersPage**: 53.17 kB → 8.75 kB  
+- **CustomersPage**: 53.17 kB → 8.75 kB
 - **全体バンドル**: 626.67 kB → 194.11 kB
 - **改善必要**: 500kB+ チャンク分割検討
 
 ### API パフォーマンス
+
 - **メニュー一覧**: < 200ms
 - **メニュー作成**: < 500ms
 - **認証**: Bearer token 正常動作
@@ -1500,13 +1690,15 @@ curl -X POST http://localhost/api/v1/auth/logout \
 ## 開発環境状況
 
 ### Docker コンテナ
+
 - **PHP/Laravel**: 正常稼働
-- **MySQL**: マルチ環境DB（dev/staging/prod）
+- **MySQL**: マルチ環境 DB（dev/staging/prod）
 - **Redis**: キャッシュ・セッション管理
 - **Nginx**: 環境別ルーティング
 - **Frontend**: Vite HMR 正常動作
 
 ### データベース
+
 - **マイグレーション**: 最新状態
 - **シーダー**: テストデータ完備
 - **インデックス**: パフォーマンス最適化済み
@@ -1523,6 +1715,7 @@ curl -X POST http://localhost/api/v1/auth/logout \
 5. **開発効率向上**: 共通コンポーネントによる生産性向上
 
 ### 次回開始ポイント
+
 - **Phase 4.11**: MenuEditModal 実装開始
 - **コンポーネント再利用**: Modal, FormField 活用
 - **型定義拡張**: UpdateMenuRequest 詳細化
@@ -1533,29 +1726,32 @@ curl -X POST http://localhost/api/v1/auth/logout \
 **開発担当**: AI Assistant + User  
 **作業環境**: tugiMacMini.local  
 **ブランチ**: develop  
-**最終コミット**: 2025-07-04 14:58:42予定
+**最終コミット**: 2025-07-04 14:58:42 予定
 
 ### 最新更新: 2025-07-04 17:38:30
 
 ---
 
-## Phase 4.12.5: HTML5 number input step制約問題修正 ✅ 完了
+## Phase 4.12.5: HTML5 number input step 制約問題修正 ✅ 完了
 
 ### 修正内容
-- **HTML5 step制約問題解消**: number input の step={5} → step={1} に変更
-- **基本時間フィールド修正**: 60分等の一般的な値でバリデーションエラー解消
+
+- **HTML5 step 制約問題解消**: number input の step={5} → step={1} に変更
+- **基本時間フィールド修正**: 60 分等の一般的な値でバリデーションエラー解消
 - **準備・片付け時間フィールド修正**: 全時間フィールドで一貫した step=1 設定
 - **ブラウザ互換性向上**: HTML5 number input の制約による問題を根本解決
 
 ### 技術的解決
-- **step属性統一**: 全時間フィールドで step={1} に統一（step={5} から変更）
-- **HTML5制約回避**: ブラウザの5の倍数制約によるバリデーションエラー解消
-- **デバッグログ削除**: 不要なconsole.logを削除してコードクリーンアップ
+
+- **step 属性統一**: 全時間フィールドで step={1} に統一（step={5} から変更）
+- **HTML5 制約回避**: ブラウザの 5 の倍数制約によるバリデーションエラー解消
+- **デバッグログ削除**: 不要な console.log を削除してコードクリーンアップ
 
 ### 修正効果
-- ✅ **基本時間60分入力可能**: 「有効な数値を入力してください」エラー完全解消
-- ✅ **任意整数値対応**: 1分単位での柔軟な時間設定が可能
-- ✅ **ブラウザ互換性確保**: Chrome/Firefox/Safari等での一貫した動作
+
+- ✅ **基本時間 60 分入力可能**: 「有効な数値を入力してください」エラー完全解消
+- ✅ **任意整数値対応**: 1 分単位での柔軟な時間設定が可能
+- ✅ **ブラウザ互換性確保**: Chrome/Firefox/Safari 等での一貫した動作
 - ✅ **ユーザー体験向上**: 直感的な時間入力フローの実現
 
 ---
@@ -1563,19 +1759,22 @@ curl -X POST http://localhost/api/v1/auth/logout \
 ## Phase 4.12.4: 新規メニュー作成数値バリデーション修正 ✅ 完了
 
 ### 修正内容
+
 - **数値入力エラー解消**: 「有効な数値を入力してください」エラーを修正
-- **FormField number 型処理改善**: 空文字列→0変換、NaNチェック追加
-- **MenuCreateModal バリデーション強化**: 各数値フィールドでNumber()変換とisNaN()チェック
-- **フォーム値更新処理改善**: 数値フィールドの明示的な型変換とNaNフォールバック
+- **FormField number 型処理改善**: 空文字列 →0 変換、NaN チェック追加
+- **MenuCreateModal バリデーション強化**: 各数値フィールドで Number()変換と isNaN()チェック
+- **フォーム値更新処理改善**: 数値フィールドの明示的な型変換と NaN フォールバック
 
 ### 技術的解決
-- **FormField handleChange**: 空文字列は0に変換、NaN値は現在値保持
-- **validateForm**: 全数値フィールドでNumber()変換とisNaN()チェック
-- **updateFormData**: 数値フィールドの自動型変換とNaN→0フォールバック
+
+- **FormField handleChange**: 空文字列は 0 に変換、NaN 値は現在値保持
+- **validateForm**: 全数値フィールドで Number()変換と isNaN()チェック
+- **updateFormData**: 数値フィールドの自動型変換と NaN→0 フォールバック
 - **エラーメッセージ改善**: より明確な「有効な数値を入力してください」メッセージ
 
 ### 修正効果
-- ✅ **数値入力エラー完全解消**: 60分、10000円等の正常な数値入力が可能
+
+- ✅ **数値入力エラー完全解消**: 60 分、10000 円等の正常な数値入力が可能
 - ✅ **入力中の安定性向上**: 入力中に一時的なエラー表示なし
 - ✅ **数値型整合性確保**: フォーム内数値データの型安全性確保
 - ✅ **ユーザー体験改善**: スムーズな数値入力フロー実現
@@ -1585,25 +1784,29 @@ curl -X POST http://localhost/api/v1/auth/logout \
 ## Phase 4.12.3: 新規メニュー作成機能修正 ✅ 完了
 
 ### 修正内容
+
 - **データベースカラム不整合を解決**
-- **Menu モデル fillable 修正**: 実際のDBカラム名に合わせて修正
+- **Menu モデル fillable 修正**: 実際の DB カラム名に合わせて修正
 - **MenuController 修正**: データベースカラム名とフィールド名の対応
-- **CreateMenuRequest 修正**: バリデーションルールを実際のDBスキーマに合わせて修正
+- **CreateMenuRequest 修正**: バリデーションルールを実際の DB スキーマに合わせて修正
 - **MenuOption 対応**: option_type, pricing_type, price, duration カラム対応
 
 ### 技術的解決
+
 - **fillable フィールド統一**: booking_rules, required_resources, settings, require_approval
-- **sort_order デフォルト値**: 最大値+1で自動設定
+- **sort_order デフォルト値**: 最大値+1 で自動設定
 - **advance_booking_hours 追加**: 事前予約時間の管理
 - **gender_restriction 対応**: 性別制限機能の実装
 
 ### 修正結果
+
 - ✅ **API テスト成功**: curl でメニュー作成確認済み
 - ✅ **エラー解消**: SQLSTATE[23000] sort_order エラー解決
 - ✅ **フロントエンドビルド成功**: UI からの作成も可能
 - ✅ **データベース整合性確認**: 実際のスキーマと完全一致
 
 ### API レスポンス例
+
 ```json
 {
   "success": true,
@@ -1625,17 +1828,20 @@ curl -X POST http://localhost/api/v1/auth/logout \
 ## Phase 4.12.2: モーダルオーバーレイちらつき修正 ✅ 完了
 
 ### 修正内容
+
 - **オーバーレイのちらつき問題を解決**
 - **アニメーション同期**: オーバーレイとコンテンツのアニメーション時間を統一（0.15s）
-- **CSS競合解消**: `transition-opacity`クラスを削除してFramer Motionに統一
-- **AnimatePresence最適化**: `mode="wait"`でより安定したアニメーション
+- **CSS 競合解消**: `transition-opacity`クラスを削除して Framer Motion に統一
+- **AnimatePresence 最適化**: `mode="wait"`でより安定したアニメーション
 
 ### 技術的解決
-- **統一アニメーション**: オーバーレイとコンテンツの時間を0.15秒に統一
-- **単一motion.div**: 外側のコンテナをmotion.divにしてopacityを管理
-- **CSS競合回避**: CSSトランジションとFramer Motionの競合を解消
+
+- **統一アニメーション**: オーバーレイとコンテンツの時間を 0.15 秒に統一
+- **単一 motion.div**: 外側のコンテナを motion.div にして opacity を管理
+- **CSS 競合回避**: CSS トランジションと Framer Motion の競合を解消
 
 ### 改善効果
+
 - ✅ 背景の明暗ちらつき解消
 - ✅ 滑らかなオーバーレイ表示
 - ✅ 一貫したアニメーション体験
@@ -1646,17 +1852,20 @@ curl -X POST http://localhost/api/v1/auth/logout \
 ## Phase 4.12.1: モーダルフラッシュ問題修正 ✅ 完了
 
 ### 修正内容
+
 - **モーダル表示時のフラッシュ（ちらつき）問題を解決**
-- **MenuDetailModal**: ローディング状態を同一Modal内で管理
+- **MenuDetailModal**: ローディング状態を同一 Modal 内で管理
 - **MenuEditModal**: 同様にローディング状態を統一
 - **Modal アニメーション調整**: より滑らかなアニメーション（0.15s, scale: 0.98）
 
 ### 技術的解決
-- **単一Modalコンポーネント**: ローディング/エラー/コンテンツを条件分岐で表示
-- **AnimatePresence重複回避**: 同じキーでの複数マウント/アンマウントを防止
-- **アニメーション最適化**: Y軸移動を削除し、スケールのみに変更
+
+- **単一 Modal コンポーネント**: ローディング/エラー/コンテンツを条件分岐で表示
+- **AnimatePresence 重複回避**: 同じキーでの複数マウント/アンマウントを防止
+- **アニメーション最適化**: Y 軸移動を削除し、スケールのみに変更
 
 ### 改善効果
+
 - ✅ モーダル開閉時のフラッシュ解消
 - ✅ よりスムーズなユーザー体験
 - ✅ 一貫したローディング表示
@@ -1667,15 +1876,17 @@ curl -X POST http://localhost/api/v1/auth/logout \
 ## Phase 4.11.1: メニュー編集バリデーション修正 ✅ 完了
 
 ### 修正内容
-- **FormField数値処理修正**: 空文字列を0に変換しないよう改善
-- **MenuEditModal バリデーション修正**: 
-  - 基本時間の`min`属性を1から0に変更（HTML5バリデーション緩和）
+
+- **FormField 数値処理修正**: 空文字列を 0 に変換しないよう改善
+- **MenuEditModal バリデーション修正**:
+  - 基本時間の`min`属性を 1 から 0 に変更（HTML5 バリデーション緩和）
   - 文字列/数値混在対応のバリデーション関数改良
   - `parseFloat`と`isNaN`チェック追加
   - 総時間計算の型安全性向上
 
 ### 技術的解決
-- **FormField.tsx**: 
+
+- **FormField.tsx**:
   - `handleChange`で空文字列処理改善
   - 数値フィールドの空値を適切に処理
 - **MenuEditModal.tsx**:
@@ -1684,8 +1895,9 @@ curl -X POST http://localhost/api/v1/auth/logout \
   - 総時間計算の安全性向上
 
 ### 動作確認
+
 - ✅ メニュー編集時の時間変更が正常動作
-- ✅ 60分→50分への変更が可能
+- ✅ 60 分 →50 分への変更が可能
 - ✅ バリデーションエラー解消
 - ✅ フロントエンドビルド成功
 
@@ -1694,28 +1906,32 @@ curl -X POST http://localhost/api/v1/auth/logout \
 ## Phase 4.11: メニュー編集モーダル実装 ✅ 完了
 
 ### 実装内容
+
 - **MenuEditModal.tsx**: 既存メニュー編集フォーム実装
   - 既存データ取得と初期化
   - 差分検出と変更内容表示
   - 変更確認機能（未保存時の警告）
   - 包括的バリデーション（作成モーダルと同等）
-  - 変更された項目のみAPI送信（効率的更新）
+  - 変更された項目のみ API 送信（効率的更新）
 
 ### 高度な機能
-- **インテリジェント差分更新**: 変更された項目のみをAPIに送信
+
+- **インテリジェント差分更新**: 変更された項目のみを API に送信
 - **変更サマリー表示**: リアルタイムで変更内容を可視化
 - **未保存警告**: モーダルクローズ時の確認ダイアログ
 - **ローディング状態**: データ取得中の適切な表示
 - **エラーハンドリング**: API エラーの詳細表示
 
-### MenusPage統合
+### MenusPage 統合
+
 - 編集モーダル状態管理追加
 - 「編集」ボタンからモーダル表示
 - 編集成功時の現在ページリロード
-- 統一UI/UX体験（作成・編集の一貫性）
+- 統一 UI/UX 体験（作成・編集の一貫性）
 
 ### 技術的成果
-- **TypeScript型安全性**: 完全な型チェック通過
+
+- **TypeScript 型安全性**: 完全な型チェック通過
 - **フロントエンドビルド**: 成功（2.59s）
 - **バンドルサイズ**: MenusPage 49.50 kB（gzip: 8.94 kB）
 - **コンポーネント再利用**: Modal, FormField の効果的活用
@@ -1727,21 +1943,24 @@ curl -X POST http://localhost/api/v1/auth/logout \
 ---
 
 ## 最新更新情報
+
 - **更新日時**: 2025-07-04 19:04:43
 - **作業端末**: tugiMacMini.local
 - **ブランチ**: develop
 
-## Phase 5.4: フロントエンドAPI統合エラー修正 (完了)
+## Phase 5.4: フロントエンド API 統合エラー修正 (完了)
 
 ### 実装完了項目
+
 - ✅ **resources.filter is not a function エラー修正**
-  - APIレスポンス構造とフロントエンド期待値の不整合解決
+  - API レスポンス構造とフロントエンド期待値の不整合解決
   - リソース一覧データの適切な配列処理実装
   - エラー時の空配列フォールバック追加
 
 ### 修正された技術的問題
 
-#### 1. APIレスポンス構造不整合
+#### 1. API レスポンス構造不整合
+
 ```typescript
 // ❌ 問題：期待した配列形式でない
 const resourceList = await resourceApi.getList(filters);
@@ -1753,15 +1972,19 @@ setResources(result.resources || []); // 常に配列を保証
 ```
 
 #### 2. 配列メソッド呼び出しエラー防止
+
 ```typescript
 // ❌ 問題：resources が undefined の場合エラー
-return resources.filter(resource => resource.is_active).length;
+return resources.filter((resource) => resource.is_active).length;
 
 // ✅ 解決：配列チェック追加
-return Array.isArray(resources) ? resources.filter(resource => resource.is_active).length : 0;
+return Array.isArray(resources)
+  ? resources.filter((resource) => resource.is_active).length
+  : 0;
 ```
 
-#### 3. API戻り値型修正
+#### 3. API 戻り値型修正
+
 ```typescript
 // 修正前：直接配列を期待
 async getResources(filters?: FilterOptions): Promise<Resource[]>
@@ -1770,7 +1993,8 @@ async getResources(filters?: FilterOptions): Promise<Resource[]>
 async getResources(filters?: FilterOptions): Promise<{ resources: Resource[]; pagination: any }>
 ```
 
-### 実際のAPIレスポンス構造
+### 実際の API レスポンス構造
+
 ```json
 {
   "success": true,
@@ -1788,15 +2012,17 @@ async getResources(filters?: FilterOptions): Promise<{ resources: Resource[]; pa
 ```
 
 ### フロントエンド動作確認
-- ✅ **リソース管理画面**: 正常表示
-- ✅ **タイプ別サマリー**: 0件表示（初期状態正常）
-- ✅ **フィルター機能**: エラーなし
-- ✅ **API通信**: 正常レスポンス
 
-## Phase 5.3: CORS・API接続エラー修正 (完了)
+- ✅ **リソース管理画面**: 正常表示
+- ✅ **タイプ別サマリー**: 0 件表示（初期状態正常）
+- ✅ **フィルター機能**: エラーなし
+- ✅ **API 通信**: 正常レスポンス
+
+## Phase 5.3: CORS・API 接続エラー修正 (完了)
 
 ### 実装完了項目
-- ✅ **リソース管理画面のCORS・API接続エラー修正**
+
+- ✅ **リソース管理画面の CORS・API 接続エラー修正**
   - Resource モデルの getAttributeValue メソッド名競合解決
   - resources テーブルに deleted_at カラム追加（SoftDeletes 対応）
   - API エンドポイント正常動作確認完了
@@ -1804,6 +2030,7 @@ async getResources(filters?: FilterOptions): Promise<{ resources: Resource[]; pa
 ### 修正された技術的問題
 
 #### 1. Resource モデル メソッド名競合
+
 ```php
 // ❌ 問題：親クラスとシグネチャが競合
 public function getAttributeValue(string $key, $default = null)
@@ -1813,6 +2040,7 @@ public function getCustomAttributeValue(string $key, $default = null)
 ```
 
 #### 2. SoftDeletes カラム不足
+
 ```php
 // ❌ 問題：deleted_at カラムが存在しない
 SQLSTATE[42S22]: Column not found: 1054 Unknown column 'resources.deleted_at'
@@ -1824,6 +2052,7 @@ Schema::table('resources', function (Blueprint $table) {
 ```
 
 ### API 動作確認結果
+
 ```json
 {
   "success": true,
@@ -1843,100 +2072,113 @@ Schema::table('resources', function (Blueprint $table) {
 ```
 
 ### 修正ファイル
+
 - `backend/app/Models/Resource.php` - メソッド名変更
 - `backend/database/migrations/2025_07_04_185819_add_deleted_at_to_resources_table.php` - 新規作成
-- `frontend/src/services/api.ts` - API戻り値型修正
+- `frontend/src/services/api.ts` - API 戻り値型修正
 - `frontend/src/pages/resources/ResourcesPage.tsx` - 配列チェック追加
 
 ## Phase 5.5: リソース管理画面完全動作 (完了)
 
 ### 実装済み機能
+
 - ✅ **ResourcesPage 完全実装**
   - 統一リソース概念（staff/room/equipment/vehicle）完全対応
   - 業種別表示名システム動作確認
-  - API統合・エラーハンドリング完了
+  - API 統合・エラーハンドリング完了
   - フィルタリング・検索機能実装
   - リアルタイム統計表示
 
 ### 次のステップ (Phase 5.6)
+
 - [ ] リソース作成/編集モーダル実装
-- [ ] 稼働時間設定UI
+- [ ] 稼働時間設定 UI
 - [ ] 業種別制約管理インターフェース
 - [ ] ドラッグ&ドロップ表示順序変更
 
 ## 技術実装統計
 
 ### Backend 実装完了
-- **ResourceController**: 完全CRUD実装
+
+- **ResourceController**: 完全 CRUD 実装
 - **Request Classes**: CreateResourceRequest, UpdateResourceRequest
-- **API Routes**: 8エンドポイント実装
-- **Multi-tenant**: 完全対応（store_id分離）
+- **API Routes**: 8 エンドポイント実装
+- **Multi-tenant**: 完全対応（store_id 分離）
 - **Error Handling**: 詳細ログ・例外処理完備
 
 ### Frontend 実装完了
-- **ResourcesPage**: フル機能実装（約500行）
-- **ResourceCard**: 専用コンポーネント（約170行）
+
+- **ResourcesPage**: フル機能実装（約 500 行）
+- **ResourceCard**: 専用コンポーネント（約 170 行）
 - **API Integration**: resourceApi 完全対応
 - **TypeScript**: 型安全性確保
 - **UI/UX**: レスポンシブ・アニメーション対応
 
 ### 解決した技術課題
+
 1. **Eloquent メソッド名競合**: 親クラス互換性確保
 2. **SoftDeletes 未対応**: deleted_at カラム追加
 3. **API 接続問題**: 完全解決
 4. **認証システム**: Sanctum 正常動作
-5. **フロントエンド型エラー**: APIレスポンス構造整合性確保
+5. **フロントエンド型エラー**: API レスポンス構造整合性確保
 
 ## 開発環境状況
+
 - **Docker**: 全コンテナ正常稼働
-- **API**: 完全動作（200レスポンス）
+- **API**: 完全動作（200 レスポンス）
 - **Database**: マイグレーション完了
 - **Frontend**: ビルド成功・画面表示正常
-- **エラー状況**: 0件（全問題解決済み）
+- **エラー状況**: 0 件（全問題解決済み）
 
 ## ビジネス機能実装度
+
 - **リソース管理**: 95% 完了（CRUD + 高度機能）
 - **統一リソース概念**: 100% 実装
 - **マルチテナント**: 100% 対応
-- **業種対応**: 5業種完全対応
+- **業種対応**: 5 業種完全対応
 
 tugical の核心機能「統一リソース概念によるリソース管理」が完全動作可能状態に到達。
-リソース一覧表示・フィルタリング・API統合すべて正常動作。
-次は具体的なリソース作成・編集UIの実装に移行予定。
+リソース一覧表示・フィルタリング・API 統合すべて正常動作。
+次は具体的なリソース作成・編集 UI の実装に移行予定。
 
 # tugical プロジェクト開発進捗
 
 ## 最新更新情報
+
 - **更新日時**: 2025-07-04 19:16:04
 - **作業端末**: tugiMacMini.local
 - **ブランチ**: develop
 
-## Phase 5.5: ResourceCreateModal実装完了 ✅
+## Phase 5.5: ResourceCreateModal 実装完了 ✅
 
 ### 実装完了項目
-- ✅ **ResourceCreateModal完全実装**
+
+- ✅ **ResourceCreateModal 完全実装**
   - 統一リソース概念対応の革新的作成フォーム
-  - 4タイプリソース対応（staff/room/equipment/vehicle）
+  - 4 タイプリソース対応（staff/room/equipment/vehicle）
   - 業種別表示名・属性・制約管理システム
   - 完全なバリデーション・エラーハンドリング実装
 
 ### 技術的革新ポイント
 
 #### 1. 統一リソース概念の完全実現
+
 ```typescript
 // 4タイプ × 5業種 = 20パターンの動的UI
 staff    → 美容師・先生・講師・ガイド・管理者
-room     → 個室・診療室・教室・集合場所・会議室  
+room     → 個室・診療室・教室・集合場所・会議室
 equipment → 美容器具・医療機器・教材・体験器具・設備
 vehicle  → 送迎車・往診車・スクールバス・ツアー車両・レンタカー
 ```
 
-#### 2. インタラクティブタイプ選択UI
-- 4タイプボタンによる直感的切り替え
+#### 2. インタラクティブタイプ選択 UI
+
+- 4 タイプボタンによる直感的切り替え
 - タイプ変更時の自動属性リセット
 - デフォルト容量の自動設定（staff:1, room:4, equipment:1, vehicle:8）
 
 #### 3. 高度フォームバリデーション
+
 ```typescript
 // 効率率: 0.5-2.0 (50%-200%)
 // 時間料金差: -10,000円〜+10,000円
@@ -1944,18 +2186,20 @@ vehicle  → 送迎車・往診車・スクールバス・ツアー車両・レ�
 // 必須フィールド: name, display_name
 ```
 
-#### 4. 業種別動的UI対応
+#### 4. 業種別動的 UI 対応
+
 ```typescript
 // タイプ別容量ラベル自動変更
-staff: '同時対応人数'
-room: '収容人数' 
-equipment: '同時利用数'
-vehicle: '乗車定員'
+staff: "同時対応人数";
+room: "収容人数";
+equipment: "同時利用数";
+vehicle: "乗車定員";
 ```
 
 ### 実装ファイル詳細
 
-#### ResourceCreateModal.tsx (約400行)
+#### ResourceCreateModal.tsx (約 400 行)
+
 ```typescript
 interface ResourceCreateModalProps {
   isOpen: boolean;
@@ -1974,7 +2218,8 @@ interface ResourceCreateModalProps {
 - API統合・成功通知
 ```
 
-#### ResourcesPage.tsx統合
+#### ResourcesPage.tsx 統合
+
 ```typescript
 // モーダル状態管理
 const [showCreateModal, setShowCreateModal] = useState(false);
@@ -1987,13 +2232,15 @@ const handleResourceCreated = (newResource: Resource) => {
 };
 ```
 
-### API統合確認
-- ✅ **resourceApi.create()**: 完全動作
-- ✅ **CreateResourceRequest型**: 型安全性確保
-- ✅ **エラーハンドリング**: APIエラー・バリデーションエラー対応
-- ✅ **成功通知**: Toast通知システム統合
+### API 統合確認
 
-### UI/UX品質
+- ✅ **resourceApi.create()**: 完全動作
+- ✅ **CreateResourceRequest 型**: 型安全性確保
+- ✅ **エラーハンドリング**: API エラー・バリデーションエラー対応
+- ✅ **成功通知**: Toast 通知システム統合
+
+### UI/UX 品質
+
 - ✅ **レスポンシブデザイン**: モバイル〜デスクトップ対応
 - ✅ **アクセシビリティ**: 適切なラベル・フォーカス管理
 - ✅ **ローディング状態**: ボタン無効化・スピナー表示
@@ -2001,6 +2248,7 @@ const handleResourceCreated = (newResource: Resource) => {
 - ✅ **アニメーション**: Framer Motion による滑らかな動作
 
 ### フロントエンドビルド結果
+
 ```
 ✓ ResourcesPage-BMtMnv_P.js     33.21 kB │ gzip:   7.45 kB
 ✓ ビルド成功: 2.59s
@@ -2010,7 +2258,8 @@ const handleResourceCreated = (newResource: Resource) => {
 
 ## 次の実装ステップ
 
-### Phase 5.6: ResourceEditModal実装（次回）
+### Phase 5.6: ResourceEditModal 実装（次回）
+
 ```typescript
 // 予定実装内容
 1. ResourceEditModal.tsx作成
@@ -2033,58 +2282,66 @@ const handleResourceCreated = (newResource: Resource) => {
 ## 完成済み機能マップ
 
 ### ✅ 完全実装済み
+
 - **メニュー管理**: CRUD + オプション管理
-- **顧客管理**: CRUD + ロイヤリティ管理  
+- **顧客管理**: CRUD + ロイヤリティ管理
 - **リソース管理**: 作成機能完了
-- **予約管理**: バックエンドCRUD完了
-- **認証システム**: Sanctum完全動作
-- **API基盤**: 全エンドポイント動作
+- **予約管理**: バックエンド CRUD 完了
+- **認証システム**: Sanctum 完全動作
+- **API 基盤**: 全エンドポイント動作
 
 ### 🔄 実装中
+
 - **リソース管理**: 編集・詳細モーダル
-- **予約管理**: フロントエンドCRUD
+- **予約管理**: フロントエンド CRUD
 
 ### ⏳ 未実装
-- **LIFF予約フロー**: 5ステップ予約システム
-- **LINE通知**: テンプレート・自動送信
+
+- **LIFF 予約フロー**: 5 ステップ予約システム
+- **LINE 通知**: テンプレート・自動送信
 - **ダッシュボード**: 統計・グラフ表示
 
 ## 技術的成果
 
-tugicalの核心である「統一リソース概念」が **完全に動作可能** な状態に到達。
+tugical の核心である「統一リソース概念」が **完全に動作可能** な状態に到達。
 
-- 4タイプリソース × 5業種対応 = 20パターンの動的UI
+- 4 タイプリソース × 5 業種対応 = 20 パターンの動的 UI
 - 革新的なタイプ選択インターフェース
 - 業種別表示名の自動切り替え
 - 完全なバリデーション・エラーハンドリング
-- API統合・型安全性の確保
+- API 統合・型安全性の確保
 
-**次回セッション**: ResourceEditModal + ResourceDetailModal実装で、リソース管理機能を完全完成させる予定。
+**次回セッション**: ResourceEditModal + ResourceDetailModal 実装で、リソース管理機能を完全完成させる予定。
 
 # tugical 開発進捗管理
 
 ## 最新状況
+
 - **最終更新**: 2025-07-04 19:41:22
 - **作業端末**: tugiMacMini.local
 - **現在ブランチ**: develop
-- **フェーズ**: Phase 5.5 ResourceCreateModal実装完了 → Phase 5.6 ResourceEditModal実装開始
+- **フェーズ**: Phase 5.5 ResourceCreateModal 実装完了 → Phase 5.6 ResourceEditModal 実装開始
 
-## Phase 5.6: ResourceCreateModal APIエラー修正完了 ✅
+## Phase 5.6: ResourceCreateModal API エラー修正完了 ✅
 
 ### 問題の発見と解決
+
 **発生した問題:**
-- ResourceCreateModalで新規スタッフ追加時に500エラーが発生
-- APIエラー: "Column not found: 1054 Unknown column 'constraints' in 'INSERT INTO'"
+
+- ResourceCreateModal で新規スタッフ追加時に 500 エラーが発生
+- API エラー: "Column not found: 1054 Unknown column 'constraints' in 'INSERT INTO'"
 
 **根本原因:**
-- ResourceControllerとResourceモデルで使用しているフィールド名が実際のデータベース構造と不一致
+
+- ResourceController と Resource モデルで使用しているフィールド名が実際のデータベース構造と不一致
 - 存在しないフィールド: `constraints`, `equipment_specs`, `booking_rules`, `image_url`
 - 実際のフィールド: 個別制約フィールド、`equipment_list`, 個別ブッキングルール、`profile_image_url`
 
 **修正内容:**
 
 #### 1. ResourceController.php 修正
-- **store メソッド**: 存在しないフィールドを実際のDB構造に合わせて修正
+
+- **store メソッド**: 存在しないフィールドを実際の DB 構造に合わせて修正
 - **update メソッド**: 配列フィールドの処理を実際のフィールドに修正
 - **修正ファイル**: `backend/app/Http/Controllers/Api/ResourceController.php`
 
@@ -2105,10 +2362,11 @@ tugicalの核心である「統一リソース概念」が **完全に動作可�
 ```
 
 #### 2. Resource.php モデル修正
-- **fillable配列**: 実際のDBフィールドに更新
-- **casts配列**: 実際のフィールドの型キャスト設定
-- **hidden配列**: 非表示フィールドの更新
-- **bootedメソッド**: `constraints`フィールドの参照を削除
+
+- **fillable 配列**: 実際の DB フィールドに更新
+- **casts 配列**: 実際のフィールドの型キャスト設定
+- **hidden 配列**: 非表示フィールドの更新
+- **booted メソッド**: `constraints`フィールドの参照を削除
 
 ```php
 // fillable配列を実際のDB構造に合わせて修正
@@ -2123,7 +2381,8 @@ protected $fillable = [
 ];
 ```
 
-#### 3. API動作確認
+#### 3. API 動作確認
+
 ```bash
 # テスト結果: 成功
 curl -X POST http://localhost/api/v1/resources \
@@ -2135,32 +2394,38 @@ curl -X POST http://localhost/api/v1/resources \
 ```
 
 ### 技術的成果
+
 1. **データベース構造とモデルの完全同期**: 実際のテーブル構造に合わせてコードを修正
-2. **API正常動作確認**: リソース作成APIが正常に動作することを確認
-3. **統一リソース概念の実現**: 4タイプリソース（staff/room/equipment/vehicle）が正常に作成可能
-4. **フロントエンド統合準備完了**: ResourceCreateModalが正常に動作する環境を整備
+2. **API 正常動作確認**: リソース作成 API が正常に動作することを確認
+3. **統一リソース概念の実現**: 4 タイプリソース（staff/room/equipment/vehicle）が正常に作成可能
+4. **フロントエンド統合準備完了**: ResourceCreateModal が正常に動作する環境を整備
 
 ### 解決したエラー
+
 - ✅ Column not found: 1054 Unknown column 'constraints'
-- ✅ Column not found: 1054 Unknown column 'equipment_specs'  
+- ✅ Column not found: 1054 Unknown column 'equipment_specs'
 - ✅ Column not found: 1054 Unknown column 'booking_rules'
 - ✅ Column not found: 1054 Unknown column 'image_url'
 
 ### 次のステップ
-**Phase 5.6: ResourceEditModal実装**
-1. ResourceEditModal.tsx作成
+
+**Phase 5.6: ResourceEditModal 実装**
+
+1. ResourceEditModal.tsx 作成
 2. 既存リソース編集機能実装
-3. ResourceDetailModal.tsx作成  
-4. ResourcesPage完全統合
+3. ResourceDetailModal.tsx 作成
+4. ResourcesPage 完全統合
 
 **完了ファイル:**
+
 - `backend/app/Http/Controllers/Api/ResourceController.php` (修正完了)
 - `backend/app/Models/Resource.php` (修正完了)
 - `frontend/dist/` (ビルド完了)
 
 **コミット準備:**
-- ResourceController/Resourceモデルの修正
-- API動作確認完了
+
+- ResourceController/Resource モデルの修正
+- API 動作確認完了
 - フロントエンドビルド成功
 
 ---
@@ -2168,71 +2433,83 @@ curl -X POST http://localhost/api/v1/resources \
 ## これまでの完了フェーズ
 
 ### Phase 1: 基盤整備 ✅
-- Docker環境構築完了
-- Laravel + React + Vite環境構築
+
+- Docker 環境構築完了
+- Laravel + React + Vite 環境構築
 - 基本認証システム実装
 - データベース設計・マイグレーション完了
 
-### Phase 2: 認証・基本機能 ✅  
-- Sanctum認証システム完成
+### Phase 2: 認証・基本機能 ✅
+
+- Sanctum 認証システム完成
 - ログイン・ログアウト機能
-- 基本的なCRUD API実装
+- 基本的な CRUD API 実装
 - フロントエンド基本レイアウト
 
 ### Phase 3: メニュー管理機能 ✅
-- MenuController完成（CRUD + オプション管理）
-- MenusPage実装（メニュー管理画面）
+
+- MenuController 完成（CRUD + オプション管理）
+- MenusPage 実装（メニュー管理画面）
 - メニューオプション機能実装
 - 業種別メニューテンプレート対応
 
 ### Phase 4: 顧客管理機能 ✅
-- CustomerController完成（CRUD + ロイヤリティ管理）
-- CustomersPage実装（顧客管理画面）
+
+- CustomerController 完成（CRUD + ロイヤリティ管理）
+- CustomersPage 実装（顧客管理画面）
 - 顧客詳細・編集機能実装
-- LINE連携準備（line_user_id nullable対応）
+- LINE 連携準備（line_user_id nullable 対応）
 
 ### Phase 5.1-5.4: リソース管理基盤 ✅
-- ResourceController完成（CRUD + 順序管理）
-- 統一リソース概念実装（staff/room/equipment/vehicle）
-- ResourcesPage実装（リソース管理画面）
-- API統合完了
 
-### Phase 5.5: ResourceCreateModal実装 ✅
+- ResourceController 完成（CRUD + 順序管理）
+- 統一リソース概念実装（staff/room/equipment/vehicle）
+- ResourcesPage 実装（リソース管理画面）
+- API 統合完了
+
+### Phase 5.5: ResourceCreateModal 実装 ✅
+
 - 革新的リソース作成フォーム実装
-- 4タイプリソース対応UI
+- 4 タイプリソース対応 UI
 - 業種別ラベル自動切り替え
 - 完全バリデーション・エラーハンドリング
 
-### Phase 5.6: ResourceCreateModal APIエラー修正 ✅
+### Phase 5.6: ResourceCreateModal API エラー修正 ✅
+
 - データベース構造とモデルの完全同期
-- API正常動作確認
+- API 正常動作確認
 - フロントエンド統合準備完了
 
 ## 技術的マイルストーン
 
-### 🎯 tugical独自機能実装済み
-- **統一リソース概念**: 4タイプリソース統一管理
-- **業種別表示**: 5業種 × 4リソース = 20パターン対応
-- **マルチテナント**: 完全なstore_id分離
-- **革新的UI**: タイプ選択インターフェース
+### 🎯 tugical 独自機能実装済み
+
+- **統一リソース概念**: 4 タイプリソース統一管理
+- **業種別表示**: 5 業種 × 4 リソース = 20 パターン対応
+- **マルチテナント**: 完全な store_id 分離
+- **革新的 UI**: タイプ選択インターフェース
 
 ### 📊 実装完了率
-- **バックエンドAPI**: 80% (メニュー・顧客・リソース完了)
-- **フロントエンド管理画面**: 70% (3画面完了、編集機能一部)
-- **認証システム**: 100% (Sanctum完全動作)
+
+- **バックエンド API**: 80% (メニュー・顧客・リソース完了)
+- **フロントエンド管理画面**: 70% (3 画面完了、編集機能一部)
+- **認証システム**: 100% (Sanctum 完全動作)
 - **データベース**: 90% (主要テーブル完了)
 
 ### 🔄 現在の課題
-- [ ] ResourceEditModal実装
-- [ ] ResourceDetailModal実装
+
+- [ ] ResourceEditModal 実装
+- [ ] ResourceDetailModal 実装
 - [ ] 予約管理フロントエンド
-- [ ] LIFF予約フロー
-- [ ] LINE通知システム
+- [ ] LIFF 予約フロー
+- [ ] LINE 通知システム
 
 ### 🎉 次回目標
-**Phase 5.6完了**: リソース管理機能完全実装
+
+**Phase 5.6 完了**: リソース管理機能完全実装
+
 - ResourceEditModal + ResourceDetailModal
-- ResourcesPage完全統合
+- ResourcesPage 完全統合
 - ドラッグ&ドロップ順序変更
 - 一括操作機能
 
@@ -2241,6 +2518,7 @@ curl -X POST http://localhost/api/v1/resources \
 # tugical 開発進捗管理
 
 ## 最新状況
+
 - **最終更新**: 2025-07-04 19:48:24
 - **作業端末**: tugiMacMini.local
 - **現在ブランチ**: develop
@@ -2249,30 +2527,36 @@ curl -X POST http://localhost/api/v1/resources \
 ## 🚨 重要な反省と学習
 
 ### 発生した問題
+
 場当たり的な対応により、tugical_database_design_v1.0.md の仕様書を無視した実装を行い、プロジェクトの設計思想を破綻させました。
 
 ### 根本原因
+
 1. **.cursorrules の軽視**: 「tugical_database_design_v1.0.md schema EXACTLY」の指示を無視
 2. **仕様書の軽視**: エラー発生時に仕様書を確認せず、場当たり的修正を実施
-3. **設計思想の無視**: tugical独自の統一リソース概念を理解せず、勝手にフィールドを追加
+3. **設計思想の無視**: tugical 独自の統一リソース概念を理解せず、勝手にフィールドを追加
 
 ### 正しい対応手順の確立
+
 **今後は必ず以下の順序で対応:**
+
 1. **仕様書確認**: tugical_database_design_v1.0.md を最初に確認
-2. **.cursorrules確認**: プロジェクト固有のルールを把握
+2. **.cursorrules 確認**: プロジェクト固有のルールを把握
 3. **設計思想理解**: tugical の統一リソース概念を理解
 4. **仕様書準拠実装**: 仕様書通りの正確な実装
-5. **API動作確認**: 仕様書通りの動作確認
+5. **API 動作確認**: 仕様書通りの動作確認
 
 ## Phase 5.6: 仕様書準拠修正完了 ✅
 
 ### 実施した正しい修正
 
-#### 1. resourcesテーブル構造の仕様書準拠修正
+#### 1. resources テーブル構造の仕様書準拠修正
+
 **修正前（間違った拡張構造）:**
+
 ```sql
 -- 仕様書にない余計なフィールドが多数存在
-specialties, skill_level, equipment_list, gender_restriction, 
+specialties, skill_level, equipment_list, gender_restriction,
 min_age, max_age, requirements, allow_overtime, break_time_minutes,
 unavailable_dates, priority_level, is_featured, allow_designation,
 profile_image_url, image_gallery, background_color, is_bookable,
@@ -2280,32 +2564,40 @@ settings, notes, deleted_at
 ```
 
 **修正後（仕様書通り）:**
+
 ```sql
 -- tugical_database_design_v1.0.md 2.1 resources 準拠
 id, store_id, type, name, display_name, description, photo_url,
-attributes (JSON), working_hours (JSON), efficiency_rate, 
+attributes (JSON), working_hours (JSON), efficiency_rate,
 hourly_rate_diff, sort_order, is_active, created_at, updated_at
 ```
 
 #### 2. マイグレーション修正
+
 **ファイル**: `backend/database/migrations/2025_06_29_235129_create_resources_table.php`
+
 - 仕様書通りのシンプルな構造に修正
 - 余計なフィールドを全削除
 - インデックスも仕様書通りに修正
 
-#### 3. Resourceモデル修正
-**ファイル**: `backend/app/Models/Resource.php`
-- `fillable`: 仕様書の12フィールドのみに限定
-- `casts`: 仕様書通りのフィールドのみ
-- `booted`: capacity等の存在しないフィールド参照を削除
+#### 3. Resource モデル修正
 
-#### 4. ResourceController修正
+**ファイル**: `backend/app/Models/Resource.php`
+
+- `fillable`: 仕様書の 12 フィールドのみに限定
+- `casts`: 仕様書通りのフィールドのみ
+- `booted`: capacity 等の存在しないフィールド参照を削除
+
+#### 4. ResourceController 修正
+
 **ファイル**: `backend/app/Http/Controllers/Api/ResourceController.php`
+
 - `store`メソッド: 仕様書通りのフィールドのみ使用
 - `update`メソッド: 配列フィールドを仕様書通りに限定
 - 存在しないフィールドへの参照を完全削除
 
 #### 5. データベース再構築
+
 ```bash
 docker-compose exec app php artisan migrate:fresh --seed
 # 仕様書通りの正しい構造でテーブル再作成
@@ -2313,14 +2605,15 @@ docker-compose exec app php artisan migrate:fresh --seed
 
 ### 動作確認結果
 
-#### API正常動作確認 ✅
+#### API 正常動作確認 ✅
+
 ```bash
 # 仕様書通りのリクエスト
 curl -X POST http://localhost/api/v1/resources \
   -H "Authorization: Bearer ..." \
   -d '{
     "type": "staff",
-    "name": "test_staff", 
+    "name": "test_staff",
     "display_name": "テストスタッフ",
     "description": "テスト用スタッフ",
     "photo_url": "https://example.com/staff.jpg",
@@ -2339,6 +2632,7 @@ curl -X POST http://localhost/api/v1/resources \
 ### 仕様書準拠の確認
 
 #### tugical_database_design_v1.0.md 2.1 resources 完全準拠 ✅
+
 ```sql
 | カラム名 | 型 | NOT NULL | デフォルト | 説明 |
 |---------|---|----------|-----------|------|
@@ -2364,12 +2658,14 @@ curl -X POST http://localhost/api/v1/resources \
 ### tugical 統一リソース概念の正しい理解
 
 #### 仕様書通りの設計思想
-1. **シンプルな構造**: 複雑な個別フィールドではなく、JSON attributesで柔軟性を確保
+
+1. **シンプルな構造**: 複雑な個別フィールドではなく、JSON attributes で柔軟性を確保
 2. **統一管理**: staff/room/equipment/vehicle を同一テーブルで管理
-3. **業種対応**: attributes JSONで業種固有の情報を格納
-4. **拡張性**: 新しい属性はattributes JSONに追加
+3. **業種対応**: attributes JSON で業種固有の情報を格納
+4. **拡張性**: 新しい属性は attributes JSON に追加
 
 #### 間違った理解（修正前）
+
 - 個別フィールドを大量追加
 - 複雑な制約フィールドを個別定義
 - 仕様書を無視した独自拡張
@@ -2379,88 +2675,103 @@ curl -X POST http://localhost/api/v1/resources \
 1. **仕様書は絶対**: tugical_database_design_v1.0.md は設計の根幹
 2. **.cursorrules は必読**: プロジェクト固有のルールを必ず確認
 3. **場当たり的対応厳禁**: エラー発生時こそ仕様書を確認
-4. **設計思想の理解**: tugical独自の概念を正しく理解して実装
+4. **設計思想の理解**: tugical 独自の概念を正しく理解して実装
 
 ### 次のステップ
-**Phase 5.7: ResourceEditModal実装**
+
+**Phase 5.7: ResourceEditModal 実装**
+
 - 仕様書通りのフィールドのみを使用
 - tugical_database_design_v1.0.md を厳密に遵守
 - 統一リソース概念に基づく正しい実装
 
 **今後の開発方針:**
+
 - 仕様書ファーストの開発
 - .cursorrules の厳格な遵守
-- tugical設計思想の深い理解
+- tugical 設計思想の深い理解
 
 ---
 
 ## これまでの完了フェーズ
 
 ### Phase 1: 基盤整備 ✅
-- Docker環境構築完了
-- Laravel + React + Vite環境構築
+
+- Docker 環境構築完了
+- Laravel + React + Vite 環境構築
 - 基本認証システム実装
 - データベース設計・マイグレーション完了
 
-### Phase 2: 認証・基本機能 ✅  
-- Sanctum認証システム完成
+### Phase 2: 認証・基本機能 ✅
+
+- Sanctum 認証システム完成
 - ログイン・ログアウト機能
-- 基本的なCRUD API実装
+- 基本的な CRUD API 実装
 - フロントエンド基本レイアウト
 
 ### Phase 3: メニュー管理機能 ✅
-- MenuController完成（CRUD + オプション管理）
-- MenusPage実装（メニュー管理画面）
+
+- MenuController 完成（CRUD + オプション管理）
+- MenusPage 実装（メニュー管理画面）
 - メニューオプション機能実装
 - 業種別メニューテンプレート対応
 
 ### Phase 4: 顧客管理機能 ✅
-- CustomerController完成（CRUD + ロイヤリティ管理）
-- CustomersPage実装（顧客管理画面）
+
+- CustomerController 完成（CRUD + ロイヤリティ管理）
+- CustomersPage 実装（顧客管理画面）
 - 顧客詳細・編集機能実装
-- LINE連携準備（line_user_id nullable対応）
+- LINE 連携準備（line_user_id nullable 対応）
 
 ### Phase 5.1-5.4: リソース管理基盤 ✅
-- ResourceController完成（CRUD + 順序管理）
-- 統一リソース概念実装（staff/room/equipment/vehicle）
-- ResourcesPage実装（リソース管理画面）
-- API統合完了
 
-### Phase 5.5: ResourceCreateModal実装 ✅
+- ResourceController 完成（CRUD + 順序管理）
+- 統一リソース概念実装（staff/room/equipment/vehicle）
+- ResourcesPage 実装（リソース管理画面）
+- API 統合完了
+
+### Phase 5.5: ResourceCreateModal 実装 ✅
+
 - 革新的リソース作成フォーム実装
-- 4タイプリソース対応UI
+- 4 タイプリソース対応 UI
 - 業種別ラベル自動切り替え
 - 完全バリデーション・エラーハンドリング
 
 ### Phase 5.6: 仕様書準拠修正完了 ✅
+
 - tugical_database_design_v1.0.md 完全準拠
 - 場当たり的対応の反省と改善
 - 正しい開発プロセスの確立
-- API正常動作確認
+- API 正常動作確認
 
 ## 技術的マイルストーン
 
-### 🎯 tugical独自機能実装済み（仕様書準拠）
-- **統一リソース概念**: 仕様書通りのシンプルな構造で4タイプリソース統一管理
-- **業種別表示**: attributes JSONで5業種対応
-- **マルチテナント**: 完全なstore_id分離
-- **JSON柔軟性**: attributes/working_hours による拡張可能設計
+### 🎯 tugical 独自機能実装済み（仕様書準拠）
+
+- **統一リソース概念**: 仕様書通りのシンプルな構造で 4 タイプリソース統一管理
+- **業種別表示**: attributes JSON で 5 業種対応
+- **マルチテナント**: 完全な store_id 分離
+- **JSON 柔軟性**: attributes/working_hours による拡張可能設計
 
 ### 📊 実装完了率
-- **バックエンドAPI**: 85% (メニュー・顧客・リソース完了、仕様書準拠)
-- **フロントエンド管理画面**: 70% (3画面完了、仕様書準拠修正必要)
-- **認証システム**: 100% (Sanctum完全動作)
+
+- **バックエンド API**: 85% (メニュー・顧客・リソース完了、仕様書準拠)
+- **フロントエンド管理画面**: 70% (3 画面完了、仕様書準拠修正必要)
+- **認証システム**: 100% (Sanctum 完全動作)
 - **データベース**: 95% (仕様書完全準拠)
 
 ### 🔄 現在の課題
+
 - [ ] ResourceCreateModal の仕様書準拠修正
-- [ ] ResourceEditModal実装（仕様書準拠）
-- [ ] ResourceDetailModal実装（仕様書準拠）
+- [ ] ResourceEditModal 実装（仕様書準拠）
+- [ ] ResourceDetailModal 実装（仕様書準拠）
 - [ ] 予約管理フロントエンド
-- [ ] LIFF予約フロー
+- [ ] LIFF 予約フロー
 
 ### 🎉 次回目標
-**Phase 5.7**: ResourceEditModal実装（仕様書厳守）
+
+**Phase 5.7**: ResourceEditModal 実装（仕様書厳守）
+
 - tugical_database_design_v1.0.md の厳密な遵守
 - 統一リソース概念の正しい理解に基づく実装
 - JSON attributes を活用した柔軟な属性管理
@@ -2470,6 +2781,7 @@ curl -X POST http://localhost/api/v1/resources \
 ## Phase 5.8: 仕様書更新と実装統一 (2025-07-04 20:00:58)
 
 ### 作業概要
+
 - **目的**: 現在の実装と仕様書の整合性確保
 - **方針**: ハイブリッドアプローチ（実装を基準に仕様書を更新）
 - **作業端末**: tugiMacMini.local
@@ -2477,75 +2789,88 @@ curl -X POST http://localhost/api/v1/resources \
 ### 完了事項
 
 #### 1. 実装妥当性検証
+
 - **stores テーブル**: 追加フィールドの使用状況確認 → 実際に使用されており妥当
 - **menus テーブル**: 複雑なフィールドの使用状況確認 → 実際に使用されており妥当
 - **フロントエンド**: 実装されたフィールドが実際に表示・操作されていることを確認
 
 #### 2. 仕様書確認結果
+
 - **tugical_database_design_v1.0.md**: 既に現在の実装に合わせて更新済み
-  - stores テーブル: 37フィールド（実装と一致）
-  - menus テーブル: 40フィールド（実装と一致）
-  - customers テーブル: line_user_id nullable対応済み
-  - resources テーブル: 仕様書通りの12フィールド（Phase 5.6で修正済み）
+  - stores テーブル: 37 フィールド（実装と一致）
+  - menus テーブル: 40 フィールド（実装と一致）
+  - customers テーブル: line_user_id nullable 対応済み
+  - resources テーブル: 仕様書通りの 12 フィールド（Phase 5.6 で修正済み）
 
 #### 3. 整合性確認
+
 - ✅ 主要テーブルの仕様書と実装が一致
-- ✅ ENUM値の定義が一致
+- ✅ ENUM 値の定義が一致
 - ✅ インデックス定義が一致
 - ✅ 外部キー制約が一致
 
 ### 重要な発見
+
 1. **アジャイル的進化**: 仕様書作成後の実装過程で、実際のビジネスニーズに基づいて適切に進化
 2. **実用性重視**: 追加された複雑なフィールドは実際に使用されており、ビジネス価値がある
-3. **tugical設計思想の維持**: JSON型を活用した柔軟性は維持されている
+3. **tugical 設計思想の維持**: JSON 型を活用した柔軟性は維持されている
 
 ### 次のステップ
-- Phase 5.9: ResourceEditModal実装（仕様書厳守）
+
+- Phase 5.9: ResourceEditModal 実装（仕様書厳守）
 - 今後の開発では仕様書ファーストを徹底
 
 ### ファイル変更履歴
+
 - `doc/tugical_database_design_v1.0.md`: 実装との整合性確認完了
 
-## Phase 5.9: 仕様書更新とcapacityフィールド追加 (2025-07-04 20:18:17)
+## Phase 5.9: 仕様書更新と capacity フィールド追加 (2025-07-04 20:18:17)
 
 ### 作業概要
-- **目的**: ペルソナ分析に基づくcapacityフィールドの仕様書追加と実装
+
+- **目的**: ペルソナ分析に基づく capacity フィールドの仕様書追加と実装
 - **方針**: 仕様書ファースト、ビジネス価値重視のアプローチ
 - **作業端末**: tugiMacMini.local
 
 ### 完了事項
 
 #### 1. ペルソナ分析によるビジネス価値検証
-- **美容室オーナー**: スタッフの同時対応能力管理（新人1人、ベテラン2人同時）
+
+- **美容室オーナー**: スタッフの同時対応能力管理（新人 1 人、ベテラン 2 人同時）
 - **クリニック受付**: 診察室収容人数、医師の同時診察可能数
 - **料理教室運営者**: 教室収容人数、講師の指導可能人数
 - **体験ツアー運営者**: 車両乗車定員、ガイドの案内可能人数
 - **お客様視点**: 透明性・安心感・効率的予約の向上
 
 #### 2. 仕様書更新
-- **tugical_database_design_v1.0.md**: 
+
+- **tugical_database_design_v1.0.md**:
   - resources テーブルに `capacity` フィールド追加
-  - タイプ別の capacity 説明追加（staff: 1-10人、room: 1-100人、等）
+  - タイプ別の capacity 説明追加（staff: 1-10 人、room: 1-100 人、等）
   - attributes JSON 構造例の詳細化
-- **tugical_api_specification_v1.0.md**: 
-  - リソース作成・更新APIレスポンスに capacity フィールド追加
+- **tugical_api_specification_v1.0.md**:
+  - リソース作成・更新 API レスポンスに capacity フィールド追加
 
 #### 3. データベース実装
+
 - **マイグレーション修正**: `2025_06_29_235129_create_resources_table.php`
   - `capacity` INT NOT NULL DEFAULT 1 追加
   - 収容・対応人数のコメント追加
 
 #### 4. バックエンド実装
+
 - **Resource.php**: fillable に capacity 追加
 - **ResourceController.php**: store メソッドで capacity 対応済み確認
-- **API動作確認**: capacity=2 のリソース作成成功
+- **API 動作確認**: capacity=2 のリソース作成成功
 
 #### 5. フロントエンド修正
-- **ResourceCreateModal.tsx**: 
+
+- **ResourceCreateModal.tsx**:
   - 仕様書にないフィールド（constraints, equipment_specs）削除
   - capacity フィールドの正しい実装確認
 
-### API動作確認結果
+### API 動作確認結果
+
 ```bash
 # capacity フィールド付きリソース作成成功
 POST /api/v1/resources
@@ -2558,38 +2883,42 @@ POST /api/v1/resources
 ```
 
 ### 重要な学習
+
 1. **ペルソナ分析の有効性**: 利用者・お客様の立場から機能の必要性を検証
 2. **仕様書ファーストの重要性**: 実装前の仕様書更新で整合性確保
 3. **ビジネス価値重視**: 技術的な複雑さよりもビジネス価値を優先
 
 ### 次のステップ
-- Phase 5.10: ResourceEditModal実装（仕様書準拠、capacity対応）
-- フロントエンドでのcapacity表示・編集UI実装
+
+- Phase 5.10: ResourceEditModal 実装（仕様書準拠、capacity 対応）
+- フロントエンドでの capacity 表示・編集 UI 実装
 
 ### ファイル変更履歴
-
 
 ## Phase 5.10: 削除ダイアログ仕様統一 (2025-07-04 20:23:32)
 
 ### 作業概要
-- **目的**: tugical UI設計書に準拠した削除ダイアログの統一
-- **方針**: ConfirmDialogコンポーネントによる統一的な削除確認機能
+
+- **目的**: tugical UI 設計書に準拠した削除ダイアログの統一
+- **方針**: ConfirmDialog コンポーネントによる統一的な削除確認機能
 - **作業端末**: tugiMacMini.local
 
 ### 完了事項
 
 #### 1. 削除ダイアログ仕様確認
-- **tugical_ui_design_system_v1.0.md**: 削除ダイアログの仕様を確認
-- **既存実装**: ConfirmDialogコンポーネントが正しく実装済み
-- **問題発見**: MenusPageでnative confirm()を使用している箇所を発見
 
-#### 2. MenusPage削除機能修正
+- **tugical_ui_design_system_v1.0.md**: 削除ダイアログの仕様を確認
+- **既存実装**: ConfirmDialog コンポーネントが正しく実装済み
+- **問題発見**: MenusPage で native confirm()を使用している箇所を発見
+
+#### 2. MenusPage 削除機能修正
+
 - **削除方法変更**: `confirm()` → `ConfirmDialog`コンポーネント
-- **状態管理追加**: 
+- **状態管理追加**:
   - `showDeleteDialog`: 削除ダイアログ表示状態
   - `deletingMenu`: 削除対象メニュー
   - `isDeleting`: 削除処理中フラグ
-- **ConfirmDialog実装**:
+- **ConfirmDialog 実装**:
   - title: "メニューを削除"
   - message: メニュー名を含む確認メッセージ
   - confirmText: "削除する"
@@ -2597,20 +2926,23 @@ POST /api/v1/resources
   - isDanger: true（危険な操作）
   - isLoading: 削除処理中の表示
 
-#### 3. TypeScript型定義修正
-- **PaginationData追加**: frontend/src/types/index.ts
-  - from/toフィールドを含む完全なページネーション型
-- **ResourceFormData修正**: capacity フィールドを追加
+#### 3. TypeScript 型定義修正
+
+- **PaginationData 追加**: frontend/src/types/index.ts
+  - from/to フィールドを含む完全なページネーション型
+- **ResourceFormData 修正**: capacity フィールドを追加
 - **型エラー解決**: response.pagination の型安全な処理
 
 #### 4. フロントエンドビルド成功
-- **ビルド結果**: 正常完了（2.57s）
-- **バンドルサイズ**: 適切（最大66.36kB gzip後10.37kB）
-- **TypeScriptエラー**: 全て解決
 
-### tugical削除ダイアログ仕様
+- **ビルド結果**: 正常完了（2.57s）
+- **バンドルサイズ**: 適切（最大 66.36kB gzip 後 10.37kB）
+- **TypeScript エラー**: 全て解決
+
+### tugical 削除ダイアログ仕様
 
 #### 統一仕様
+
 ```typescript
 <ConfirmDialog
   isOpen={showDeleteDialog}
@@ -2626,58 +2958,69 @@ POST /api/v1/resources
 ```
 
 #### デザイン特徴
+
 - **危険操作の視覚化**: 赤色のアイコンとボタン
 - **明確なメッセージ**: 対象名と不可逆性の明示
 - **ローディング状態**: 処理中の適切なフィードバック
 - **モーダル形式**: オーバーレイによる集中表示
 
 ### 影響範囲
-- **MenusPage**: 削除ダイアログをConfirmDialogに統一
-- **CustomerDetailModal**: 既に正しくConfirmDialogを使用
+
+- **MenusPage**: 削除ダイアログを ConfirmDialog に統一
+- **CustomerDetailModal**: 既に正しく ConfirmDialog を使用
 - **他のページ**: 今後の実装で同様の仕様を適用
 
 ### 次のステップ
-- Phase 5.11: ResourceEditModal実装（仕様書厳守）
+
+- Phase 5.11: ResourceEditModal 実装（仕様書厳守）
 - 他のページでの削除機能統一確認
-- UI/UXの一貫性向上
+- UI/UX の一貫性向上
 
 ### ファイル変更履歴
+
 - `frontend/src/pages/menus/MenusPage.tsx`: 削除ダイアログ修正
-- `frontend/src/types/index.ts`: PaginationData型追加
-- `frontend/src/components/resource/ResourceCreateModal.tsx`: capacity型修正
+- `frontend/src/types/index.ts`: PaginationData 型追加
+- `frontend/src/components/resource/ResourceCreateModal.tsx`: capacity 型修正
 - `docs/PROGRESS.md`: 進捗記録更新
 
 ### 重要な学習
-**tugical UI設計思想**: 統一されたConfirmDialogコンポーネントにより、全ての削除操作で一貫したユーザー体験を提供。危険な操作には適切な視覚的フィードバックと確認プロセスを実装。
+
+**tugical UI 設計思想**: 統一された ConfirmDialog コンポーネントにより、全ての削除操作で一貫したユーザー体験を提供。危険な操作には適切な視覚的フィードバックと確認プロセスを実装。
 
 # tugical 開発進捗管理
 
 ## 最新状況
+
 - **日時**: 2025-07-04 20:38:44
 - **作業端末**: tugiMacMini.local
 - **ブランチ**: develop
-- **フェーズ**: Phase 5.11 TypeScript設定最適化
+- **フェーズ**: Phase 5.11 TypeScript 設定最適化
 
-## Phase 5.11: TypeScript設定最適化とリンターエラー解決 ✅
+## Phase 5.11: TypeScript 設定最適化とリンターエラー解決 ✅
 
 ### 実施内容
-1. **TypeScript設定最適化**
+
+1. **TypeScript 設定最適化**
+
    - `tsconfig.json`の設定調整
    - `exactOptionalPropertyTypes: false`に変更
    - 未使用変数警告の無効化（`noUnusedLocals: false`, `noUnusedParameters: false`）
    - パス解決の改善（`@/*`エイリアス設定）
 
-2. **VSCode設定追加**
-   - `tugical.code-workspace`にTypeScript設定を追加
+2. **VSCode 設定追加**
+
+   - `tugical.code-workspace`に TypeScript 設定を追加
    - エラー表示の制御とフォーマット設定
    - 推奨拡張機能の定義
 
-3. **ESLint設定ファイル作成**
+3. **ESLint 設定ファイル作成**
+
    - `frontend/.eslintrc.js`を新規作成
    - TypeScript、React、アクセシビリティのルール設定
    - 開発中のエラー警告レベルを調整
 
-4. **Prettier設定追加**
+4. **Prettier 設定追加**
+
    - `frontend/.prettierrc`を新規作成
    - コードフォーマットの統一
 
@@ -2688,71 +3031,138 @@ POST /api/v1/resources
    - `FormField`コンポーネントの`value`型を`string | number | null`に対応
 
 ### 解決したエラー
-- `exactOptionalPropertyTypes`による厳密な型チェックエラー（15件）
-- FormFieldコンポーネントの型不一致エラー（2件）
+
+- `exactOptionalPropertyTypes`による厳密な型チェックエラー（15 件）
+- FormField コンポーネントの型不一致エラー（2 件）
 - 未使用変数・パラメータ警告の適切な制御
 
 ### 動作確認
-- TypeScriptビルド成功（2.47秒）
-- エラー0件、警告はチャンクサイズのみ（性能最適化の提案）
+
+- TypeScript ビルド成功（2.47 秒）
+- エラー 0 件、警告はチャンクサイズのみ（性能最適化の提案）
 - 開発体験の向上（適切なエラー表示制御）
 
 ### 技術的成果
+
 - **開発効率向上**: 不要な警告を削減し、重要なエラーに集中
 - **型安全性維持**: 厳密すぎる設定を調整しつつ、基本的な型チェックは保持
-- **コード品質**: ESLint/Prettierによる統一されたコードスタイル
-- **VSCode統合**: ワークスペース設定による開発環境の統一
+- **コード品質**: ESLint/Prettier による統一されたコードスタイル
+- **VSCode 統合**: ワークスペース設定による開発環境の統一
 
 ## 前回までの完了フェーズ
 
 ### Phase 5.10: 削除ダイアログ仕様統一 ✅
-- ConfirmDialogコンポーネントによる統一実装
-- MenusPageでnative confirm()を使用していた問題を修正
-- TypeScript型定義修正（PaginationData追加、ResourceFormData capacity対応）
 
-### Phase 5.9: capacityフィールド追加 ✅
+- ConfirmDialog コンポーネントによる統一実装
+- MenusPage で native confirm()を使用していた問題を修正
+- TypeScript 型定義修正（PaginationData 追加、ResourceFormData capacity 対応）
+
+### Phase 5.9: capacity フィールド追加 ✅
+
 - ペルソナ分析実施（美容室オーナー、クリニック受付、料理教室運営者、お客様視点）
-- capacityフィールドのビジネス価値確認
-- 仕様書更新後にマイグレーション・モデル・API修正
-- API動作確認成功（capacity=2のリソース作成）
+- capacity フィールドのビジネス価値確認
+- 仕様書更新後にマイグレーション・モデル・API 修正
+- API 動作確認成功（capacity=2 のリソース作成）
 
 ### Phase 5.8: 仕様書更新と実装統一 ✅
+
 - stores, menus, customers テーブルの仕様書との整合性確認
 - 実装を基準とした仕様書との統一
 - ハイブリッドアプローチ採用
 
 ### Phase 5.6-5.7: 仕様書準拠修正 ✅
-- ResourceController/Resourceモデルの仕様書準拠修正
-- tugical_database_design_v1.0.md通りの12フィールド実装
-- API動作確認成功（リソース作成APIが正常動作）
+
+- ResourceController/Resource モデルの仕様書準拠修正
+- tugical_database_design_v1.0.md 通りの 12 フィールド実装
+- API 動作確認成功（リソース作成 API が正常動作）
 
 ## 次回作業予定
 
 ### Phase 6: LIFF アプリケーション実装開始
-1. **LIFF環境セットアップ**
-   - LINE Developer Console設定
-   - LIFF アプリケーション登録
-   - 開発環境でのLIFF SDK統合
 
-2. **LIFF基本構造実装**
-   - React + Vite + TypeScript環境構築
-   - LINE認証フロー実装
+1. **LIFF 環境セットアップ**
+
+   - LINE Developer Console 設定
+   - LIFF アプリケーション登録
+   - 開発環境での LIFF SDK 統合
+
+2. **LIFF 基本構造実装**
+
+   - React + Vite + TypeScript 環境構築
+   - LINE 認証フロー実装
    - 基本レイアウトコンポーネント作成
 
 3. **予約フロー実装**
-   - 5ステップ予約フロー（メニュー選択→リソース選択→日時選択→顧客情報→確認）
+   - 5 ステップ予約フロー（メニュー選択 → リソース選択 → 日時選択 → 顧客情報 → 確認）
    - 仮押さえシステム（HoldToken）統合
    - リアルタイム空き状況確認
 
 ### 重要な学習と改善点
-- **TypeScript設定の重要性**: 開発効率と型安全性のバランス
+
+- **TypeScript 設定の重要性**: 開発効率と型安全性のバランス
 - **段階的な設定調整**: 厳密すぎる設定は開発を阻害する場合がある
-- **開発環境の統一**: VSCode設定、ESLint、Prettierによる一貫した開発体験
+- **開発環境の統一**: VSCode 設定、ESLint、Prettier による一貫した開発体験
 - **エラー管理**: 重要なエラーと警告を区別し、適切に制御
 
 ## 開発メモ
-- TypeScript `exactOptionalPropertyTypes: true`は厳密すぎるため、`false`に変更
-- ESLint設定で未使用変数を警告レベルに調整（開発中は`warn`、本番前に`error`）
-- FormFieldコンポーネントで`null`値を適切に処理（空文字列に変換）
-- Prettierによるコードフォーマットの自動化で品質向上
 
+- TypeScript `exactOptionalPropertyTypes: true`は厳密すぎるため、`false`に変更
+- ESLint 設定で未使用変数を警告レベルに調整（開発中は`warn`、本番前に`error`）
+- FormField コンポーネントで`null`値を適切に処理（空文字列に変換）
+- Prettier によるコードフォーマットの自動化で品質向上
+
+### 2025-07-04 21:05:55
+
+- **作業端末**: tugiMacAir.local
+- **Phase**: 5.12 - リソース管理削除確認ダイアログ修正
+- **Status**: ✅ 完了
+
+#### 実施内容
+
+1. **削除確認ダイアログの修正**
+
+   - 古い`confirm()`関数を削除
+   - 既存の`ConfirmDialog`コンポーネントを使用するように修正
+   - モダンなダイアログ UI に統一
+
+2. **状態管理の追加**
+
+   - `showDeleteConfirm`: 削除確認ダイアログの表示状態
+   - `resourceToDelete`: 削除対象のリソース
+   - `isDeleting`: 削除処理中の状態
+
+3. **削除処理の分離**
+
+   - `handleDeleteResource`: ダイアログ表示処理
+   - `executeDeleteResource`: 実際の削除処理
+   - `handleDeleteCancel`: ダイアログキャンセル処理
+
+4. **UX 改善**
+   - 削除中はローディング状態を表示
+   - 削除中はダイアログを閉じられない
+   - 危険な操作として赤いボタンで表示
+   - 削除対象リソース名を表示
+
+#### 技術的成果
+
+- 既存コンポーネントの再利用によるコード統一
+- ユーザーエクスペリエンスの向上
+- 一貫性のある UI デザイン
+- 安全な削除処理の実装
+
+#### 完了ファイル
+
+- `frontend/src/pages/resources/ResourcesPage.tsx` - 削除確認ダイアログ修正
+- `frontend/src/types/index.ts` - ToastNotification 型に actions 追加（未使用）
+
+#### ビルド結果
+
+- TypeScript ビルド成功（2.62 秒、エラー 0 件）
+- バンドルサイズ最適化の警告あり（500KB 超過）
+
+#### 次のステップ
+
+- **Phase 6**: LIFF アプリケーション実装開始
+- LINE SDK 統合と LIFF 環境セットアップ
+- 予約フロー（5 ステップ）の実装
+- 顧客向け UI コンポーネントの作成

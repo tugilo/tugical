@@ -1,11 +1,11 @@
 /**
  * tugical Admin Dashboard Type Definitions
- * 
+ *
  * API仕様準拠:
  * - tugical_api_specification_v1.0.md 完全準拠
  * - Laravel Sanctum認証対応
  * - マルチテナント対応型定義
- * 
+ *
  * @author tugical Development Team
  * @version 1.0
  * @since 2025-07-02
@@ -486,7 +486,14 @@ export interface MenuCategoriesResponse {
 
 export interface Notification {
   id: number;
-  type: 'booking_confirmation' | 'booking_reminder' | 'booking_cancellation' | 'booking_update' | 'promotional' | 'system' | 'emergency';
+  type:
+    | 'booking_confirmation'
+    | 'booking_reminder'
+    | 'booking_cancellation'
+    | 'booking_update'
+    | 'promotional'
+    | 'system'
+    | 'emergency';
   channel: 'line' | 'email' | 'sms';
   recipient_type: 'customer' | 'staff';
   recipient_id: number;
@@ -531,6 +538,12 @@ export interface ToastNotification {
   title: string;
   message?: string | null;
   duration?: number | null;
+  actions?: Array<{
+    label: string;
+    onClick: () => void;
+    variant: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
+  }>;
+  persistent?: boolean;
 }
 
 // ========================================
@@ -540,7 +553,17 @@ export interface ToastNotification {
 export interface FormField {
   name: string;
   label: string;
-  type: 'text' | 'email' | 'password' | 'number' | 'select' | 'textarea' | 'checkbox' | 'radio' | 'date' | 'time';
+  type:
+    | 'text'
+    | 'email'
+    | 'password'
+    | 'number'
+    | 'select'
+    | 'textarea'
+    | 'checkbox'
+    | 'radio'
+    | 'date'
+    | 'time';
   required?: boolean;
   placeholder?: string;
   options?: Array<{ value: string | number; label: string }>;
@@ -597,7 +620,11 @@ export interface DashboardStats {
 
 export interface RecentActivity {
   id: string;
-  type: 'booking_created' | 'booking_updated' | 'customer_registered' | 'payment_received';
+  type:
+    | 'booking_created'
+    | 'booking_updated'
+    | 'customer_registered'
+    | 'payment_received';
   title: string;
   description: string;
   timestamp: string;
@@ -613,4 +640,4 @@ export type BookingStatus = Booking['status'];
 export type UserRole = User['role'];
 export type ResourceType = Resource['type'];
 export type NotificationType = Notification['type'];
-export type NotificationChannel = Notification['channel']; 
+export type NotificationChannel = Notification['channel'];

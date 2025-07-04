@@ -30,8 +30,8 @@ const FormField: React.FC<FormFieldProps> = ({
   type = 'text',
   value,
   onChange,
-  placeholder,
-  error,
+  placeholder = '',
+  error = '',
   required = false,
   disabled = false,
   options = [],
@@ -69,8 +69,8 @@ const FormField: React.FC<FormFieldProps> = ({
     }
   };
 
-  // nullの場合は空文字列に変換
-  const displayValue = value === null ? '' : value;
+  // nullの場合は空文字列に変換、数値の場合は文字列に変換
+  const displayValue = value === null ? '' : String(value);
 
   const renderInput = () => {
     switch (type) {
