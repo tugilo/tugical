@@ -69,6 +69,7 @@ Route::prefix('v1')->middleware(['auth:sanctum'])->name('api.v1.')->group(functi
     Route::put('bookings/{booking}', [BookingController::class, 'update']);
     Route::delete('bookings/{booking}', [BookingController::class, 'destroy']);
     Route::patch('bookings/{booking}/status', [BookingController::class, 'updateStatus']);
+    Route::patch('bookings/{booking}/move', [BookingController::class, 'move']);
 
     // 空き時間・可用性API（tugical_api_specification_v1.0.md Section 3）
     Route::get('availability', [AvailabilityController::class, 'index']);

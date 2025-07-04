@@ -354,6 +354,31 @@ class ApiClient {
     }
   }
 
+  /**
+   * 予約移動（タイムライン専用）
+   * 日時・時間・担当者を一括更新
+   */
+  async moveBooking(
+    id: number,
+    moveData: {
+      booking_date: string;
+      start_time: string;
+      end_time: string;
+      resource_id?: number | null;
+    }
+  ): Promise<Booking> {
+    const response = await this.client.patch<ApiResponse<Booking>>(
+      `/bookings/${id}/move`,
+      moveData
+    );
+
+    if (response.data.success && response.data.data) {
+      return response.data.data;
+    }
+
+    throw new Error(response.data.error?.message || '予約の移動に失敗しました');
+  }
+
   // ========================================
   // 顧客API
   // ========================================

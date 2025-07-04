@@ -1,5 +1,11 @@
-import React from 'react';
-import { Booking } from '../../types';
+import React, { useRef, useEffect, useState } from 'react';
+import FullCalendar from '@fullcalendar/react';
+import resourceTimelinePlugin from '@fullcalendar/resource-timeline';
+import interactionPlugin from '@fullcalendar/interaction';
+import { EventInput } from '@fullcalendar/core';
+import { Booking, Resource } from '../../types';
+import { useUIStore } from '../../stores/uiStore';
+import { resourceApi } from '../../services/api';
 
 interface BookingTimelineViewProps {
   date: Date;
@@ -18,38 +24,327 @@ interface BookingTimelineViewProps {
   ) => Promise<void>;
 }
 
-const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
-  date,
-  bookings,
-  onBookingClick,
-  onBookingCreate,
-  onBookingMove,
-}) => {
-  return (
-    <div className='bg-white rounded-lg shadow-sm border border-gray-200 p-6'>
-      <div className='text-center py-12'>
-        <h3 className='text-lg font-semibold text-gray-900 mb-2'>
-          📅 タイムライン表示
-        </h3>
-        <p className='text-gray-600 mb-4'>
-          FullCalendar Timelineによる予約管理画面
-        </p>
-        <div className='text-sm text-gray-500'>
-          <p>表示日: {date.toLocaleDateString('ja-JP')}</p>
-          <p>予約件数: {bookings.length}件</p>
-        </div>
-        <div className='mt-6 p-4 bg-blue-50 rounded-lg'>
-          <p className='text-sm text-blue-700'>
-            🚧 FullCalendar Timeline実装中
-            <br />
-            横軸: 時間（9:00-20:00）
-            <br />
-            縦軸: 担当者（スタッフ・リソース）
-            <br />
-            ドラッグ&ドロップ対応予定
-          </p>
-        </div>
+// リソースの型定義
+interface CalendarResource {
+  id: string;
+  title: string;
+  extendedProps?: {
+    type: string;
+    color: string;
+    photo?: string;
+  };
+}
+
+/**
+ * 予約タイムライン表示コンポーネント
+ *
+ * FullCalendar Timelineを使用して美容室の予約を視覚的に表示
+ * - 横軸: 時間（9:00-20:00）
+ * - 縦軸: 担当者（スタッフ・リソース）
+ * - ドラッグ&ドロップ対応
+ * - リアルタイム更新
+ */
+const BookingTimelineView: React.FC<BookingTimelineViewProps> = props => {
+  const { date, bookings, onBookingClick, onBookingCreate, onBookingMove } =
+    props;
+
+  const calendarRef = useRef<FullCalendar>(null);
+  const { addNotification } = useUIStore();
+
+  const [resources, setResources] = useState<Resource[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // リソース（担当者）一覧取得
+  useEffect(() => {
+    const loadResources = async () => {
+      try {
+        const response = await resourceApi.getList({
+          per_page: 100,
+          is_active: true,
+        });
+        setResources(response.resources || []);
+      } catch (error) {
+        console.error('リソース取得エラー:', error);
+        addNotification({
+          type: 'error',
+          title: 'リソース取得エラー',
+          message: '担当者情報の取得に失敗しました',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadResources();
+  }, [addNotification]);
+
+  // FullCalendar用のリソースデータ変換
+  const calendarResources: CalendarResource[] = [
+    // 「指定なし」リソース
+    {
+      id: 'unassigned',
+      title: '指定なし',
+      extendedProps: {
+        type: 'unassigned',
+        color: '#6b7280',
+      },
+    },
+    // スタッフリソース
+    ...resources.map(
+      (resource): CalendarResource => ({
+        id: resource.id.toString(),
+        title: resource.display_name || resource.name,
+        extendedProps: {
+          type: resource.type,
+          color: getResourceColor(resource.type),
+          photo: resource.image_url,
+        },
+      })
+    ),
+  ];
+
+  // FullCalendar用のイベントデータ変換
+  const calendarEvents: EventInput[] = bookings.map((booking): EventInput => {
+    const startDateTime = new Date(
+      `${booking.booking_date}T${booking.start_time}`
+    );
+    const endDateTime = new Date(`${booking.booking_date}T${booking.end_time}`);
+
+    return {
+      id: booking.id.toString(),
+      title: `${booking.customer.name} - ${booking.menu.name}`,
+      start: startDateTime,
+      end: endDateTime,
+      resourceId: booking.resource_id
+        ? booking.resource_id.toString()
+        : 'unassigned',
+      backgroundColor: getStatusColor(booking.status),
+      borderColor: getStatusBorderColor(booking.status),
+      textColor: getStatusTextColor(booking.status),
+      extendedProps: {
+        booking: booking,
+        customerName: booking.customer.name,
+        menuName: booking.menu.name,
+        price: booking.total_price,
+        status: booking.status,
+        notes: booking.customer_notes,
+      },
+    };
+  });
+
+  /**
+   * リソースタイプ別の色分け
+   */
+  function getResourceColor(type: string): string {
+    const colors = {
+      staff: '#10b981', // エメラルドグリーン
+      room: '#3b82f6', // ブルー
+      equipment: '#8b5cf6', // パープル
+      vehicle: '#f59e0b', // アンバー
+    };
+    return colors[type as keyof typeof colors] || '#6b7280';
+  }
+
+  /**
+   * 予約ステータス別の背景色
+   */
+  function getStatusColor(status: string): string {
+    const colors = {
+      pending: '#fbbf24', // イエロー
+      confirmed: '#10b981', // グリーン
+      cancelled: '#ef4444', // レッド
+      completed: '#6b7280', // グレー
+      no_show: '#dc2626', // ダークレッド
+    };
+    return colors[status as keyof typeof colors] || '#6b7280';
+  }
+
+  /**
+   * 予約ステータス別のボーダー色
+   */
+  function getStatusBorderColor(status: string): string {
+    const colors = {
+      pending: '#f59e0b',
+      confirmed: '#059669',
+      cancelled: '#dc2626',
+      completed: '#4b5563',
+      no_show: '#991b1b',
+    };
+    return colors[status as keyof typeof colors] || '#4b5563';
+  }
+
+  /**
+   * 予約ステータス別のテキスト色
+   */
+  function getStatusTextColor(status: string): string {
+    return status === 'completed' ? '#ffffff' : '#000000';
+  }
+
+  /**
+   * 予約クリック処理
+   */
+  const handleEventClick = (info: any) => {
+    const booking = info.event.extendedProps.booking;
+    if (booking && onBookingClick) {
+      onBookingClick(booking);
+    }
+  };
+
+  /**
+   * 空き時間クリック処理（新規予約作成）
+   */
+  const handleDateSelect = (info: any) => {
+    if (onBookingCreate) {
+      onBookingCreate({
+        start: info.start,
+        end: info.end,
+        resourceId: info.resource?.id,
+      });
+    }
+  };
+
+  /**
+   * 予約ドラッグ&ドロップ処理
+   */
+  const handleEventDrop = async (info: any) => {
+    const booking = info.event.extendedProps.booking;
+    const newStart = info.event.start;
+    const newEnd = info.event.end;
+    const newResourceId = info.event.getResources()[0]?.id;
+
+    if (booking && onBookingMove) {
+      try {
+        await onBookingMove(booking, newStart, newEnd, newResourceId);
+
+        addNotification({
+          type: 'success',
+          title: '予約移動完了',
+          message: `${booking.customer.name}様の予約を移動しました`,
+        });
+      } catch (error) {
+        // エラー時は元の位置に戻す
+        info.revert();
+
+        addNotification({
+          type: 'error',
+          title: '予約移動エラー',
+          message: '予約の移動に失敗しました',
+        });
+      }
+    }
+  };
+
+  /**
+   * 予約リサイズ処理
+   */
+  const handleEventResize = async (info: any) => {
+    const booking = info.event.extendedProps.booking;
+    const newStart = info.event.start;
+    const newEnd = info.event.end;
+
+    if (booking && onBookingMove) {
+      try {
+        await onBookingMove(booking, newStart, newEnd);
+
+        addNotification({
+          type: 'success',
+          title: '予約時間変更完了',
+          message: `${booking.customer.name}様の予約時間を変更しました`,
+        });
+      } catch (error) {
+        // エラー時は元のサイズに戻す
+        info.revert();
+
+        addNotification({
+          type: 'error',
+          title: '予約時間変更エラー',
+          message: '予約時間の変更に失敗しました',
+        });
+      }
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className='flex items-center justify-center h-96'>
+        <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500'></div>
+        <span className='ml-3 text-gray-600'>
+          タイムラインを読み込んでいます...
+        </span>
       </div>
+    );
+  }
+
+  return (
+    <div className='booking-timeline bg-white rounded-lg shadow-sm border border-gray-200'>
+      <FullCalendar
+        ref={calendarRef}
+        plugins={[resourceTimelinePlugin, interactionPlugin]}
+        initialView='resourceTimelineDay'
+        initialDate={date}
+        headerToolbar={{
+          left: 'prev,next today',
+          center: 'title',
+          right: 'resourceTimelineDay,resourceTimelineWeek',
+        }}
+        resources={calendarResources}
+        events={calendarEvents}
+        // 時間設定
+        slotMinTime='09:00:00'
+        slotMaxTime='21:00:00'
+        slotDuration='00:30:00'
+        slotLabelInterval='01:00:00'
+        // インタラクション設定
+        selectable={true}
+        editable={true}
+        eventResizableFromStart={true}
+        eventDurationEditable={true}
+        eventResourceEditable={true}
+        // 日本語設定
+        locale='ja'
+        timeZone='Asia/Tokyo'
+        // スタイル設定
+        height='auto'
+        contentHeight={400}
+        resourceAreaWidth='200px'
+        // イベントハンドラー
+        eventClick={handleEventClick}
+        select={handleDateSelect}
+        eventDrop={handleEventDrop}
+        eventResize={handleEventResize}
+        // カスタムスタイル
+        eventContent={info => (
+          <div className='p-1 text-xs'>
+            <div className='font-semibold truncate'>
+              {info.event.extendedProps.customerName}
+            </div>
+            <div className='truncate opacity-75'>
+              {info.event.extendedProps.menuName}
+            </div>
+            <div className='font-medium'>
+              ¥{info.event.extendedProps.price?.toLocaleString()}
+            </div>
+          </div>
+        )}
+        // リソースヘッダー
+        resourceLabelContent={info => (
+          <div className='flex items-center p-2'>
+            {info.resource.extendedProps.photo && (
+              <img
+                src={info.resource.extendedProps.photo}
+                alt={info.resource.title}
+                className='w-8 h-8 rounded-full mr-2'
+              />
+            )}
+            <div>
+              <div className='font-medium text-sm'>{info.resource.title}</div>
+              <div className='text-xs text-gray-500 capitalize'>
+                {info.resource.extendedProps.type}
+              </div>
+            </div>
+          </div>
+        )}
+      />
     </div>
   );
 };

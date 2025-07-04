@@ -389,15 +389,42 @@ const BookingsPage: React.FC = () => {
             setIsCreateModalOpen(true);
           }}
           onBookingMove={async (booking, newStart, newEnd, newResourceId) => {
-            // タイムラインでの予約移動
-            console.log('Timeline booking move:', {
-              booking,
-              newStart,
-              newEnd,
-              newResourceId,
-            });
-            // TODO: 予約更新API呼び出し
-            await fetchBookings(); // 再取得
+            try {
+              // 日時・時間・リソースIDを更新
+              const updateData = {
+                booking_date: newStart.toISOString().split('T')[0],
+                start_time: newStart.toTimeString().substring(0, 5),
+                end_time: newEnd.toTimeString().substring(0, 5),
+                resource_id:
+                  newResourceId && newResourceId !== 'unassigned'
+                    ? parseInt(newResourceId)
+                    : undefined,
+              };
+
+              await bookingApi.update(booking.id, updateData);
+
+              // 予約一覧を再取得
+              await fetchBookings();
+
+              addToast({
+                type: 'success',
+                title: '予約移動完了',
+                message: `${booking.customer.name}様の予約を移動しました`,
+              });
+            } catch (error: any) {
+              console.error('予約移動エラー:', error);
+
+              addToast({
+                type: 'error',
+                title: '予約移動エラー',
+                message:
+                  error.response?.data?.error?.message ||
+                  '予約の移動に失敗しました',
+              });
+
+              // エラーを再スローして、FullCalendarが元の位置に戻すようにする
+              throw error;
+            }
           }}
         />
       ) : (

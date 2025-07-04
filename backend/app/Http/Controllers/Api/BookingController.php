@@ -604,4 +604,114 @@ class BookingController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * 予約移動（タイムライン専用）
+     * 
+     * PATCH /api/v1/bookings/{booking}/move
+     * 
+     * FullCalendar Timelineからのドラッグ&ドロップによる予約移動
+     * 日時・時間・担当者を一括更新
+     * 
+     * @param Request $request
+     * @param Booking $booking
+     * @return JsonResponse
+     */
+    public function move(Request $request, Booking $booking): JsonResponse
+    {
+        try {
+            // バリデーション
+            $request->validate([
+                'booking_date' => 'required|date|after_or_equal:today',
+                'start_time' => 'required|date_format:H:i',
+                'end_time' => 'required|date_format:H:i|after:start_time',
+                'resource_id' => 'nullable|exists:resources,id'
+            ]);
+
+            // マルチテナント確認
+            if ($booking->store_id !== auth()->user()->store_id) {
+                return response()->json([
+                    'success' => false,
+                    'error' => [
+                        'code' => 'BOOKING_NOT_FOUND',
+                        'message' => '予約が見つかりません'
+                    ],
+                    'meta' => [
+                        'timestamp' => now()->toISOString()
+                    ]
+                ], 404);
+            }
+
+            $moveData = $request->only(['booking_date', 'start_time', 'end_time', 'resource_id']);
+
+            Log::info('予約移動開始', [
+                'booking_id' => $booking->id,
+                'booking_number' => $booking->booking_number,
+                'current_data' => [
+                    'date' => $booking->booking_date,
+                    'start_time' => $booking->start_time,
+                    'end_time' => $booking->end_time,
+                    'resource_id' => $booking->resource_id,
+                ],
+                'new_data' => $moveData,
+                'store_id' => $booking->store_id
+            ]);
+
+            // BookingServiceで予約移動
+            $movedBooking = $this->bookingService->updateBooking($booking, $moveData);
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'booking' => new BookingResource($movedBooking)
+                ],
+                'message' => '予約を移動しました',
+                'meta' => [
+                    'timestamp' => now()->toISOString(),
+                    'version' => '1.0'
+                ]
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'error' => [
+                    'code' => 'VALIDATION_ERROR',
+                    'message' => '移動先の設定に誤りがあります',
+                    'details' => $e->errors()
+                ],
+                'meta' => [
+                    'timestamp' => now()->toISOString()
+                ]
+            ], 422);
+        } catch (\App\Exceptions\BookingConflictException $e) {
+            return response()->json([
+                'success' => false,
+                'error' => [
+                    'code' => 'BOOKING_CONFLICT',
+                    'message' => $e->getMessage()
+                ],
+                'meta' => [
+                    'timestamp' => now()->toISOString()
+                ]
+            ], 409);
+        } catch (\Exception $e) {
+            Log::error('予約移動エラー', [
+                'booking_id' => $booking->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'store_id' => $booking->store_id
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => [
+                    'code' => 'BOOKING_MOVE_ERROR',
+                    'message' => '予約の移動に失敗しました'
+                ],
+                'meta' => [
+                    'timestamp' => now()->toISOString()
+                ]
+            ], 500);
+        }
+    }
 }
