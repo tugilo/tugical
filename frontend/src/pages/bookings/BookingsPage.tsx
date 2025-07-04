@@ -15,11 +15,14 @@ import Button from '../../components/ui/Button';
 import LoadingScreen from '../../components/ui/LoadingScreen';
 import BookingCard from '../../components/booking/BookingCard';
 import BookingCreateModal from '../../components/booking/BookingCreateModal';
+import BookingTimelineView from '../../components/booking/BookingTimelineView';
 import {
   PlusIcon,
   MagnifyingGlassIcon,
   CalendarIcon,
   ArrowPathIcon,
+  Bars3Icon,
+  TableCellsIcon,
 } from '@heroicons/react/24/outline';
 
 const BookingsPage: React.FC = () => {
@@ -36,6 +39,7 @@ const BookingsPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+  const [viewMode, setViewMode] = useState<'list' | 'timeline'>('list');
 
   // モーダル状態
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -273,6 +277,24 @@ const BookingsPage: React.FC = () => {
           >
             更新
           </Button>
+          <div className='flex border border-gray-300 rounded-lg overflow-hidden'>
+            <Button
+              variant={viewMode === 'list' ? 'primary' : 'ghost'}
+              leftIcon={<Bars3Icon className='w-4 h-4' />}
+              onClick={() => setViewMode('list')}
+              className='rounded-none border-0'
+            >
+              リスト
+            </Button>
+            <Button
+              variant={viewMode === 'timeline' ? 'primary' : 'ghost'}
+              leftIcon={<TableCellsIcon className='w-4 h-4' />}
+              onClick={() => setViewMode('timeline')}
+              className='rounded-none border-0'
+            >
+              タイムライン
+            </Button>
+          </div>
           <Button
             variant='primary'
             leftIcon={<PlusIcon className='w-4 h-4' />}
@@ -356,6 +378,28 @@ const BookingsPage: React.FC = () => {
             </div>
           </Card.Body>
         </Card>
+      ) : viewMode === 'timeline' ? (
+        <BookingTimelineView
+          date={dateFilter ? new Date(dateFilter) : new Date()}
+          bookings={bookings}
+          onBookingClick={handleBookingClick}
+          onBookingCreate={info => {
+            // タイムラインからの予約作成
+            console.log('Timeline booking create:', info);
+            setIsCreateModalOpen(true);
+          }}
+          onBookingMove={async (booking, newStart, newEnd, newResourceId) => {
+            // タイムラインでの予約移動
+            console.log('Timeline booking move:', {
+              booking,
+              newStart,
+              newEnd,
+              newResourceId,
+            });
+            // TODO: 予約更新API呼び出し
+            await fetchBookings(); // 再取得
+          }}
+        />
       ) : (
         <div className='space-y-6'>
           {/* タイムライン形式の予約一覧 */}
