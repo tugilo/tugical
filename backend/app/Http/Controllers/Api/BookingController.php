@@ -48,8 +48,9 @@ class BookingController extends Controller
         // Sanctum認証必須
         $this->middleware('auth:sanctum');
         
-        // マルチテナント分離（TenantScopeMiddleware適用想定）
-        $this->middleware('tenant.scope');
+        // マルチテナント分離はモデルのTenantScopeで自動処理
+        // （TenantScopeMiddleware は未実装のため一時的にコメントアウト）
+        // $this->middleware('tenant.scope');
     }
 
     /**

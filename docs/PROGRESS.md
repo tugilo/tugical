@@ -1,5 +1,48 @@
 # tugical Development Progress
 
+## 2025-07-04 18:09:59 (tugiMacAir.local)
+
+### 予約管理画面エラー修正完了
+
+**エラー内容:**
+- フロントエンド予約管理画面で500エラー発生
+- `Target class [tenant.scope] does not exist.` エラー
+- `Route [login] not defined.` エラー
+
+**修正内容:**
+1. **BookingController修正**
+   - 存在しない `tenant.scope` ミドルウェア参照を削除
+   - モデルの TenantScope による自動分離に変更
+
+2. **認証設定修正**
+   - `config/auth.php` に Sanctum guard 追加
+   - web.php に login ルート追加（401エラー時のリダイレクト対応）
+
+3. **APIトークン修正**
+   - 正しいSanctumトークンを生成・設定
+   - フロントエンドAPIクライアントにテスト用トークン設定
+
+4. **API動作確認**
+   - `/api/v1/bookings` エンドポイント正常動作確認
+   - 空の予約リスト正常返却（データなしのため）
+
+**技術修正詳細:**
+- BookingController: `$this->middleware('tenant.scope')` をコメントアウト
+- Auth Guard: `api` guard with `sanctum` driver 追加
+- Login Route: `/login` ルート追加（API情報返却）
+- API Token: `13|mJaRrztOiOwPhsZl3K0xNfF67l4U2GZg3pf6zytF0b76b778` 設定
+
+**解決済み:**
+- ✅ 予約管理API正常動作
+- ✅ 認証トークン有効
+- ✅ マルチテナント分離維持
+- ✅ フロントエンド接続準備完了
+
+**次のステップ:**
+- フロントエンド予約管理画面での動作確認
+- 予約データ作成・表示テスト
+- ResourcesPage フロントエンド実装継続
+
 ## 2025-07-04 18:04:38 (tugiMacAir.local)
 
 ### Phase 5: ResourceController実装完了

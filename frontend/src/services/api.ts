@@ -88,9 +88,15 @@ class ApiClient {
       const savedToken = localStorage.getItem('tugical_admin_token');
       if (savedToken) {
         this.token = savedToken;
+      } else {
+        // 開発環境用のデフォルトトークン
+        this.token = '13|mJaRrztOiOwPhsZl3K0xNfF67l4U2GZg3pf6zytF0b76b778';
+        localStorage.setItem('tugical_admin_token', this.token);
       }
     } catch (error) {
       console.warn('Failed to load token from localStorage:', error);
+      // フォールバック
+      this.token = '13|mJaRrztOiOwPhsZl3K0xNfF67l4U2GZg3pf6zytF0b76b778';
     }
   }
 

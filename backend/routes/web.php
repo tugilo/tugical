@@ -16,3 +16,18 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 });
+
+// ログインページ（APIアプリケーションなので401エラー時のリダイレクト用）
+Route::get('/login', function () {
+    return response()->json([
+        'success' => false,
+        'error' => [
+            'code' => 'UNAUTHENTICATED',
+            'message' => '認証が必要です。/api/v1/auth/login エンドポイントを使用してください。',
+        ],
+        'meta' => [
+            'api_login_endpoint' => '/api/v1/auth/login',
+            'timestamp' => now()->toISOString(),
+        ]
+    ], 401);
+})->name('login');
