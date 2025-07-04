@@ -26,6 +26,8 @@ class UpdateCustomerRequest extends FormRequest
      */
     public function rules(): array
     {
+        \Log::info('UpdateCustomerRequest received data:', $this->all());
+        
         return [
             'name' => 'sometimes|required|string|max:100',
             'phone' => 'sometimes|required|string|max:20|regex:/^[0-9\-]+$/',

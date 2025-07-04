@@ -849,4 +849,21 @@ curl -X POST http://localhost/api/v1/auth/logout \
 - ✅ マルチテナント対応（store_id分離）
 - ✅ 個人情報暗号化（phone, email, address）
 
+### 2025-07-03 10:42 (tugiMacMini.local)
+- フロントエンド開発環境を本番と同じ `/admin/` ベースに統一
+
+### 2025-07-04 13:54 (tugiMacAir.local)
+- **顧客削除機能修正**
+  - エラー: `Column not found: 'bookings.deleted_at'` 
+  - 原因: Booking モデルが SoftDeletes を使用しているが、deleted_at カラムが存在しなかった
+  - 修正: `add_deleted_at_to_bookings_table` マイグレーションを作成・実行
+- **確認ダイアログ実装**
+  - 古い `confirm()` を廃止し、モダンな ConfirmDialog コンポーネントを作成
+  - Framer Motion によるアニメーション付き
+  - 危険な操作（削除）用のスタイル対応
+  - CustomerDetailModal で削除確認ダイアログを統合
+- **今後の検討事項**
+  - SweetAlert2 など外部ライブラリの導入は後回し
+  - 現在の実装で十分なユーザビリティを実現
+
 ---

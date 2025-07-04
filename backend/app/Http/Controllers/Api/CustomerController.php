@@ -194,6 +194,12 @@ class CustomerController extends Controller
      */
     public function update(UpdateCustomerRequest $request, Customer $customer): JsonResponse
     {
+        Log::info('Customer update attempt', [
+            'customer_id' => $customer->id,
+            'request_data' => $request->all(),
+            'validated_data' => $request->validated(),
+        ]);
+        
         // 店舗IDの確認（マルチテナント対応）
         if ($customer->store_id !== Auth::user()->store_id) {
             return response()->json([

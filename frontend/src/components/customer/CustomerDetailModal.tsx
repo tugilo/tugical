@@ -12,6 +12,7 @@ import {
 } from '@heroicons/react/24/outline';
 import Modal from '../modal/Modal';
 import Button from '../ui/Button';
+import ConfirmDialog from '../ui/ConfirmDialog';
 import { cn, formatDate, formatNumber } from '../../utils';
 import { customerApi } from '../../services/api';
 import { useToast } from '../../stores/uiStore';
@@ -46,6 +47,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
   const { addToast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [formData, setFormData] = useState<UpdateCustomerRequest>({});
 
   // 顧客データが変更されたらフォームデータを更新
@@ -74,7 +76,21 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
   const handleSave = async () => {
     try {
       setIsLoading(true);
-      const updatedCustomer = await customerApi.update(customer.id, formData);
+      
+      // 空文字列をnullに変換
+      const cleanedData: UpdateCustomerRequest = {};
+      Object.entries(formData).forEach(([key, value]) => {
+        if (value !== '' && value !== undefined) {
+          cleanedData[key as keyof UpdateCustomerRequest] = value;
+        } else if (key === 'email' || key === 'address' || key === 'birth_date' || key === 'gender' || key === 'notes') {
+          // これらのフィールドは空の場合nullを送信
+          cleanedData[key as keyof UpdateCustomerRequest] = null as any;
+        }
+      });
+      
+      console.log('Sending update data:', cleanedData);
+      
+      const updatedCustomer = await customerApi.update(customer.id, cleanedData);
       addToast({
         type: 'success',
         title: '顧客情報を更新しました',
@@ -82,6 +98,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
       setIsEditing(false);
       onUpdate?.(updatedCustomer);
     } catch (error: any) {
+      console.error('Update error:', error.response?.data);
       addToast({
         type: 'error',
         title: '更新に失敗しました',
@@ -93,10 +110,6 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
   };
 
   const handleDelete = async () => {
-    if (!confirm('この顧客を削除しますか？この操作は取り消せません。')) {
-      return;
-    }
-
     try {
       setIsLoading(true);
       await customerApi.delete(customer.id);
@@ -106,6 +119,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
       });
       onDelete?.(customer.id);
       onClose();
+      setIsDeleteConfirmOpen(false);
     } catch (error: any) {
       addToast({
         type: 'error',
@@ -132,17 +146,18 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="顧客詳細"
-      size="lg"
-      footer={
+    <>
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        title="顧客詳細"
+        size="lg"
+        footer={
         <div className="flex justify-between">
           <Button
             variant="danger"
             size="sm"
-            onClick={handleDelete}
+            onClick={() => setIsDeleteConfirmOpen(true)}
             disabled={isLoading}
             leftIcon={<TrashIcon className="w-4 h-4" />}
           >
@@ -423,6 +438,20 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
         </div>
       </div>
     </Modal>
+
+    {/* 削除確認ダイアログ */}
+    <ConfirmDialog
+      isOpen={isDeleteConfirmOpen}
+      onClose={() => setIsDeleteConfirmOpen(false)}
+      onConfirm={handleDelete}
+      title="顧客を削除しますか？"
+      message={`${customer.name}様の情報を削除します。この操作は取り消せません。`}
+      confirmText="削除する"
+      cancelText="キャンセル"
+      isDanger={true}
+      isLoading={isLoading}
+    />
+    </>
   );
 };
 

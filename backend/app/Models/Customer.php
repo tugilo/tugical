@@ -106,10 +106,7 @@ class Customer extends Model
      * 個人情報保護のため
      */
     protected $hidden = [
-        'phone',
-        'email',
-        'address',
-        'notes',
+        // 暗号化フィールドは CustomerResource で適切に制御するため、ここでは除外しない
     ];
 
     /**
@@ -271,7 +268,10 @@ class Customer extends Model
     {
         foreach ($this->encrypted as $field) {
             if ($this->isDirty($field) && !empty($this->attributes[$field])) {
-                $this->attributes[$field] = encrypt($this->attributes[$field]);
+                // 既に暗号化されているかチェック
+                if (strpos($this->attributes[$field], 'eyJpdiI6') !== 0) {
+                    $this->attributes[$field] = encrypt($this->attributes[$field]);
+                }
             }
         }
     }
@@ -286,12 +286,17 @@ class Customer extends Model
                 try {
                     $this->attributes[$field] = decrypt($this->attributes[$field]);
                 } catch (\Exception $e) {
-                    // 復号化失敗時は空文字に設定
-                    $this->attributes[$field] = '';
-                    \Log::warning("Failed to decrypt customer field: {$field}", [
-                        'customer_id' => $this->id,
-                        'error' => $e->getMessage(),
-                    ]);
+                    // 復号化失敗時は元の値をそのまま使用（既に復号化されている可能性）
+                    // 暗号化されたデータかどうかをチェック
+                    if (strpos($this->attributes[$field], 'eyJpdiI6') === 0) {
+                        // Base64エンコードされた暗号化データの場合は空文字に
+                        $this->attributes[$field] = '';
+                        \Log::warning("Failed to decrypt customer field: {$field}", [
+                            'customer_id' => $this->id,
+                            'error' => $e->getMessage(),
+                        ]);
+                    }
+                    // それ以外は既に復号化されているとみなしてそのまま使用
                 }
             }
         }
@@ -541,6 +546,78 @@ class Customer extends Model
         $preferences = $this->preferences ?? [];
         $preferences[$key] = $value;
         $this->preferences = $preferences;
+    }
+
+    /**
+     * 電話番号アクセサ
+     */
+    public function getPhoneAttribute($value)
+    {
+        if (empty($value)) {
+            return $value;
+        }
+        
+        try {
+            // 暗号化されたデータかチェック
+            if (strpos($value, 'eyJpdiI6') === 0) {
+                return decrypt($value);
+            }
+            return $value;
+        } catch (\Exception $e) {
+            \Log::warning("Failed to decrypt phone in accessor", [
+                'customer_id' => $this->id,
+                'error' => $e->getMessage(),
+            ]);
+            return '';
+        }
+    }
+
+    /**
+     * メールアドレスアクセサ
+     */
+    public function getEmailAttribute($value)
+    {
+        if (empty($value)) {
+            return $value;
+        }
+        
+        try {
+            // 暗号化されたデータかチェック
+            if (strpos($value, 'eyJpdiI6') === 0) {
+                return decrypt($value);
+            }
+            return $value;
+        } catch (\Exception $e) {
+            \Log::warning("Failed to decrypt email in accessor", [
+                'customer_id' => $this->id,
+                'error' => $e->getMessage(),
+            ]);
+            return '';
+        }
+    }
+
+    /**
+     * 住所アクセサ
+     */
+    public function getAddressAttribute($value)
+    {
+        if (empty($value)) {
+            return $value;
+        }
+        
+        try {
+            // 暗号化されたデータかチェック
+            if (strpos($value, 'eyJpdiI6') === 0) {
+                return decrypt($value);
+            }
+            return $value;
+        } catch (\Exception $e) {
+            \Log::warning("Failed to decrypt address in accessor", [
+                'customer_id' => $this->id,
+                'error' => $e->getMessage(),
+            ]);
+            return '';
+        }
     }
 
     /**
