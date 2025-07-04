@@ -76,29 +76,12 @@ class Store extends Model
     protected $table = 'stores';
 
     /**
-     * 一括代入可能な属性
+     * 一括代入から保護する属性
+     * 
+     * 開発の柔軟性を重視し、IDのみを保護
+     * これにより新しいフィールド追加時にfillableの更新が不要になる
      */
-    protected $fillable = [
-        'tenant_id',
-        'name',
-        'slug',
-        'industry_type',
-        'industry_settings',
-        'line_integration',
-        'business_hours',
-        'booking_rules',
-        'notification_settings',
-        'address',
-        'phone',
-        'email',
-        'website',
-        'social_links',
-        'timezone',
-        'locale',
-        'currency',
-        'status',
-        'last_activity_at',
-    ];
+    protected $guarded = ['id'];
 
     /**
      * 非表示属性（API出力時に除外）
@@ -266,7 +249,7 @@ class Store extends Model
     protected static function booted()
     {
         // Storeモデルは tenant_id で分離されるため、TenantScopeは適用しない
-        
+
         // 作成時のデフォルト値設定
         static::creating(function ($store) {
             // デフォルト業種設定適用
@@ -396,8 +379,8 @@ class Store extends Model
     public function hasLineIntegration(): bool
     {
         $lineSettings = $this->line_integration ?? [];
-        return !empty($lineSettings['channel_id']) && 
-               !empty($lineSettings['channel_secret']);
+        return !empty($lineSettings['channel_id']) &&
+            !empty($lineSettings['channel_secret']);
     }
 
     /**
@@ -407,7 +390,7 @@ class Store extends Model
     {
         $lineSettings = $this->line_integration ?? [];
         $liffId = $lineSettings['liff_id'] ?? null;
-        
+
         return $liffId ? "https://liff.line.me/{$liffId}" : null;
     }
 
@@ -418,16 +401,16 @@ class Store extends Model
     {
         $now = Carbon::now($this->timezone);
         $dayOfWeek = strtolower($now->format('l'));
-        
+
         $todayHours = $this->business_hours[$dayOfWeek] ?? null;
-        
+
         if (!$todayHours || isset($todayHours['closed'])) {
             return false;
         }
 
         $openTime = Carbon::createFromFormat('H:i', $todayHours['open'], $this->timezone);
         $closeTime = Carbon::createFromFormat('H:i', $todayHours['close'], $this->timezone);
-        
+
         return $now->between($openTime, $closeTime);
     }
 
@@ -437,21 +420,21 @@ class Store extends Model
     public function getNextOpenTime(): ?Carbon
     {
         $now = Carbon::now($this->timezone);
-        
+
         for ($i = 0; $i < 7; $i++) {
             $checkDate = $now->copy()->addDays($i);
             $dayOfWeek = strtolower($checkDate->format('l'));
             $dayHours = $this->business_hours[$dayOfWeek] ?? null;
-            
+
             if ($dayHours && !isset($dayHours['closed'])) {
                 $openTime = $checkDate->setTimeFromTimeString($dayHours['open']);
-                
+
                 if ($openTime->isFuture() || ($i === 0 && $openTime->isToday() && $openTime->gt($now))) {
                     return $openTime;
                 }
             }
         }
-        
+
         return null;
     }
 
@@ -486,7 +469,7 @@ class Store extends Model
     private static function getDefaultIndustrySettings(string $industryType): array
     {
         $template = self::getIndustryTemplates()[$industryType] ?? [];
-        
+
         return [
             'template_name' => $template['name'] ?? '',
             'features' => $template['features'] ?? [],
@@ -529,6 +512,6 @@ class Store extends Model
     public function scopeWithLineIntegration($query)
     {
         return $query->whereNotNull('line_integration')
-                    ->where('line_integration->channel_id', '!=', null);
+            ->where('line_integration->channel_id', '!=', null);
     }
-} 
+}

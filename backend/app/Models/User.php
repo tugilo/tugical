@@ -34,25 +34,14 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable;
 
     /**
-     * 複数代入可能な属性
-     *
-     * @var array<int, string>
+     * 一括代入から保護する属性
+     * 
+     * 開発の柔軟性を重視し、IDのみを保護
+     * これにより新しいフィールド追加時にfillableの更新が不要になる
      */
-    protected $fillable = [
-        'store_id',
-        'name',
-        'email',
-        'password',
-        'role',
-        'is_active',
-        'last_login_at',
-        'last_login_ip',
-        'last_activity_at',
-        'password_updated_at',
-        'two_factor_enabled',
-        'profile',
-        'preferences',
-    ];
+    protected $guarded = ['id'];
+
+    // fillableは削除済み - guardedを使用
 
     /**
      * シリアル化時に隠す属性
@@ -124,28 +113,56 @@ class User extends Authenticatable
     {
         $permissions = [
             'owner' => [
-                'booking.manage', 'booking.create', 'booking.update', 'booking.delete',
-                'customer.manage', 'customer.create', 'customer.update', 'customer.delete',
-                'staff.manage', 'staff.create', 'staff.update', 'staff.delete',
-                'menu.manage', 'menu.create', 'menu.update', 'menu.delete',
-                'notification.manage', 'notification.send',
-                'settings.manage', 'analytics.view', 'export.data',
-                'store.settings', 'user.manage'
+                'booking.manage',
+                'booking.create',
+                'booking.update',
+                'booking.delete',
+                'customer.manage',
+                'customer.create',
+                'customer.update',
+                'customer.delete',
+                'staff.manage',
+                'staff.create',
+                'staff.update',
+                'staff.delete',
+                'menu.manage',
+                'menu.create',
+                'menu.update',
+                'menu.delete',
+                'notification.manage',
+                'notification.send',
+                'settings.manage',
+                'analytics.view',
+                'export.data',
+                'store.settings',
+                'user.manage'
             ],
             'manager' => [
-                'booking.manage', 'booking.create', 'booking.update',
-                'customer.manage', 'customer.create', 'customer.update',
-                'staff.view', 'menu.view',
-                'notification.send', 'analytics.view'
+                'booking.manage',
+                'booking.create',
+                'booking.update',
+                'customer.manage',
+                'customer.create',
+                'customer.update',
+                'staff.view',
+                'menu.view',
+                'notification.send',
+                'analytics.view'
             ],
             'staff' => [
-                'booking.view', 'booking.update',
-                'customer.view', 'customer.update',
+                'booking.view',
+                'booking.update',
+                'customer.view',
+                'customer.update',
                 'notification.view'
             ],
             'reception' => [
-                'booking.manage', 'booking.create', 'booking.update',
-                'customer.view', 'customer.create', 'customer.update'
+                'booking.manage',
+                'booking.create',
+                'booking.update',
+                'customer.view',
+                'customer.create',
+                'customer.update'
             ]
         ];
 

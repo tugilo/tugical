@@ -78,26 +78,12 @@ class NotificationTemplate extends Model
     protected $table = 'notification_templates';
 
     /**
-     * 一括代入可能な属性
+     * 一括代入から保護する属性
+     * 
+     * 開発の柔軟性を重視し、IDのみを保護
+     * これにより新しいフィールド追加時にfillableの更新が不要になる
      */
-    protected $fillable = [
-        'store_id',
-        'name',
-        'type',
-        'industry_type',
-        'language',
-        'title',
-        'message',
-        'message_type',
-        'rich_message_data',
-        'variables',
-        'preview_data',
-        'description',
-        'is_active',
-        'is_system_template',
-        'usage_count',
-        'last_used_at',
-    ];
+    protected $guarded = ['id'];
 
     /**
      * 属性のキャスト設定
@@ -299,10 +285,10 @@ class NotificationTemplate extends Model
             if (!$template->variables) {
                 $typeInfo = self::getTemplateTypes()[$template->type] ?? [];
                 $allVariables = self::getAvailableVariables();
-                
+
                 $requiredVars = $typeInfo['required_variables'] ?? [];
                 $optionalVars = $typeInfo['optional_variables'] ?? [];
-                
+
                 $templateVariables = [];
                 foreach (array_merge($requiredVars, $optionalVars) as $varKey) {
                     if (isset($allVariables[$varKey])) {
@@ -312,7 +298,7 @@ class NotificationTemplate extends Model
                         );
                     }
                 }
-                
+
                 $template->variables = $templateVariables;
             }
         });
@@ -423,7 +409,7 @@ class NotificationTemplate extends Model
         }
 
         $richData = $this->rich_message_data;
-        
+
         // 変数置換
         $dataJson = json_encode($richData);
         foreach ($data as $key => $value) {
@@ -453,8 +439,8 @@ class NotificationTemplate extends Model
      */
     public function isApplicableToIndustry(string $industryType): bool
     {
-        return $this->industry_type === self::INDUSTRY_ALL || 
-               $this->industry_type === $industryType;
+        return $this->industry_type === self::INDUSTRY_ALL ||
+            $this->industry_type === $industryType;
     }
 
     /**
@@ -470,9 +456,9 @@ class NotificationTemplate extends Model
      */
     public function scopeByIndustry($query, string $industryType)
     {
-        return $query->where(function($q) use ($industryType) {
+        return $query->where(function ($q) use ($industryType) {
             $q->where('industry_type', $industryType)
-              ->orWhere('industry_type', self::INDUSTRY_ALL);
+                ->orWhere('industry_type', self::INDUSTRY_ALL);
         });
     }
 
@@ -537,11 +523,11 @@ class NotificationTemplate extends Model
      */
     public function scopeSearch($query, string $keyword)
     {
-        return $query->where(function($q) use ($keyword) {
+        return $query->where(function ($q) use ($keyword) {
             $q->where('name', 'like', "%{$keyword}%")
-              ->orWhere('title', 'like', "%{$keyword}%")
-              ->orWhere('message', 'like', "%{$keyword}%")
-              ->orWhere('description', 'like', "%{$keyword}%");
+                ->orWhere('title', 'like', "%{$keyword}%")
+                ->orWhere('message', 'like', "%{$keyword}%")
+                ->orWhere('description', 'like', "%{$keyword}%");
         });
     }
-} 
+}

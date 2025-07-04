@@ -71,35 +71,12 @@ class Customer extends Model
     protected $table = 'customers';
 
     /**
-     * 一括代入可能な属性
+     * 一括代入から保護する属性
+     * 
+     * 開発の柔軟性を重視し、IDのみを保護
+     * これにより新しいフィールド追加時にfillableの更新が不要になる
      */
-    protected $fillable = [
-        'store_id',
-        'line_user_id',
-        'line_display_name',
-        'line_picture_url',
-        'name',
-        'name_kana',
-        'phone',
-        'email',
-        'birthday',
-        'gender',
-        'address',
-        'notes',
-        'allergies',
-        'preferences',
-        'loyalty_rank',
-        'total_bookings',
-        'total_spent',
-        'no_show_count',
-        'last_no_show_at',
-        'is_restricted',
-        'restriction_until',
-        'is_active',
-        'notification_settings',
-        'first_visit_at',
-        'last_visit_at',
-    ];
+    protected $guarded = ['id'];
 
     /**
      * 非表示属性（API出力時に除外）
@@ -582,7 +559,7 @@ class Customer extends Model
     }
 
     /**
-     * 住所アクセサ
+     * 住所アクセサ（暗号化対応）
      */
     public function getAddressAttribute($value)
     {
@@ -603,6 +580,93 @@ class Customer extends Model
             ]);
             return '';
         }
+    }
+
+    /**
+     * 完全な住所を整形して取得
+     * 
+     * @return string 整形された住所
+     */
+    public function getFormattedAddress(): string
+    {
+        $parts = array_filter([
+            $this->postal_code ? "〒{$this->postal_code}" : null,
+            $this->prefecture,
+            $this->city,
+            $this->address_line1,
+            $this->address_line2,
+        ]);
+
+        return implode(' ', $parts);
+    }
+
+    /**
+     * 住所の一部分を取得
+     * 
+     * @return string 市区町村以下の住所
+     */
+    public function getShortAddress(): string
+    {
+        $parts = array_filter([
+            $this->city,
+            $this->address_line1,
+            $this->address_line2,
+        ]);
+
+        return implode(' ', $parts);
+    }
+
+    /**
+     * 住所が完全に入力されているかチェック
+     * 
+     * @return bool 完全な住所の場合true
+     */
+    public function hasCompleteAddress(): bool
+    {
+        return !empty($this->postal_code) &&
+            !empty($this->prefecture) &&
+            !empty($this->city) &&
+            !empty($this->address_line1);
+    }
+
+    /**
+     * 住所の都道府県別検索スコープ
+     */
+    public function scopeByPrefecture($query, string $prefecture)
+    {
+        return $query->where('prefecture', $prefecture);
+    }
+
+    /**
+     * 住所の市区町村別検索スコープ
+     */
+    public function scopeByCity($query, string $city)
+    {
+        return $query->where('city', $city);
+    }
+
+    /**
+     * 郵便番号検索スコープ
+     */
+    public function scopeByPostalCode($query, string $postalCode)
+    {
+        return $query->where('postal_code', $postalCode);
+    }
+
+    /**
+     * 地域別検索スコープ（都道府県と市区町村）
+     */
+    public function scopeByRegion($query, ?string $prefecture = null, ?string $city = null)
+    {
+        if ($prefecture) {
+            $query->where('prefecture', $prefecture);
+        }
+
+        if ($city) {
+            $query->where('city', $city);
+        }
+
+        return $query;
     }
 
     /**

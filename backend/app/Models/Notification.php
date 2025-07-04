@@ -87,32 +87,12 @@ class Notification extends Model
     protected $table = 'notifications';
 
     /**
-     * 一括代入可能な属性
+     * 一括代入から保護する属性
+     * 
+     * 開発の柔軟性を重視し、IDのみを保護
+     * これにより新しいフィールド追加時にfillableの更新が不要になる
      */
-    protected $fillable = [
-        'store_id',
-        'customer_id',
-        'staff_id',
-        'booking_id',
-        'template_id',
-        'type',
-        'recipient_type',
-        'recipient_id',
-        'title',
-        'message',
-        'status',
-        'template_variables',
-        'line_payload',
-        'delivery_info',
-        'scheduled_at',
-        'sent_at',
-        'failed_at',
-        'retry_count',
-        'max_retries',
-        'next_retry_at',
-        'error_message',
-        'error_details',
-    ];
+    protected $guarded = ['id'];
 
     /**
      * 属性のキャスト設定
@@ -255,7 +235,7 @@ class Notification extends Model
             $notification->status = $notification->status ?? self::STATUS_PENDING;
             $notification->retry_count = $notification->retry_count ?? 0;
             $notification->max_retries = $notification->max_retries ?? 3;
-            
+
             // 即座に送信する場合
             if (!$notification->scheduled_at) {
                 $notification->scheduled_at = now();
@@ -329,8 +309,8 @@ class Notification extends Model
     public function canSend(): bool
     {
         return in_array($this->status, [self::STATUS_PENDING, self::STATUS_FAILED]) &&
-               ($this->scheduled_at === null || $this->scheduled_at->isPast()) &&
-               $this->retry_count < $this->max_retries;
+            ($this->scheduled_at === null || $this->scheduled_at->isPast()) &&
+            $this->retry_count < $this->max_retries;
     }
 
     /**
@@ -339,8 +319,8 @@ class Notification extends Model
     public function canRetry(): bool
     {
         return $this->status === self::STATUS_FAILED &&
-               $this->retry_count < $this->max_retries &&
-               ($this->next_retry_at === null || $this->next_retry_at->isPast());
+            $this->retry_count < $this->max_retries &&
+            ($this->next_retry_at === null || $this->next_retry_at->isPast());
     }
 
     /**
@@ -381,7 +361,7 @@ class Notification extends Model
     public function markAsFailed(string $errorMessage, array $errorDetails = []): void
     {
         $this->increment('retry_count');
-        
+
         $nextRetryAt = null;
         if ($this->retry_count < $this->max_retries) {
             // 指数バックオフ（1分, 5分, 30分）
@@ -415,11 +395,11 @@ class Notification extends Model
     public function replaceTemplateVariables(string $content): string
     {
         $variables = $this->template_variables ?? [];
-        
+
         foreach ($variables as $key => $value) {
             $content = str_replace("{{$key}}", $value, $content);
         }
-        
+
         return $content;
     }
 
@@ -508,10 +488,10 @@ class Notification extends Model
     public function scopePending($query)
     {
         return $query->where('status', self::STATUS_PENDING)
-                    ->where(function($q) {
-                        $q->whereNull('scheduled_at')
-                          ->orWhere('scheduled_at', '<=', now());
-                    });
+            ->where(function ($q) {
+                $q->whereNull('scheduled_at')
+                    ->orWhere('scheduled_at', '<=', now());
+            });
     }
 
     /**
@@ -520,11 +500,11 @@ class Notification extends Model
     public function scopeForRetry($query)
     {
         return $query->where('status', self::STATUS_FAILED)
-                    ->where('retry_count', '<', 'max_retries')
-                    ->where(function($q) {
-                        $q->whereNull('next_retry_at')
-                          ->orWhere('next_retry_at', '<=', now());
-                    });
+            ->where('retry_count', '<', 'max_retries')
+            ->where(function ($q) {
+                $q->whereNull('next_retry_at')
+                    ->orWhere('next_retry_at', '<=', now());
+            });
     }
 
     /**
@@ -600,4 +580,4 @@ class Notification extends Model
 
         return $query->whereIn('type', $highPriorityTypes);
     }
-} 
+}

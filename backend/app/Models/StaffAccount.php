@@ -65,23 +65,12 @@ class StaffAccount extends Authenticatable
     protected $table = 'staff_accounts';
 
     /**
-     * 一括代入可能な属性
+     * 一括代入から保護する属性
+     * 
+     * 開発の柔軟性を重視し、IDのみを保護
+     * これにより新しいフィールド追加時にfillableの更新が不要になる
      */
-    protected $fillable = [
-        'store_id',
-        'name',
-        'email',
-        'password',
-        'role',
-        'permissions',
-        'two_factor_auth',
-        'phone',
-        'profile_settings',
-        'last_login_at',
-        'last_login_ip',
-        'login_history',
-        'is_active',
-    ];
+    protected $guarded = ['id'];
 
     /**
      * 非表示属性（API出力時に除外）
@@ -133,8 +122,13 @@ class StaffAccount extends Authenticatable
                 'description' => '管理権限（予約管理、顧客管理、レポート閲覧）',
                 'level' => 80,
                 'permissions' => [
-                    'bookings_all', 'customers_all', 'resources_all', 'menus_all',
-                    'reports_view', 'notifications_send', 'calendar_manage'
+                    'bookings_all',
+                    'customers_all',
+                    'resources_all',
+                    'menus_all',
+                    'reports_view',
+                    'notifications_send',
+                    'calendar_manage'
                 ],
             ],
             self::ROLE_STAFF => [
@@ -142,8 +136,12 @@ class StaffAccount extends Authenticatable
                 'description' => '基本権限（自分の予約管理、顧客対応）',
                 'level' => 50,
                 'permissions' => [
-                    'bookings_own', 'customers_view', 'customers_edit',
-                    'resources_view', 'menus_view', 'notifications_view'
+                    'bookings_own',
+                    'customers_view',
+                    'customers_edit',
+                    'resources_view',
+                    'menus_view',
+                    'notifications_view'
                 ],
             ],
             self::ROLE_VIEWER => [
@@ -151,8 +149,11 @@ class StaffAccount extends Authenticatable
                 'description' => '閲覧権限のみ（予約状況確認、レポート閲覧）',
                 'level' => 20,
                 'permissions' => [
-                    'bookings_view', 'customers_view', 'resources_view',
-                    'menus_view', 'reports_view'
+                    'bookings_view',
+                    'customers_view',
+                    'resources_view',
+                    'menus_view',
+                    'reports_view'
                 ],
             ],
         ];
@@ -216,7 +217,7 @@ class StaffAccount extends Authenticatable
     protected static function booted()
     {
         static::addGlobalScope(new TenantScope);
-        
+
         // 作成時に自動でstore_id設定
         static::creating(function ($staffAccount) {
             if (!$staffAccount->store_id && auth()->check()) {
@@ -247,7 +248,7 @@ class StaffAccount extends Authenticatable
                     'ip_address' => $staffAccount->last_login_ip,
                     'user_agent' => request()->userAgent(),
                 ]);
-                
+
                 // 最新10件まで保持
                 $staffAccount->login_history = array_slice($loginHistory, 0, 10);
             }
@@ -291,7 +292,7 @@ class StaffAccount extends Authenticatable
         }
 
         $userPermissions = $this->permissions['granted'] ?? [];
-        
+
         // 全権限チェック
         if (in_array('all', $userPermissions)) {
             return true;
@@ -344,7 +345,7 @@ class StaffAccount extends Authenticatable
         $roles = self::getAvailableRoles();
         $userLevel = $roles[$this->role]['level'] ?? 0;
         $requiredLevel = $roles[$requiredRole]['level'] ?? 100;
-        
+
         return $userLevel >= $requiredLevel;
     }
 
@@ -356,8 +357,8 @@ class StaffAccount extends Authenticatable
     public function hasTwoFactorAuth(): bool
     {
         $twoFactorSettings = $this->two_factor_auth ?? [];
-        return ($twoFactorSettings['enabled'] ?? false) && 
-               ($twoFactorSettings['verified'] ?? false);
+        return ($twoFactorSettings['enabled'] ?? false) &&
+            ($twoFactorSettings['verified'] ?? false);
     }
 
     /**
@@ -425,7 +426,7 @@ class StaffAccount extends Authenticatable
     {
         $roles = self::getAvailableRoles();
         $roleInfo = $roles[$role] ?? $roles[self::ROLE_VIEWER];
-        
+
         return [
             'granted' => $roleInfo['permissions'],
             'denied' => [],
@@ -456,11 +457,11 @@ class StaffAccount extends Authenticatable
     {
         $roles = self::getAvailableRoles();
         $minimumLevel = $roles[$minimumRole]['level'] ?? 0;
-        
-        $validRoles = array_keys(array_filter($roles, function($role) use ($minimumLevel) {
+
+        $validRoles = array_keys(array_filter($roles, function ($role) use ($minimumLevel) {
             return $role['level'] >= $minimumLevel;
         }));
-        
+
         return $query->whereIn('role', $validRoles);
     }
 
@@ -478,6 +479,6 @@ class StaffAccount extends Authenticatable
     public function scopeWithTwoFactor($query)
     {
         return $query->where('two_factor_auth->enabled', true)
-                    ->where('two_factor_auth->verified', true);
+            ->where('two_factor_auth->verified', true);
     }
-} 
+}
