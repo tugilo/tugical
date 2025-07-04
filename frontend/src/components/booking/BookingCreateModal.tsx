@@ -361,7 +361,7 @@ const BookingCreateModal: React.FC<BookingCreateModalProps> = ({
       addNotification({
         type: 'success',
         title: '予約作成完了',
-        message: `予約番号 ${bookingNumber} で予約が作成されました`,
+        message: `${selectedCustomer?.name}様の予約を承りました（予約番号: ${bookingNumber}）`,
         duration: 5000,
       });
 
@@ -701,7 +701,7 @@ const BookingCreateModal: React.FC<BookingCreateModalProps> = ({
               required
               fullWidth
               size='lg'
-              showQuickSelect={true}
+              showQuickSelect={false}
               placeholder='予約日を選択してください'
             />
           </div>

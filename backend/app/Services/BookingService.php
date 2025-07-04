@@ -188,7 +188,8 @@ class BookingService
                 'total_price' => $totalPrice
             ]);
 
-            return $booking;
+            // リレーションをロードして返す
+            return $booking->load(['customer', 'menu', 'resource', 'bookingOptions']);
         });
     }
 

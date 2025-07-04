@@ -187,39 +187,6 @@ const DatePicker: React.FC<DatePickerProps> = ({
         </label>
       )}
 
-      {/* クイック選択ボタン */}
-      {showQuickSelect && (
-        <div className='grid grid-cols-3 gap-2 mb-3'>
-          {quickDates.map(({ label, date, dayOfWeek }) => {
-            const isSelected =
-              value && date.toDateString() === value.toDateString();
-            const isDisabled = !isDateSelectable(date);
-
-            return (
-              <button
-                key={label}
-                type='button'
-                onClick={() => !isDisabled && handleDateSelect(date)}
-                disabled={isDisabled}
-                className={cn(
-                  'p-3 rounded-lg border-2 text-center transition-all font-medium',
-                  isSelected
-                    ? 'border-primary-500 bg-primary-100 text-primary-900 shadow-md'
-                    : isDisabled
-                    ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed'
-                    : 'border-gray-200 bg-white hover:border-primary-300 hover:bg-primary-50 text-gray-700 shadow-sm hover:shadow-md'
-                )}
-              >
-                <div className='font-bold text-sm'>{label}</div>
-                <div className='text-xs text-gray-600'>
-                  {date.getDate()}日({dayOfWeek})
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      )}
-
       {/* メイン入力フィールド */}
       <div className='relative'>
         <button

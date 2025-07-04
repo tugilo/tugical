@@ -191,6 +191,7 @@ export interface BookingMenu {
 export interface BookingResource {
   id: number;
   name: string;
+  display_name: string;
   type: 'staff' | 'room' | 'equipment';
 }
 
