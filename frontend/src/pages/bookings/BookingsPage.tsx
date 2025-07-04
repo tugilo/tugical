@@ -137,6 +137,121 @@ const BookingsPage: React.FC = () => {
     fetchBookings();
   };
 
+  /**
+   * 予約を日付別にグループ化
+   */
+  const groupBookingsByDate = (bookings: Booking[]) => {
+    const groups: { [key: string]: Booking[] } = {};
+
+    bookings.forEach(booking => {
+      const date = booking.booking_date;
+      if (!groups[date]) {
+        groups[date] = [];
+      }
+      groups[date].push(booking);
+    });
+
+    // 日付順でソート
+    return Object.entries(groups)
+      .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
+      .map(([date, bookings]) => ({
+        date,
+        bookings: bookings.sort((a, b) =>
+          a.start_time.localeCompare(b.start_time)
+        ),
+      }));
+  };
+
+  /**
+   * 日付ヘッダーのフォーマット
+   */
+  const formatDateHeader = (dateString: string): string => {
+    const date = new Date(dateString);
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    if (date.toDateString() === today.toDateString()) {
+      return (
+        '今日 ' +
+        date.toLocaleDateString('ja-JP', {
+          month: 'long',
+          day: 'numeric',
+          weekday: 'short',
+        })
+      );
+    } else if (date.toDateString() === tomorrow.toDateString()) {
+      return (
+        '明日 ' +
+        date.toLocaleDateString('ja-JP', {
+          month: 'long',
+          day: 'numeric',
+          weekday: 'short',
+        })
+      );
+    } else {
+      return date.toLocaleDateString('ja-JP', {
+        month: 'long',
+        day: 'numeric',
+        weekday: 'short',
+      });
+    }
+  };
+
+  /**
+   * 時間のフォーマット
+   */
+  const formatTime = (timeString: string): string => {
+    return timeString.substring(0, 5);
+  };
+
+  /**
+   * 所要時間の計算
+   */
+  const calculateDuration = (booking: Booking): number => {
+    return booking.menu.base_duration || booking.menu.duration || 60;
+  };
+
+  /**
+   * ステータスのスタイル
+   */
+  const getStatusStyle = (status: string): string => {
+    const styles = {
+      pending: 'bg-yellow-100 text-yellow-800',
+      confirmed: 'bg-green-100 text-green-800',
+      cancelled: 'bg-red-100 text-red-800',
+      completed: 'bg-gray-100 text-gray-800',
+      no_show: 'bg-red-200 text-red-900',
+    };
+    return styles[status as keyof typeof styles] || 'bg-gray-100 text-gray-800';
+  };
+
+  /**
+   * ステータスのラベル
+   */
+  const getStatusLabel = (status: string): string => {
+    const labels = {
+      pending: '申込み中',
+      confirmed: '確定',
+      cancelled: 'キャンセル',
+      completed: '完了',
+      no_show: '無断キャンセル',
+    };
+    return labels[status as keyof typeof labels] || status;
+  };
+
+  /**
+   * リソース名の取得
+   */
+  const getResourceName = (resourceId: number): string => {
+    const resourceMap: Record<number, string> = {
+      2: '次廣',
+      3: 'テスト',
+      4: '個室B',
+    };
+    return resourceMap[resourceId] || `担当者ID:${resourceId}`;
+  };
+
   if (isLoading) {
     return <LoadingScreen />;
   }
@@ -242,15 +357,90 @@ const BookingsPage: React.FC = () => {
           </Card.Body>
         </Card>
       ) : (
-        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
-          {bookings.map(booking => (
-            <BookingCard
-              key={booking.id}
-              booking={booking}
-              onClick={handleBookingClick}
-              mode='compact'
-            />
-          ))}
+        <div className='space-y-6'>
+          {/* タイムライン形式の予約一覧 */}
+          {groupBookingsByDate(bookings).map(
+            ({ date, bookings: dayBookings }) => (
+              <Card key={date}>
+                <Card.Body className='p-0'>
+                  {/* 日付ヘッダー */}
+                  <div className='px-6 py-4 border-b border-gray-200 bg-gray-50'>
+                    <div className='flex items-center justify-between'>
+                      <h3 className='text-lg font-semibold text-gray-900'>
+                        {formatDateHeader(date)}
+                      </h3>
+                      <span className='text-sm text-gray-500'>
+                        {dayBookings.length}件の予約
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* その日の予約一覧 */}
+                  <div className='divide-y divide-gray-100'>
+                    {dayBookings.map(booking => (
+                      <div
+                        key={booking.id}
+                        onClick={() => handleBookingClick(booking)}
+                        className='px-6 py-4 hover:bg-gray-50 cursor-pointer transition-colors'
+                      >
+                        <div className='flex items-center justify-between'>
+                          {/* 左側: 時間 + 顧客情報 */}
+                          <div className='flex items-center space-x-4'>
+                            {/* 時間 */}
+                            <div className='flex-shrink-0 w-20 text-right'>
+                              <div className='text-lg font-mono font-semibold text-gray-900'>
+                                {formatTime(booking.start_time)}
+                              </div>
+                              <div className='text-xs text-gray-500'>
+                                {calculateDuration(booking)}分
+                              </div>
+                            </div>
+
+                            {/* 顧客情報 */}
+                            <div className='flex-1 min-w-0'>
+                              <div className='flex items-center space-x-2'>
+                                <h4 className='text-base font-medium text-gray-900 truncate'>
+                                  {booking.customer.name}
+                                </h4>
+                                <span
+                                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getStatusStyle(
+                                    booking.status
+                                  )}`}
+                                >
+                                  {getStatusLabel(booking.status)}
+                                </span>
+                              </div>
+                              <div className='flex items-center space-x-4 mt-1'>
+                                <span className='text-sm text-gray-600'>
+                                  {booking.menu.name}
+                                </span>
+                                <span className='text-sm text-gray-500'>
+                                  担当:{' '}
+                                  {booking.resource_id
+                                    ? getResourceName(booking.resource_id)
+                                    : '担当なし'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* 右側: 料金 */}
+                          <div className='flex-shrink-0 text-right'>
+                            <div className='text-lg font-semibold text-gray-900'>
+                              ¥{booking.total_price.toLocaleString()}
+                            </div>
+                            <div className='text-xs text-gray-500'>
+                              {booking.booking_number}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </Card.Body>
+              </Card>
+            )
+          )}
         </div>
       )}
 

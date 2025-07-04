@@ -186,6 +186,7 @@ export interface BookingMenu {
   id: number;
   name: string;
   duration: number;
+  base_duration: number;
   price: number;
 }
 

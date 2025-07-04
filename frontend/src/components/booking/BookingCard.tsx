@@ -150,12 +150,16 @@ const BookingCard: React.FC<BookingCardProps> = ({
             </div>
           </div>
 
-          {booking.resource_id && (
-            <div className='flex items-center gap-1 text-sm text-gray-600 ml-1'>
-              <UserIcon className='w-4 h-4 text-gray-400' />
-              <span>担当: {getResourceName(booking.resource_id)}</span>
-            </div>
-          )}
+          {/* 担当者情報 */}
+          <div className='flex items-center gap-1 text-sm text-gray-600 ml-1'>
+            <UserIcon className='w-4 h-4 text-gray-400' />
+            <span>
+              担当:{' '}
+              {booking.resource_id
+                ? getResourceName(booking.resource_id)
+                : '担当なし'}
+            </span>
+          </div>
         </div>
 
         {/* 顧客情報 */}
