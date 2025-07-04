@@ -72,26 +72,41 @@ class Resource extends Model
         'type',
         'name',
         'display_name',
+        'description',
         'attributes',
-        'working_hours',
-        'constraints',
+        'specialties',
+        'skill_level',
         'efficiency_rate',
         'hourly_rate_diff',
         'capacity',
-        'equipment_specs',
-        'booking_rules',
-        'description',
-        'image_url',
-        'is_active',
+        'equipment_list',
+        'gender_restriction',
+        'min_age',
+        'max_age',
+        'requirements',
+        'working_hours',
+        'allow_overtime',
+        'break_time_minutes',
+        'unavailable_dates',
         'sort_order',
+        'priority_level',
+        'is_featured',
+        'allow_designation',
+        'profile_image_url',
+        'image_gallery',
+        'background_color',
+        'is_active',
+        'is_bookable',
+        'settings',
+        'notes',
     ];
 
     /**
      * 非表示属性（API出力時に除外）
      */
     protected $hidden = [
-        'equipment_specs',
-        'booking_rules',
+        'settings',
+        'notes',
     ];
 
     /**
@@ -99,15 +114,26 @@ class Resource extends Model
      */
     protected $casts = [
         'attributes' => 'array',
+        'specialties' => 'array',
         'working_hours' => 'array',
-        'constraints' => 'array',
-        'equipment_specs' => 'array',
-        'booking_rules' => 'array',
+        'equipment_list' => 'array',
+        'requirements' => 'array',
+        'unavailable_dates' => 'array',
+        'image_gallery' => 'array',
+        'settings' => 'array',
         'efficiency_rate' => 'float',
         'hourly_rate_diff' => 'integer',
         'capacity' => 'integer',
-        'is_active' => 'boolean',
+        'min_age' => 'integer',
+        'max_age' => 'integer',
+        'break_time_minutes' => 'integer',
         'sort_order' => 'integer',
+        'priority_level' => 'integer',
+        'is_active' => 'boolean',
+        'is_featured' => 'boolean',
+        'allow_designation' => 'boolean',
+        'allow_overtime' => 'boolean',
+        'is_bookable' => 'boolean',
         'deleted_at' => 'datetime',
     ];
 
@@ -225,10 +251,8 @@ class Resource extends Model
                 $resource->attributes = self::getDefaultAttributes($resource->type);
             }
 
-            // デフォルト制約設定
-            if (!$resource->constraints && $resource->type) {
-                $resource->constraints = self::getDefaultConstraints($resource->type);
-            }
+            // デフォルト制約設定は個別フィールドで管理
+            // 新しいデータベース構造では constraints フィールドは使用しない
 
             // デフォルト効率率設定
             if (!$resource->efficiency_rate) {

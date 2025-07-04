@@ -2060,3 +2060,180 @@ tugicalの核心である「統一リソース概念」が **完全に動作可�
 - API統合・型安全性の確保
 
 **次回セッション**: ResourceEditModal + ResourceDetailModal実装で、リソース管理機能を完全完成させる予定。
+
+# tugical 開発進捗管理
+
+## 最新状況
+- **最終更新**: 2025-07-04 19:41:22
+- **作業端末**: tugiMacMini.local
+- **現在ブランチ**: develop
+- **フェーズ**: Phase 5.5 ResourceCreateModal実装完了 → Phase 5.6 ResourceEditModal実装開始
+
+## Phase 5.6: ResourceCreateModal APIエラー修正完了 ✅
+
+### 問題の発見と解決
+**発生した問題:**
+- ResourceCreateModalで新規スタッフ追加時に500エラーが発生
+- APIエラー: "Column not found: 1054 Unknown column 'constraints' in 'INSERT INTO'"
+
+**根本原因:**
+- ResourceControllerとResourceモデルで使用しているフィールド名が実際のデータベース構造と不一致
+- 存在しないフィールド: `constraints`, `equipment_specs`, `booking_rules`, `image_url`
+- 実際のフィールド: 個別制約フィールド、`equipment_list`, 個別ブッキングルール、`profile_image_url`
+
+**修正内容:**
+
+#### 1. ResourceController.php 修正
+- **store メソッド**: 存在しないフィールドを実際のDB構造に合わせて修正
+- **update メソッド**: 配列フィールドの処理を実際のフィールドに修正
+- **修正ファイル**: `backend/app/Http/Controllers/Api/ResourceController.php`
+
+```php
+// 修正前（エラーの原因）
+'constraints' => $request->constraints ?? [],
+'equipment_specs' => $request->equipment_specs ?? [],
+'booking_rules' => $request->booking_rules ?? [],
+'image_url' => $request->image_url,
+
+// 修正後（実際のDB構造に対応）
+'profile_image_url' => $request->image_url,
+'specialties' => $request->specialties ?? [],
+'skill_level' => $request->skill_level ?? 'intermediate',
+'equipment_list' => $request->equipment_list ?? [],
+'gender_restriction' => $request->gender_restriction ?? 'none',
+// ... 他の実際のフィールド
+```
+
+#### 2. Resource.php モデル修正
+- **fillable配列**: 実際のDBフィールドに更新
+- **casts配列**: 実際のフィールドの型キャスト設定
+- **hidden配列**: 非表示フィールドの更新
+- **bootedメソッド**: `constraints`フィールドの参照を削除
+
+```php
+// fillable配列を実際のDB構造に合わせて修正
+protected $fillable = [
+    'store_id', 'type', 'name', 'display_name', 'description',
+    'attributes', 'specialties', 'skill_level', 'efficiency_rate',
+    'hourly_rate_diff', 'capacity', 'equipment_list', 'gender_restriction',
+    'min_age', 'max_age', 'requirements', 'working_hours', 'allow_overtime',
+    'break_time_minutes', 'unavailable_dates', 'sort_order', 'priority_level',
+    'is_featured', 'allow_designation', 'profile_image_url', 'image_gallery',
+    'background_color', 'is_active', 'is_bookable', 'settings', 'notes',
+];
+```
+
+#### 3. API動作確認
+```bash
+# テスト結果: 成功
+curl -X POST http://localhost/api/v1/resources \
+  -H "Authorization: Bearer ..." \
+  -H "Content-Type: application/json" \
+  -d '{"type": "staff", "name": "test_staff", ...}'
+
+# レスポンス: {"success":true,"data":{"resource":{"id":1,...}}}
+```
+
+### 技術的成果
+1. **データベース構造とモデルの完全同期**: 実際のテーブル構造に合わせてコードを修正
+2. **API正常動作確認**: リソース作成APIが正常に動作することを確認
+3. **統一リソース概念の実現**: 4タイプリソース（staff/room/equipment/vehicle）が正常に作成可能
+4. **フロントエンド統合準備完了**: ResourceCreateModalが正常に動作する環境を整備
+
+### 解決したエラー
+- ✅ Column not found: 1054 Unknown column 'constraints'
+- ✅ Column not found: 1054 Unknown column 'equipment_specs'  
+- ✅ Column not found: 1054 Unknown column 'booking_rules'
+- ✅ Column not found: 1054 Unknown column 'image_url'
+
+### 次のステップ
+**Phase 5.6: ResourceEditModal実装**
+1. ResourceEditModal.tsx作成
+2. 既存リソース編集機能実装
+3. ResourceDetailModal.tsx作成  
+4. ResourcesPage完全統合
+
+**完了ファイル:**
+- `backend/app/Http/Controllers/Api/ResourceController.php` (修正完了)
+- `backend/app/Models/Resource.php` (修正完了)
+- `frontend/dist/` (ビルド完了)
+
+**コミット準備:**
+- ResourceController/Resourceモデルの修正
+- API動作確認完了
+- フロントエンドビルド成功
+
+---
+
+## これまでの完了フェーズ
+
+### Phase 1: 基盤整備 ✅
+- Docker環境構築完了
+- Laravel + React + Vite環境構築
+- 基本認証システム実装
+- データベース設計・マイグレーション完了
+
+### Phase 2: 認証・基本機能 ✅  
+- Sanctum認証システム完成
+- ログイン・ログアウト機能
+- 基本的なCRUD API実装
+- フロントエンド基本レイアウト
+
+### Phase 3: メニュー管理機能 ✅
+- MenuController完成（CRUD + オプション管理）
+- MenusPage実装（メニュー管理画面）
+- メニューオプション機能実装
+- 業種別メニューテンプレート対応
+
+### Phase 4: 顧客管理機能 ✅
+- CustomerController完成（CRUD + ロイヤリティ管理）
+- CustomersPage実装（顧客管理画面）
+- 顧客詳細・編集機能実装
+- LINE連携準備（line_user_id nullable対応）
+
+### Phase 5.1-5.4: リソース管理基盤 ✅
+- ResourceController完成（CRUD + 順序管理）
+- 統一リソース概念実装（staff/room/equipment/vehicle）
+- ResourcesPage実装（リソース管理画面）
+- API統合完了
+
+### Phase 5.5: ResourceCreateModal実装 ✅
+- 革新的リソース作成フォーム実装
+- 4タイプリソース対応UI
+- 業種別ラベル自動切り替え
+- 完全バリデーション・エラーハンドリング
+
+### Phase 5.6: ResourceCreateModal APIエラー修正 ✅
+- データベース構造とモデルの完全同期
+- API正常動作確認
+- フロントエンド統合準備完了
+
+## 技術的マイルストーン
+
+### 🎯 tugical独自機能実装済み
+- **統一リソース概念**: 4タイプリソース統一管理
+- **業種別表示**: 5業種 × 4リソース = 20パターン対応
+- **マルチテナント**: 完全なstore_id分離
+- **革新的UI**: タイプ選択インターフェース
+
+### 📊 実装完了率
+- **バックエンドAPI**: 80% (メニュー・顧客・リソース完了)
+- **フロントエンド管理画面**: 70% (3画面完了、編集機能一部)
+- **認証システム**: 100% (Sanctum完全動作)
+- **データベース**: 90% (主要テーブル完了)
+
+### 🔄 現在の課題
+- [ ] ResourceEditModal実装
+- [ ] ResourceDetailModal実装
+- [ ] 予約管理フロントエンド
+- [ ] LIFF予約フロー
+- [ ] LINE通知システム
+
+### 🎉 次回目標
+**Phase 5.6完了**: リソース管理機能完全実装
+- ResourceEditModal + ResourceDetailModal
+- ResourcesPage完全統合
+- ドラッグ&ドロップ順序変更
+- 一括操作機能
+
+**tugical の核心機能が着実に完成に向かっています！**

@@ -229,15 +229,29 @@ class ResourceController extends Controller
                     'description' => $request->description,
                     'attributes' => $request->attributes ?? [],
                     'working_hours' => $request->working_hours ?? [],
-                    'constraints' => $request->constraints ?? [],
                     'efficiency_rate' => $request->efficiency_rate ?? 1.0,
                     'hourly_rate_diff' => $request->hourly_rate_diff ?? 0,
                     'capacity' => $request->capacity ?? ($request->type === 'staff' ? 1 : 10),
-                    'equipment_specs' => $request->equipment_specs ?? [],
-                    'booking_rules' => $request->booking_rules ?? [],
-                    'image_url' => $request->image_url,
+                    'profile_image_url' => $request->image_url,
                     'is_active' => $request->is_active ?? true,
-                    'sort_order' => $request->sort_order,
+                    'sort_order' => $request->sort_order ?? 10,
+                    // 追加のフィールドにデフォルト値を設定
+                    'specialties' => $request->specialties ?? [],
+                    'skill_level' => $request->skill_level ?? 'intermediate',
+                    'equipment_list' => $request->equipment_list ?? [],
+                    'gender_restriction' => $request->gender_restriction ?? 'none',
+                    'requirements' => $request->requirements ?? [],
+                    'allow_overtime' => $request->allow_overtime ?? false,
+                    'break_time_minutes' => $request->break_time_minutes ?? 0,
+                    'unavailable_dates' => $request->unavailable_dates ?? [],
+                    'priority_level' => $request->priority_level ?? 1,
+                    'is_featured' => $request->is_featured ?? false,
+                    'allow_designation' => $request->allow_designation ?? true,
+                    'image_gallery' => $request->image_gallery ?? [],
+                    'background_color' => $request->background_color,
+                    'is_bookable' => $request->is_bookable ?? true,
+                    'settings' => $request->settings ?? [],
+                    'notes' => $request->notes,
                 ]);
 
                 DB::commit();
@@ -332,7 +346,7 @@ class ResourceController extends Controller
                 }
 
                 // 配列フィールドの特別な処理
-                $arrayFields = ['attributes', 'working_hours', 'constraints', 'equipment_specs', 'booking_rules'];
+                $arrayFields = ['attributes', 'working_hours', 'specialties', 'equipment_list', 'requirements', 'unavailable_dates', 'image_gallery', 'settings'];
                 foreach ($arrayFields as $field) {
                     if (isset($updateData[$field])) {
                         // 既存データとマージするか完全置換するかの判定
