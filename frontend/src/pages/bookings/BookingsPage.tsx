@@ -387,9 +387,10 @@ const BookingsPage: React.FC = () => {
                           {/* 左側: 時間 + 顧客情報 */}
                           <div className='flex items-center space-x-4'>
                             {/* 時間 */}
-                            <div className='flex-shrink-0 w-20 text-right'>
+                            <div className='flex-shrink-0 w-24 text-right'>
                               <div className='text-lg font-mono font-semibold text-gray-900'>
-                                {formatTime(booking.start_time)}
+                                {formatTime(booking.start_time)} -{' '}
+                                {formatTime(booking.end_time)}
                               </div>
                               <div className='text-xs text-gray-500'>
                                 {calculateDuration(booking)}分
