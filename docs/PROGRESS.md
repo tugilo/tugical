@@ -866,4 +866,11 @@ curl -X POST http://localhost/api/v1/auth/logout \
   - SweetAlert2 など外部ライブラリの導入は後回し
   - 現在の実装で十分なユーザビリティを実現
 
+### 2025-07-04 13:57 (tugiMacAir.local)
+- **顧客作成エラー修正**
+  - エラー: `Field 'line_user_id' doesn't have a default value`
+  - 原因: customers テーブルの line_user_id カラムが NOT NULL で定義されているが、管理画面から作成時は LINE 連携なし
+  - 修正: `make_line_user_id_nullable_in_customers_table` マイグレーションを作成・実行
+  - 結果: 管理画面から顧客を手動作成できるように改善
+
 ---
