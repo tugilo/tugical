@@ -198,7 +198,7 @@ class ApiClient {
   /**
    * 予約一覧取得
    */
-  async getBookings(filters?: FilterOptions): Promise<PaginatedResponse<Booking>> {
+  async getBookings(filters?: FilterOptions): Promise<{ bookings: Booking[]; pagination: { current_page: number; per_page: number; total: number; last_page: number; from: number | null; to: number | null } }> {
     const params = new URLSearchParams();
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
@@ -208,7 +208,7 @@ class ApiClient {
       });
     }
 
-    const response = await this.client.get<ApiResponse<PaginatedResponse<Booking>>>(
+    const response = await this.client.get<ApiResponse<{ bookings: Booking[]; pagination: { current_page: number; per_page: number; total: number; last_page: number; from: number | null; to: number | null } }>>(
       `/bookings?${params.toString()}`
     );
     

@@ -55,9 +55,9 @@ const BookingsPage: React.FC = () => {
       };
 
       const response = await bookingApi.getList(filters);
-      setBookings(response.data);
-      setTotalPages(response.meta.last_page);
-      setTotalCount(response.meta.total);
+      setBookings(response.bookings);
+      setTotalPages(response.pagination.last_page);
+      setTotalCount(response.pagination.total);
     } catch (error: any) {
       console.error('Failed to fetch bookings:', error);
       addToast({

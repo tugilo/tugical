@@ -1,5 +1,50 @@
 # tugical Development Progress
 
+## 2025-07-04 18:12:31 (tugiMacAir.local)
+
+### フロントエンド予約管理画面エラー修正（第2弾）
+
+**新しいエラー内容:**
+- `response.meta.last_page` undefined エラー
+- `bookings.length` undefined エラー
+- API レスポンス構造の不整合
+
+**エラー原因:**
+- BookingsPage が `bookingApi.getList()` を呼び出し
+- APIクライアントの `getBookings()` が `PaginatedResponse<Booking>` を返却
+- 実際のAPIは `{ bookings: [], pagination: {} }` 構造で返却
+- フロントエンドが `response.meta` を期待するが実際は `response.pagination`
+
+**修正内容:**
+1. **APIクライアント修正**
+   - `getBookings()` メソッドの戻り値型を実際のAPI構造に修正
+   - `{ bookings: Booking[]; pagination: {...} }` 型に変更
+
+2. **BookingsPage修正**
+   - API呼び出しを `bookingApi.getList()` に変更（既存メソッド使用）
+   - レスポンス構造を実際の構造に合わせて修正
+   - `response.bookings`, `response.pagination.last_page` でアクセス
+
+3. **API レスポンス確認**
+   - `/api/v1/bookings` エンドポイントのレスポンス構造確認
+   - `{ success: true, data: { bookings: [], pagination: {...} }, message: "...", meta: {...} }` 
+
+**技術修正詳細:**
+- APIClient.getBookings(): 戻り値型修正
+- BookingsPage.fetchBookings(): API呼び出しとレスポンス処理修正
+- フロントエンドビルド成功確認（2.40s でビルド完了）
+
+**解決済み:**
+- ✅ APIレスポンス構造の整合性確保
+- ✅ フロントエンド予約一覧表示修復
+- ✅ ページネーション情報正常取得
+- ✅ ビルドエラーなし
+
+**次のステップ:**
+- ブラウザでの動作確認
+- 予約データ追加テスト
+- ResourcesPage 実装継続
+
 ## 2025-07-04 18:09:59 (tugiMacAir.local)
 
 ### 予約管理画面エラー修正完了
