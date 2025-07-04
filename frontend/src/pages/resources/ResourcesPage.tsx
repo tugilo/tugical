@@ -116,10 +116,11 @@ const ResourcesPage: React.FC = () => {
         sort: 'type,sort_order,name'
       };
 
-      const resourceList = await resourceApi.getList(filters);
-      setResources(resourceList);
+      const result = await resourceApi.getList(filters);
+      setResources(result.resources || []);
     } catch (error: any) {
       console.error('Failed to fetch resources:', error);
+      setResources([]); // エラー時は空配列を設定
       addToast({
         type: 'error',
         title: 'リソース一覧の取得に失敗しました',
@@ -227,14 +228,14 @@ const ResourcesPage: React.FC = () => {
    * タイプ別リソース数を取得
    */
   const getResourceCountByType = (type: string): number => {
-    return resources.filter(resource => resource.type === type).length;
+    return Array.isArray(resources) ? resources.filter(resource => resource.type === type).length : 0;
   };
 
   /**
    * 稼働中リソース数を取得
    */
   const getActiveResourceCount = (): number => {
-    return resources.filter(resource => resource.is_active).length;
+    return Array.isArray(resources) ? resources.filter(resource => resource.is_active).length : 0;
   };
 
   if (isLoading) {

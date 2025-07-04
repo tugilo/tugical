@@ -367,7 +367,7 @@ class ApiClient {
   /**
    * リソース一覧取得
    */
-  async getResources(filters?: FilterOptions): Promise<Resource[]> {
+  async getResources(filters?: FilterOptions): Promise<{ resources: Resource[]; pagination: any }> {
     const params = new URLSearchParams();
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
@@ -377,7 +377,7 @@ class ApiClient {
       });
     }
 
-    const response = await this.client.get<ApiResponse<Resource[]>>(
+    const response = await this.client.get<ApiResponse<{ resources: Resource[]; pagination: any }>>(
       `/resources?${params.toString()}`
     );
     

@@ -1727,9 +1727,71 @@ curl -X POST http://localhost/api/v1/auth/logout \
 ---
 
 ## 最新更新情報
-- **更新日時**: 2025-07-04 18:59:07
+- **更新日時**: 2025-07-04 19:04:43
 - **作業端末**: tugiMacMini.local
 - **ブランチ**: develop
+
+## Phase 5.4: フロントエンドAPI統合エラー修正 (完了)
+
+### 実装完了項目
+- ✅ **resources.filter is not a function エラー修正**
+  - APIレスポンス構造とフロントエンド期待値の不整合解決
+  - リソース一覧データの適切な配列処理実装
+  - エラー時の空配列フォールバック追加
+
+### 修正された技術的問題
+
+#### 1. APIレスポンス構造不整合
+```typescript
+// ❌ 問題：期待した配列形式でない
+const resourceList = await resourceApi.getList(filters);
+setResources(resourceList); // undefined または null の可能性
+
+// ✅ 解決：正しいレスポンス構造に対応
+const result = await resourceApi.getList(filters);
+setResources(result.resources || []); // 常に配列を保証
+```
+
+#### 2. 配列メソッド呼び出しエラー防止
+```typescript
+// ❌ 問題：resources が undefined の場合エラー
+return resources.filter(resource => resource.is_active).length;
+
+// ✅ 解決：配列チェック追加
+return Array.isArray(resources) ? resources.filter(resource => resource.is_active).length : 0;
+```
+
+#### 3. API戻り値型修正
+```typescript
+// 修正前：直接配列を期待
+async getResources(filters?: FilterOptions): Promise<Resource[]>
+
+// 修正後：実際のAPIレスポンス構造に対応
+async getResources(filters?: FilterOptions): Promise<{ resources: Resource[]; pagination: any }>
+```
+
+### 実際のAPIレスポンス構造
+```json
+{
+  "success": true,
+  "data": {
+    "resources": [],
+    "pagination": {
+      "current_page": 1,
+      "per_page": 20,
+      "total": 0,
+      "last_page": 1
+    }
+  },
+  "message": "リソース一覧を取得しました"
+}
+```
+
+### フロントエンド動作確認
+- ✅ **リソース管理画面**: 正常表示
+- ✅ **タイプ別サマリー**: 0件表示（初期状態正常）
+- ✅ **フィルター機能**: エラーなし
+- ✅ **API通信**: 正常レスポンス
 
 ## Phase 5.3: CORS・API接続エラー修正 (完了)
 
@@ -1783,8 +1845,10 @@ Schema::table('resources', function (Blueprint $table) {
 ### 修正ファイル
 - `backend/app/Models/Resource.php` - メソッド名変更
 - `backend/database/migrations/2025_07_04_185819_add_deleted_at_to_resources_table.php` - 新規作成
+- `frontend/src/services/api.ts` - API戻り値型修正
+- `frontend/src/pages/resources/ResourcesPage.tsx` - 配列チェック追加
 
-## Phase 5.4: リソース管理画面完全動作 (完了)
+## Phase 5.5: リソース管理画面完全動作 (完了)
 
 ### 実装済み機能
 - ✅ **ResourcesPage 完全実装**
@@ -1794,7 +1858,7 @@ Schema::table('resources', function (Blueprint $table) {
   - フィルタリング・検索機能実装
   - リアルタイム統計表示
 
-### 次のステップ (Phase 5.5)
+### 次のステップ (Phase 5.6)
 - [ ] リソース作成/編集モーダル実装
 - [ ] 稼働時間設定UI
 - [ ] 業種別制約管理インターフェース
@@ -1821,12 +1885,14 @@ Schema::table('resources', function (Blueprint $table) {
 2. **SoftDeletes 未対応**: deleted_at カラム追加
 3. **API 接続問題**: 完全解決
 4. **認証システム**: Sanctum 正常動作
+5. **フロントエンド型エラー**: APIレスポンス構造整合性確保
 
 ## 開発環境状況
 - **Docker**: 全コンテナ正常稼働
 - **API**: 完全動作（200レスポンス）
 - **Database**: マイグレーション完了
 - **Frontend**: ビルド成功・画面表示正常
+- **エラー状況**: 0件（全問題解決済み）
 
 ## ビジネス機能実装度
 - **リソース管理**: 95% 完了（CRUD + 高度機能）
@@ -1835,4 +1901,5 @@ Schema::table('resources', function (Blueprint $table) {
 - **業種対応**: 5業種完全対応
 
 tugical の核心機能「統一リソース概念によるリソース管理」が完全動作可能状態に到達。
+リソース一覧表示・フィルタリング・API統合すべて正常動作。
 次は具体的なリソース作成・編集UIの実装に移行予定。
