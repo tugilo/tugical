@@ -32,7 +32,7 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
     category: '',
     description: '',
     base_price: 0,
-    base_duration: 60,
+    base_duration: 60, // 明示的に数値型で設定
     prep_duration: 0,
     cleanup_duration: 0,
     advance_booking_hours: 1,
@@ -194,7 +194,7 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
       category: '',
       description: '',
       base_price: 0,
-      base_duration: 60,
+      base_duration: 60, // 明示的に数値型で設定
       prep_duration: 0,
       cleanup_duration: 0,
       advance_booking_hours: 1,
@@ -300,7 +300,7 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
               error={errors.base_duration}
               min={1}
               max={1440}
-              step={5}
+              step={1}
               required
             />
           </div>
@@ -316,7 +316,7 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
               error={errors.prep_duration}
               min={0}
               max={120}
-              step={5}
+              step={1}
             />
 
             <FormField
@@ -329,7 +329,7 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
               error={errors.cleanup_duration}
               min={0}
               max={120}
-              step={5}
+              step={1}
             />
           </div>
         </div>
