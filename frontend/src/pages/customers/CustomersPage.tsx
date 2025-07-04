@@ -21,6 +21,7 @@ import CustomerCard from '../../components/customer/CustomerCard';
 import { useUIStore } from '../../stores/uiStore';
 import Button from '../../components/ui/Button';
 import CustomerDetailModal from '../../components/customer/CustomerDetailModal';
+import CustomerCreateModal from '../../components/customer/CustomerCreateModal';
 
 const CustomersPage: React.FC = () => {
   const { setPageTitle } = useUIStore();
@@ -33,6 +34,7 @@ const CustomersPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -164,6 +166,14 @@ const CustomersPage: React.FC = () => {
   };
 
   // -----------------------------
+  // 顧客作成時
+  // -----------------------------
+  const handleCustomerCreate = (_newCustomer: Customer) => {
+    // 顧客リストを再取得
+    fetchCustomers(1);
+  };
+
+  // -----------------------------
   // レンダリング
   // -----------------------------
   if (isLoading) {
@@ -183,7 +193,7 @@ const CustomersPage: React.FC = () => {
         <Button
           variant="primary"
           leftIcon={<PlusIcon className="w-5 h-5" />}
-          onClick={() => {/* TODO: 新規顧客作成モーダル */}}
+          onClick={() => setIsCreateModalOpen(true)}
         >
           新規顧客登録
         </Button>
@@ -327,6 +337,13 @@ const CustomersPage: React.FC = () => {
         }}
         onUpdate={handleCustomerUpdate}
         onDelete={handleCustomerDelete}
+      />
+
+      {/* 新規顧客登録モーダル */}
+      <CustomerCreateModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onCreate={handleCustomerCreate}
       />
     </div>
   );
