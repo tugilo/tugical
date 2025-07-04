@@ -26,6 +26,7 @@ import Button from '../../components/ui/Button';
 import LoadingScreen from '../../components/ui/LoadingScreen';
 import MenuCreateModal from '../../components/menus/MenuCreateModal';
 import MenuEditModal from '../../components/menus/MenuEditModal';
+import MenuDetailModal from '../../components/menus/MenuDetailModal';
 import { menuApi } from '../../services/api';
 import type { Menu, FilterOptions, MenuCategoriesResponse } from '../../types';
 
@@ -49,7 +50,9 @@ const MenusPage: React.FC = () => {
   });
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const [editingMenuId, setEditingMenuId] = useState<number | null>(null);
+  const [viewingMenuId, setViewingMenuId] = useState<number | null>(null);
 
   useEffect(() => {
     setPageTitle('メニュー管理');
@@ -122,10 +125,28 @@ const MenusPage: React.FC = () => {
   };
 
   /**
+   * メニュー詳細表示
+   */
+  const handleViewMenu = (menu: Menu) => {
+    setViewingMenuId(menu.id);
+    setShowDetailModal(true);
+  };
+
+  /**
    * メニュー編集
    */
   const handleEditMenu = (menu: Menu) => {
     setEditingMenuId(menu.id);
+    setShowEditModal(true);
+  };
+
+  /**
+   * 詳細モーダルから編集モーダルへ遷移
+   */
+  const handleEditFromDetail = (menuId: number) => {
+    setShowDetailModal(false);
+    setViewingMenuId(null);
+    setEditingMenuId(menuId);
     setShowEditModal(true);
   };
 
@@ -311,6 +332,7 @@ const MenusPage: React.FC = () => {
                 <MenuCard
                   key={menu.id}
                   menu={menu}
+                  onView={() => handleViewMenu(menu)}
                   onEdit={() => handleEditMenu(menu)}
                   onDelete={() => handleDeleteMenu(menu)}
                 />
@@ -347,6 +369,7 @@ const MenusPage: React.FC = () => {
                       <MenuTableRow
                         key={menu.id}
                         menu={menu}
+                        onView={() => handleViewMenu(menu)}
                         onEdit={() => handleEditMenu(menu)}
                         onDelete={() => handleDeleteMenu(menu)}
                       />
@@ -396,6 +419,17 @@ const MenusPage: React.FC = () => {
         }}
       />
 
+      {/* メニュー詳細表示モーダル */}
+      <MenuDetailModal
+        isOpen={showDetailModal}
+        onClose={() => {
+          setShowDetailModal(false);
+          setViewingMenuId(null);
+        }}
+        onEdit={handleEditFromDetail}
+        menuId={viewingMenuId}
+      />
+
       {/* メニュー編集モーダル */}
       <MenuEditModal
         isOpen={showEditModal}
@@ -419,11 +453,12 @@ const MenusPage: React.FC = () => {
  */
 interface MenuCardProps {
   menu: Menu;
+  onView: () => void;
   onEdit: () => void;
   onDelete: () => void;
 }
 
-const MenuCard: React.FC<MenuCardProps> = ({ menu, onEdit, onDelete }) => {
+const MenuCard: React.FC<MenuCardProps> = ({ menu, onView, onEdit, onDelete }) => {
   return (
     <Card className="hover:shadow-md transition-shadow">
       <Card.Body>
@@ -486,9 +521,7 @@ const MenuCard: React.FC<MenuCardProps> = ({ menu, onEdit, onDelete }) => {
             variant="outline"
             size="sm"
             leftIcon={<EyeIcon className="w-4 h-4" />}
-            onClick={() => {
-              // TODO: 詳細表示
-            }}
+            onClick={onView}
           >
             詳細
           </Button>
@@ -519,11 +552,12 @@ const MenuCard: React.FC<MenuCardProps> = ({ menu, onEdit, onDelete }) => {
  */
 interface MenuTableRowProps {
   menu: Menu;
+  onView: () => void;
   onEdit: () => void;
   onDelete: () => void;
 }
 
-const MenuTableRow: React.FC<MenuTableRowProps> = ({ menu, onEdit, onDelete }) => {
+const MenuTableRow: React.FC<MenuTableRowProps> = ({ menu, onView, onEdit, onDelete }) => {
   return (
     <tr className="hover:bg-gray-50">
       <td className="px-6 py-4 whitespace-nowrap">
@@ -578,9 +612,7 @@ const MenuTableRow: React.FC<MenuTableRowProps> = ({ menu, onEdit, onDelete }) =
             variant="outline"
             size="sm"
             leftIcon={<EyeIcon className="w-4 h-4" />}
-            onClick={() => {
-              // TODO: 詳細表示
-            }}
+            onClick={onView}
           >
             詳細
           </Button>

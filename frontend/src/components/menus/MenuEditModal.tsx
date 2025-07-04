@@ -266,35 +266,27 @@ const MenuEditModal: React.FC<MenuEditModalProps> = ({
     }
   };
 
-  if (!originalMenu && loading) {
-    return (
-      <Modal
-        isOpen={isOpen}
-        onClose={handleClose}
-        title="メニュー編集"
-        size="lg"
-      >
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
-          <span className="ml-3 text-gray-600">メニューデータを読み込み中...</span>
-        </div>
-      </Modal>
-    );
-  }
-
-  if (!originalMenu) {
-    return null;
-  }
-
   return (
     <Modal
       isOpen={isOpen}
       onClose={handleCloseWithConfirm}
-      title={`メニュー編集: ${originalMenu.display_name}`}
+      title={originalMenu ? `メニュー編集: ${originalMenu.display_name}` : 'メニュー編集'}
       size="lg"
       className="max-h-[90vh] overflow-y-auto"
     >
-      <form onSubmit={handleSubmit} className="space-y-6">
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
+          <span className="ml-3 text-gray-600">メニューデータを読み込み中...</span>
+        </div>
+      ) : !originalMenu ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center text-gray-500">
+            <p>メニューデータが見つかりません</p>
+          </div>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-6">
         {/* 基本情報 */}
         <div className="space-y-4">
           <h4 className="text-sm font-medium text-gray-900 border-b border-gray-200 pb-2">
@@ -487,7 +479,8 @@ const MenuEditModal: React.FC<MenuEditModalProps> = ({
             {isSubmitting ? '更新中...' : '変更を保存'}
           </Button>
         </div>
-      </form>
+        </form>
+      )}
     </Modal>
   );
 };

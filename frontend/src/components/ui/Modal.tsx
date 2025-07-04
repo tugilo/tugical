@@ -84,10 +84,10 @@ const Modal: React.FC<ModalProps> = ({
                 bg-white rounded-lg shadow-xl 
                 ${className}
               `}
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              transition={{ duration: 0.15, ease: 'easeOut' }}
             >
               {/* ヘッダー */}
               <div className="flex items-center justify-between p-6 border-b border-gray-200">
