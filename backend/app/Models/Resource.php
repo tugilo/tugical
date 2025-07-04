@@ -494,7 +494,7 @@ class Resource extends Model
      * @param mixed $default デフォルト値
      * @return mixed 属性値
      */
-    public function getAttributeValue(string $key, $default = null)
+    public function getCustomAttributeValue(string $key, $default = null)
     {
         $attributes = $this->attributes ?? [];
         return $attributes[$key] ?? $default;
