@@ -729,7 +729,7 @@ class BookingService
         }
 
         // Eager Loading
-        $query->with(['customer', 'menu', 'resource', 'options']);
+        $query->with(['customer', 'menu', 'resource', 'bookingOptions']);
 
         // ソート
         $query->orderBy('booking_date', 'asc')

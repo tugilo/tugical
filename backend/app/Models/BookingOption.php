@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Models\Scopes\TenantScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -104,7 +103,7 @@ class BookingOption extends Model
      */
     protected static function booted()
     {
-        static::addGlobalScope(new TenantScope);
+
 
         // 作成時の処理
         static::creating(function ($bookingOption) {

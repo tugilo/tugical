@@ -3559,3 +3559,37 @@ Next: 店舗設定等の他画面への展開"
 - 顧客管理のその他機能拡張（検索・フィルタリング等）
 
 ---
+
+## 最新の進捗状況
+
+**最終更新**: 2025-07-05 00:06:17  
+**作業端末**: tugiMacAir.local  
+**現在のブランチ**: develop
+
+### Phase 7: 予約一覧表示問題解決 ✅ **完了**
+
+**期間**: 2025-07-04 〜 2025-07-05  
+**状況**: BookingOption モデルの TenantScope 問題を解決し、予約一覧表示が成功
+
+#### 解決した問題
+
+- **500 エラー**: booking_options テーブルに store_id カラムが存在しないのに TenantScope が適用
+- **リレーション名エラー**: BookingService で'options'を'bookingOptions'に修正
+- **フロントエンド表示**: 予約一覧 API が正常動作、予約データ 1 件取得成功
+
+#### 技術的修正
+
+- BookingOption モデルから TenantScope 削除（Booking を通してテナント分離）
+- BookingService::getBookings 関数の eager loading 修正
+- API 動作確認: cURL テストで正常レスポンス確認
+
+#### 現在の状況
+
+- ✅ ログイン機能: 正常動作（owner@tugical.test / tugical123）
+- ✅ 予約作成機能: 正常動作（予約 ID:1 作成済み）
+- ✅ 予約一覧表示: 正常動作（API・フロントエンド）
+- ✅ 美容師向け UI: 片手操作対応、検索ベース顧客選択
+
+#### 次のステップ
+
+フロントエンドでの実際のログイン → 予約管理フローの動作確認と UI テスト

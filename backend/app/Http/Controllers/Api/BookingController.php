@@ -44,10 +44,10 @@ class BookingController extends Controller
     public function __construct(BookingService $bookingService)
     {
         $this->bookingService = $bookingService;
-        
+
         // Sanctum認証必須
         $this->middleware('auth:sanctum');
-        
+
         // マルチテナント分離はモデルのTenantScopeで自動処理
         // （TenantScopeMiddleware は未実装のため一時的にコメントアウト）
         // $this->middleware('tenant.scope');
@@ -74,7 +74,7 @@ class BookingController extends Controller
     {
         try {
             $storeId = auth()->user()->store_id;
-            
+
             Log::info('予約一覧取得開始', [
                 'store_id' => $storeId,
                 'filters' => $request->query()
@@ -82,19 +82,19 @@ class BookingController extends Controller
 
             // フィルター条件構築
             $filters = [];
-            
+
             if ($request->has('date')) {
                 $filters['date'] = $request->get('date');
             }
-            
+
             if ($request->has('status')) {
                 $filters['status'] = $request->get('status');
             }
-            
+
             if ($request->has('resource_id')) {
                 $filters['resource_id'] = $request->get('resource_id');
             }
-            
+
             if ($request->has('customer_id')) {
                 $filters['customer_id'] = $request->get('customer_id');
             }
@@ -102,7 +102,7 @@ class BookingController extends Controller
             // ページング設定
             $perPage = min(max(1, intval($request->get('per_page', 20))), 100);
             $filters['per_page'] = $perPage;
-            
+
             if ($request->has('page')) {
                 $filters['page'] = max(1, intval($request->get('page')));
             }
@@ -129,7 +129,6 @@ class BookingController extends Controller
                     'version' => '1.0'
                 ]
             ]);
-
         } catch (\Exception $e) {
             Log::error('予約一覧取得エラー', [
                 'error' => $e->getMessage(),
@@ -168,7 +167,7 @@ class BookingController extends Controller
         try {
             $storeId = auth()->user()->store_id;
             $bookingData = $request->validated();
-            
+
             Log::info('予約作成開始（管理者）', [
                 'store_id' => $storeId,
                 'customer_id' => $bookingData['customer_id'],
@@ -190,7 +189,6 @@ class BookingController extends Controller
                     'version' => '1.0'
                 ]
             ], 201);
-
         } catch (\App\Exceptions\BookingConflictException $e) {
             Log::warning('予約競合エラー', [
                 'error' => $e->getMessage(),
@@ -212,7 +210,6 @@ class BookingController extends Controller
                     'timestamp' => now()->toISOString()
                 ]
             ], 409);
-
         } catch (\App\Exceptions\HoldTokenExpiredException $e) {
             Log::warning('Hold Token期限切れ', [
                 'error' => $e->getMessage(),
@@ -232,7 +229,6 @@ class BookingController extends Controller
                     'timestamp' => now()->toISOString()
                 ]
             ], 410);
-
         } catch (\App\Exceptions\OutsideBusinessHoursException $e) {
             Log::warning('営業時間外予約', [
                 'error' => $e->getMessage(),
@@ -249,7 +245,6 @@ class BookingController extends Controller
                     'timestamp' => now()->toISOString()
                 ]
             ], 422);
-
         } catch (\Exception $e) {
             Log::error('予約作成エラー', [
                 'error' => $e->getMessage(),
@@ -306,7 +301,10 @@ class BookingController extends Controller
                 'success' => true,
                 'data' => [
                     'booking' => new BookingResource($booking->load([
-                        'customer', 'menu', 'resource', 'options'
+                        'customer',
+                        'menu',
+                        'resource',
+                        'bookingOptions'
                     ]))
                 ],
                 'message' => '予約詳細を取得しました',
@@ -315,7 +313,6 @@ class BookingController extends Controller
                     'version' => '1.0'
                 ]
             ]);
-
         } catch (\Exception $e) {
             Log::error('予約詳細取得エラー', [
                 'booking_id' => $booking->id ?? null,
@@ -363,7 +360,7 @@ class BookingController extends Controller
             }
 
             $updateData = $request->validated();
-            
+
             Log::info('予約更新開始', [
                 'booking_id' => $booking->id,
                 'booking_number' => $booking->booking_number,
@@ -385,7 +382,6 @@ class BookingController extends Controller
                     'version' => '1.0'
                 ]
             ]);
-
         } catch (\App\Exceptions\BookingConflictException $e) {
             return response()->json([
                 'success' => false,
@@ -397,7 +393,6 @@ class BookingController extends Controller
                     'timestamp' => now()->toISOString()
                 ]
             ], 409);
-
         } catch (\Exception $e) {
             Log::error('予約更新エラー', [
                 'booking_id' => $booking->id,
@@ -447,7 +442,7 @@ class BookingController extends Controller
 
             $cancellationReason = $request->get('cancellation_reason');
             $sendNotification = $request->boolean('send_notification', true);
-            
+
             Log::info('予約キャンセル開始', [
                 'booking_id' => $booking->id,
                 'booking_number' => $booking->booking_number,
@@ -476,7 +471,6 @@ class BookingController extends Controller
             } else {
                 throw new \Exception('予約キャンセル処理に失敗しました');
             }
-
         } catch (\Exception $e) {
             Log::error('予約キャンセルエラー', [
                 'booking_id' => $booking->id,
@@ -535,7 +529,7 @@ class BookingController extends Controller
 
             $newStatus = $request->get('status');
             $notes = $request->get('completion_notes') ?? $request->get('staff_notes');
-            
+
             Log::info('予約ステータス変更開始', [
                 'booking_id' => $booking->id,
                 'booking_number' => $booking->booking_number,
@@ -553,7 +547,9 @@ class BookingController extends Controller
                     'success' => true,
                     'data' => [
                         'booking' => new BookingResource($booking->fresh()->load([
-                            'customer', 'menu', 'resource'
+                            'customer',
+                            'menu',
+                            'resource'
                         ]))
                     ],
                     'message' => '予約ステータスを更新しました',
@@ -565,7 +561,6 @@ class BookingController extends Controller
             } else {
                 throw new \Exception('ステータス更新処理に失敗しました');
             }
-
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
@@ -578,7 +573,6 @@ class BookingController extends Controller
                     'timestamp' => now()->toISOString()
                 ]
             ], 422);
-
         } catch (\Exception $e) {
             Log::error('予約ステータス変更エラー', [
                 'booking_id' => $booking->id,

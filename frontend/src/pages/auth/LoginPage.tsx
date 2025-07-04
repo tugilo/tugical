@@ -1,13 +1,13 @@
 /**
  * tugical Admin Dashboard ログインページ
- * 
+ *
  * 機能:
  * - メール・パスワード・店舗ID認証
  * - フォームバリデーション
  * - エラーハンドリング
  * - ローディング状態
  * - レスポンシブデザイン
- * 
+ *
  * @author tugical Development Team
  * @version 1.0
  * @since 2025-07-02
@@ -64,7 +64,8 @@ const LoginPage: React.FC = () => {
     try {
       const savedCredentials = localStorage.getItem(STORAGE_KEY);
       if (savedCredentials) {
-        const { email, password, store_id, remember } = JSON.parse(savedCredentials);
+        const { email, password, store_id, remember } =
+          JSON.parse(savedCredentials);
         if (remember) {
           setFormData({
             email: email || '',
@@ -133,31 +134,38 @@ const LoginPage: React.FC = () => {
         store_id: parseInt(formData.store_id),
       };
 
+      console.log('送信するログインデータ:', loginData);
       await login(loginData);
 
       // 認証情報の保存/削除
       if (rememberMe) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-          store_id: formData.store_id,
-          remember: true,
-        }));
+        localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({
+            email: formData.email,
+            password: formData.password,
+            store_id: formData.store_id,
+            remember: true,
+          })
+        );
       } else {
         localStorage.removeItem(STORAGE_KEY);
       }
-      
+
       toast.success('ログインしました', 'tugical管理画面へようこそ');
-      
+
       // リダイレクト
       const from = location.state?.from?.pathname || '/dashboard';
       navigate(from, { replace: true });
     } catch (error: any) {
       console.error('ログインエラー:', error);
-      
+
       // エラーメッセージの表示
-      const errorMessage = error.response?.data?.error?.message || error.message || 'ログインに失敗しました';
-      
+      const errorMessage =
+        error.response?.data?.error?.message ||
+        error.message ||
+        'ログインに失敗しました';
+
       setErrors({ general: errorMessage });
       toast.error('ログインエラー', errorMessage);
     }
@@ -166,166 +174,183 @@ const LoginPage: React.FC = () => {
   /**
    * 入力値変更ハンドラー
    */
-  const handleInputChange = (field: keyof FormData) => (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: e.target.value,
-    }));
-
-    // エラーをクリア
-    if (errors[field]) {
-      setErrors(prev => ({
+  const handleInputChange =
+    (field: keyof FormData) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+      setFormData(prev => ({
         ...prev,
-        [field]: undefined,
+        [field]: e.target.value,
       }));
-    }
-  };
+
+      // エラーをクリア
+      if (errors[field]) {
+        setErrors(prev => ({
+          ...prev,
+          [field]: undefined,
+        }));
+      }
+    };
 
   return (
-    <div className="min-h-screen bg-gradient-tugical flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className='min-h-screen bg-gradient-tugical flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8'>
       <motion.div
-        className="max-w-md w-full space-y-8"
+        className='max-w-md w-full space-y-8'
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
         {/* ヘッダー */}
-        <div className="text-center">
+        <div className='text-center'>
           <motion.div
-            className="mx-auto h-12 w-auto"
+            className='mx-auto h-12 w-auto'
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.2, duration: 0.3 }}
           >
-            <h1 className="text-4xl font-bold text-primary-600">tugical</h1>
-            <p className="text-sm text-gray-600 mt-1">次の時間が、もっと自由になる。</p>
+            <h1 className='text-4xl font-bold text-primary-600'>tugical</h1>
+            <p className='text-sm text-gray-600 mt-1'>
+              次の時間が、もっと自由になる。
+            </p>
           </motion.div>
-          <h2 className="mt-6 text-3xl font-bold text-gray-900">
+          <h2 className='mt-6 text-3xl font-bold text-gray-900'>
             管理画面ログイン
           </h2>
-          <p className="mt-2 text-sm text-gray-600">
+          <p className='mt-2 text-sm text-gray-600'>
             アカウント情報を入力してログインしてください
           </p>
         </div>
 
         {/* ログインフォーム */}
-        <Card className="mt-8">
+        <Card className='mt-8'>
           <Card.Body>
-            <form className="space-y-6" onSubmit={handleSubmit}>
+            <form className='space-y-6' onSubmit={handleSubmit}>
               {/* 全般エラー */}
               {errors.general && (
                 <motion.div
-                  className="bg-red-50 border border-red-200 rounded-md p-4"
+                  className='bg-red-50 border border-red-200 rounded-md p-4'
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                 >
-                  <div className="flex">
-                    <div className="text-sm text-red-600">{errors.general}</div>
+                  <div className='flex'>
+                    <div className='text-sm text-red-600'>{errors.general}</div>
                   </div>
                 </motion.div>
               )}
 
               {/* 店舗ID選択 */}
               <div>
-                <label htmlFor="store_id" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor='store_id'
+                  className='block text-sm font-medium text-gray-700'
+                >
                   店舗
                 </label>
-                <div className="mt-1">
+                <div className='mt-1'>
                   <select
-                    id="store_id"
-                    name="store_id"
+                    id='store_id'
+                    name='store_id'
                     value={formData.store_id}
                     onChange={handleInputChange('store_id')}
                     className={cn(
                       'form-select',
-                      errors.store_id && 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                      errors.store_id &&
+                        'border-red-300 focus:border-red-500 focus:ring-red-500'
                     )}
                   >
-                    <option value="">店舗を選択してください</option>
-                    <option value="1">tugical テスト店舗</option>
+                    <option value=''>店舗を選択してください</option>
+                    <option value='1'>tugical テスト店舗</option>
                   </select>
                 </div>
                 {errors.store_id && (
-                  <p className="mt-2 text-sm text-red-600">{errors.store_id}</p>
+                  <p className='mt-2 text-sm text-red-600'>{errors.store_id}</p>
                 )}
               </div>
 
               {/* メールアドレス */}
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor='email'
+                  className='block text-sm font-medium text-gray-700'
+                >
                   メールアドレス
                 </label>
-                <div className="mt-1">
+                <div className='mt-1'>
                   <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
+                    id='email'
+                    name='email'
+                    type='email'
+                    autoComplete='email'
                     required
                     value={formData.email}
                     onChange={handleInputChange('email')}
                     className={cn(
                       'form-input',
-                      errors.email && 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                      errors.email &&
+                        'border-red-300 focus:border-red-500 focus:ring-red-500'
                     )}
-                    placeholder="admin@tugical.test"
+                    placeholder='admin@tugical.test'
                   />
                 </div>
                 {errors.email && (
-                  <p className="mt-2 text-sm text-red-600">{errors.email}</p>
+                  <p className='mt-2 text-sm text-red-600'>{errors.email}</p>
                 )}
               </div>
 
               {/* パスワード */}
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor='password'
+                  className='block text-sm font-medium text-gray-700'
+                >
                   パスワード
                 </label>
-                <div className="mt-1 relative">
+                <div className='mt-1 relative'>
                   <input
-                    id="password"
-                    name="password"
+                    id='password'
+                    name='password'
                     type={showPassword ? 'text' : 'password'}
-                    autoComplete="current-password"
+                    autoComplete='current-password'
                     required
                     value={formData.password}
                     onChange={handleInputChange('password')}
                     className={cn(
                       'form-input pr-10',
-                      errors.password && 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                      errors.password &&
+                        'border-red-300 focus:border-red-500 focus:ring-red-500'
                     )}
-                    placeholder="パスワードを入力"
+                    placeholder='パスワードを入力'
                   />
                   <button
-                    type="button"
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    type='button'
+                    className='absolute inset-y-0 right-0 pr-3 flex items-center'
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? (
-                      <EyeSlashIcon className="h-5 w-5 text-gray-400" />
+                      <EyeSlashIcon className='h-5 w-5 text-gray-400' />
                     ) : (
-                      <EyeIcon className="h-5 w-5 text-gray-400" />
+                      <EyeIcon className='h-5 w-5 text-gray-400' />
                     )}
                   </button>
                 </div>
                 {errors.password && (
-                  <p className="mt-2 text-sm text-red-600">{errors.password}</p>
+                  <p className='mt-2 text-sm text-red-600'>{errors.password}</p>
                 )}
               </div>
 
               {/* ログイン情報を保存 */}
-              <div className="flex items-center">
+              <div className='flex items-center'>
                 <input
-                  id="remember-me"
-                  name="remember-me"
-                  type="checkbox"
+                  id='remember-me'
+                  name='remember-me'
+                  type='checkbox'
                   checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                  onChange={e => setRememberMe(e.target.checked)}
+                  className='h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded'
                 />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
+                <label
+                  htmlFor='remember-me'
+                  className='ml-2 block text-sm text-gray-700'
+                >
                   ログイン情報を保存する
                 </label>
               </div>
@@ -333,9 +358,9 @@ const LoginPage: React.FC = () => {
               {/* ログインボタン */}
               <div>
                 <Button
-                  type="submit"
-                  variant="primary"
-                  size="lg"
+                  type='submit'
+                  variant='primary'
+                  size='lg'
                   fullWidth
                   loading={isLoading}
                   disabled={isLoading}
@@ -349,80 +374,36 @@ const LoginPage: React.FC = () => {
 
         {/* テスト用ログイン情報 */}
         <motion.div
-          className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg"
+          className='mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg'
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
         >
-          <h3 className="text-sm font-medium text-blue-800 mb-2">テスト用ログイン情報</h3>
-          <div className="text-xs text-blue-700 space-y-1">
-            <div className="flex items-center justify-between">
-              <span><strong>オーナー:</strong> owner@tugical.test / password123</span>
+          <h3 className='text-sm font-medium text-blue-800 mb-2'>
+            テスト用ログイン情報
+          </h3>
+          <div className='text-xs text-blue-700 space-y-1'>
+            <div className='flex items-center justify-between'>
+              <span>
+                <strong>オーナー:</strong> owner@tugical.test / tugical123
+              </span>
               <button
-                type="button"
+                type='button'
                 onClick={() => {
                   setFormData({
                     email: 'owner@tugical.test',
-                    password: 'password123',
+                    password: 'tugical123',
                     store_id: '1',
                   });
                   setErrors({});
                 }}
-                className="ml-2 px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                className='ml-2 px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors'
               >
                 入力
               </button>
             </div>
-            <div className="flex items-center justify-between">
-              <span><strong>マネージャー:</strong> manager@tugical.test / password123</span>
-              <button
-                type="button"
-                onClick={() => {
-                  setFormData({
-                    email: 'manager@tugical.test',
-                    password: 'password123',
-                    store_id: '1',
-                  });
-                  setErrors({});
-                }}
-                className="ml-2 px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-              >
-                入力
-              </button>
-            </div>
-            <div className="flex items-center justify-between">
-              <span><strong>スタッフ:</strong> staff@tugical.test / password123</span>
-              <button
-                type="button"
-                onClick={() => {
-                  setFormData({
-                    email: 'staff@tugical.test',
-                    password: 'password123',
-                    store_id: '1',
-                  });
-                  setErrors({});
-                }}
-                className="ml-2 px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-              >
-                入力
-              </button>
-            </div>
-            <div className="flex items-center justify-between">
-              <span><strong>受付:</strong> reception@tugical.test / password123</span>
-              <button
-                type="button"
-                onClick={() => {
-                  setFormData({
-                    email: 'reception@tugical.test',
-                    password: 'password123',
-                    store_id: '1',
-                  });
-                  setErrors({});
-                }}
-                className="ml-2 px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-              >
-                入力
-              </button>
+            <div className='text-xs text-blue-600 mt-2'>
+              ※ 現在利用可能な認証情報は上記のみです
             </div>
           </div>
         </motion.div>
@@ -431,4 +412,4 @@ const LoginPage: React.FC = () => {
   );
 };
 
-export default LoginPage; 
+export default LoginPage;
