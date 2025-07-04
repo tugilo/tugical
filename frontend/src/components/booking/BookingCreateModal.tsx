@@ -13,6 +13,7 @@ import {
 } from '@heroicons/react/24/outline';
 import Modal from '../modal/Modal';
 import Button from '../ui/Button';
+import DatePicker from '../ui/DatePicker';
 import {
   bookingApi,
   customerApi,
@@ -426,10 +427,13 @@ const BookingCreateModal: React.FC<BookingCreateModalProps> = ({
 
       const booking = await bookingApi.create(submissionData);
 
+      // APIレスポンスの構造に対応した安全な予約番号取得
+      const bookingNumber = booking?.booking_number || '作成済み';
+
       addNotification({
         type: 'success',
         title: '予約作成完了',
-        message: `予約番号 ${booking.booking_number} で予約が作成されました`,
+        message: `予約番号 ${bookingNumber} で予約が作成されました`,
         duration: 5000,
       });
 
@@ -752,21 +756,25 @@ const BookingCreateModal: React.FC<BookingCreateModalProps> = ({
 
           {/* 日付選択 */}
           <div className='mb-4'>
-            <label className='block text-sm font-medium text-pink-700 mb-2'>
-              予約日
-            </label>
-            <input
-              type='date'
-              value={formData.booking_date}
-              onChange={e =>
-                setFormData(prev => ({ ...prev, booking_date: e.target.value }))
+            <DatePicker
+              label='予約日'
+              value={
+                formData.booking_date ? new Date(formData.booking_date) : null
               }
-              min={today}
-              className='w-full p-4 text-lg border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500'
+              onChange={date => {
+                const dateString = date ? date.toISOString().split('T')[0] : '';
+                setFormData(prev => ({ ...prev, booking_date: dateString }));
+                clearError('booking_date');
+              }}
+              minDate={new Date()}
+              error={!!errors.booking_date}
+              errorMessage={errors.booking_date}
+              required
+              fullWidth
+              size='lg'
+              showQuickSelect={true}
+              placeholder='予約日を選択してください'
             />
-            {errors.booking_date && (
-              <p className='text-sm text-red-600 mt-1'>{errors.booking_date}</p>
-            )}
           </div>
 
           {/* 時間選択 */}

@@ -135,11 +135,6 @@ const BookingsPage: React.FC = () => {
   const handleBookingCreated = (newBooking: Booking) => {
     // 予約一覧を再取得
     fetchBookings();
-    addToast({
-      type: 'success',
-      title: '予約が作成されました',
-      message: `予約番号: ${newBooking.booking_number}`,
-    });
   };
 
   if (isLoading) {

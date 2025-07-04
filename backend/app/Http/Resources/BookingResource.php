@@ -37,13 +37,13 @@ class BookingResource extends JsonResource
             'booking_number' => $this->booking_number,
             'booking_date' => $this->booking_date,
             'start_time' => $this->start_time,
-            'end_time' => $this->end_time,
+            'end_time' => $this->calculateEndTime(),
             'status' => $this->status,
             'total_price' => $this->total_price,
-            
+
             // ステータス詳細情報
             'status_info' => $this->getStatusInfoData(),
-            
+
             // 関連データ
             'customer' => $this->whenLoaded('customer', function () {
                 return [
@@ -61,7 +61,7 @@ class BookingResource extends JsonResource
                     )
                 ];
             }),
-            
+
             'menu' => $this->whenLoaded('menu', function () {
                 return [
                     'id' => $this->menu->id,
@@ -75,7 +75,7 @@ class BookingResource extends JsonResource
                     )
                 ];
             }),
-            
+
             'resource' => $this->whenLoaded('resource', function () {
                 return $this->resource ? [
                     'id' => $this->resource->id,
@@ -92,7 +92,7 @@ class BookingResource extends JsonResource
                     )
                 ] : null;
             }),
-            
+
             'options' => $this->whenLoaded('options', function () {
                 return $this->options->map(function ($option) {
                     return [
@@ -103,7 +103,7 @@ class BookingResource extends JsonResource
                     ];
                 });
             }),
-            
+
             // 備考・メモ
             'customer_notes' => $this->when(
                 $this->customer_notes,
@@ -113,13 +113,13 @@ class BookingResource extends JsonResource
                 $this->staff_notes && auth()->check(),
                 $this->staff_notes
             ),
-            
+
             // 予約ソース
             'booking_source' => $this->when(
                 $this->booking_source,
                 $this->booking_source
             ),
-            
+
             // 料金詳細（詳細表示時のみ）
             'pricing_breakdown' => $this->when(
                 $request->route()->getName() === 'bookings.show',
@@ -127,14 +127,14 @@ class BookingResource extends JsonResource
                     return $this->getPricingBreakdown();
                 }
             ),
-            
+
             // アクション可能性（現在のステータスと権限に基づく）
             'actions' => $this->getAvailableActions(),
-            
+
             // タイムスタンプ
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
-            
+
             // キャンセル・完了時の詳細情報
             'cancelled_at' => $this->when(
                 $this->status === 'cancelled' && $this->cancelled_at,
@@ -144,7 +144,7 @@ class BookingResource extends JsonResource
                 $this->status === 'completed' && $this->completed_at,
                 $this->completed_at?->toISOString()
             ),
-            
+
             // 店舗情報（デバッグ・管理用）
             'store_id' => $this->when(
                 auth()->user()->role === 'super_admin',
@@ -182,18 +182,18 @@ class BookingResource extends JsonResource
         if ($this->relationLoaded('resource') && $this->resource) {
             $resource = $this->resource;
             $menu = $this->menu;
-            
+
             if ($resource->hourly_rate_diff && $menu) {
                 $durationMinutes = $menu->duration;
                 $resourceFee = ($durationMinutes / 60) * $resource->hourly_rate_diff;
                 $breakdown['resource_fee'] = intval($resourceFee);
             }
-            
+
             // 指名料
-            $attributes = is_string($resource->attributes) 
-                ? json_decode($resource->attributes, true) 
+            $attributes = is_string($resource->attributes)
+                ? json_decode($resource->attributes, true)
                 : $resource->attributes;
-            
+
             if (isset($attributes['nomination_fee'])) {
                 $breakdown['nomination_fee'] = $attributes['nomination_fee'];
                 $breakdown['resource_fee'] += $attributes['nomination_fee'];
@@ -222,26 +222,26 @@ class BookingResource extends JsonResource
                 $actions[] = 'cancel';
                 $actions[] = 'edit';
                 break;
-                
+
             case 'confirmed':
                 $actions[] = 'complete';
                 $actions[] = 'cancel';
                 $actions[] = 'edit';
                 $actions[] = 'mark_no_show';
                 break;
-                
+
             case 'completed':
                 if ($userRole === 'owner') {
                     $actions[] = 'reopen';
                 }
                 break;
-                
+
             case 'cancelled':
                 if ($userRole === 'owner') {
                     $actions[] = 'restore';
                 }
                 break;
-                
+
             case 'no_show':
                 if ($userRole === 'owner') {
                     $actions[] = 'mark_completed';
@@ -287,14 +287,47 @@ class BookingResource extends JsonResource
     public function withResponse(Request $request, $response): void
     {
         $data = $response->getData(true);
-        
+
         if (!isset($data['meta'])) {
             $data['meta'] = [];
         }
-        
+
         $data['meta']['timestamp'] = now()->toISOString();
         $data['meta']['version'] = '1.0';
-        
+
         $response->setData($data);
+    }
+
+    /**
+     * 終了時間を計算
+     * 
+     * @return string
+     */
+    private function calculateEndTime(): string
+    {
+        if (!$this->start_time) {
+            return '';
+        }
+
+        // 基本所要時間
+        $totalDuration = 0;
+
+        // メニューの基本時間
+        if ($this->relationLoaded('menu') && $this->menu) {
+            $totalDuration += $this->menu->base_duration;
+        }
+
+        // オプションの時間を加算
+        if ($this->relationLoaded('bookingOptions') && $this->bookingOptions) {
+            foreach ($this->bookingOptions as $option) {
+                $totalDuration += $option->duration ?? 0;
+            }
+        }
+
+        // 開始時間に所要時間を加算
+        $startTime = strtotime($this->start_time);
+        $endTime = $startTime + ($totalDuration * 60); // 分を秒に変換
+
+        return date('H:i', $endTime);
     }
 }
