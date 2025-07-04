@@ -363,6 +363,8 @@ export interface CreateMenuRequest {
   base_duration: number;
   prep_duration?: number;
   cleanup_duration?: number;
+  advance_booking_hours?: number;
+  gender_restriction?: 'none' | 'male_only' | 'female_only';
   booking_constraints?: MenuBookingConstraints;
   resource_requirements?: MenuResourceRequirements;
   industry_settings?: Record<string, any>;

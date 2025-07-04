@@ -24,6 +24,7 @@ import { useUIStore } from '../../stores/uiStore';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import LoadingScreen from '../../components/ui/LoadingScreen';
+import MenuCreateModal from '../../components/menus/MenuCreateModal';
 import { menuApi } from '../../services/api';
 import type { Menu, FilterOptions, MenuCategoriesResponse } from '../../types';
 
@@ -45,6 +46,7 @@ const MenusPage: React.FC = () => {
     per_page: 20,
     total: 0,
   });
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
     setPageTitle('メニュー管理');
@@ -164,14 +166,7 @@ const MenusPage: React.FC = () => {
         <Button
           variant="primary"
           leftIcon={<PlusIcon className="w-5 h-5" />}
-          onClick={() => {
-            // TODO: メニュー作成モーダルを開く
-            addNotification({
-              type: 'info',
-              title: 'メニュー作成',
-              message: '作成モーダルは次回実装予定です',
-            });
-          }}
+          onClick={() => setShowCreateModal(true)}
         >
           新規メニュー
         </Button>
@@ -290,14 +285,7 @@ const MenusPage: React.FC = () => {
                               <Button
                   variant="primary"
                   leftIcon={<PlusIcon className="w-5 h-5" />}
-                  onClick={() => {
-                    // TODO: メニュー作成モーダルを開く
-                    addNotification({
-                      type: 'info',
-                      title: 'メニュー作成',
-                      message: '作成モーダルは次回実装予定です',
-                    });
-                  }}
+                  onClick={() => setShowCreateModal(true)}
                 >
                   新規メニュー作成
                 </Button>
@@ -400,6 +388,16 @@ const MenusPage: React.FC = () => {
           )}
         </>
       )}
+
+      {/* メニュー作成モーダル */}
+      <MenuCreateModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={() => {
+          loadMenus(1);
+          setShowCreateModal(false);
+        }}
+      />
     </div>
   );
 };
