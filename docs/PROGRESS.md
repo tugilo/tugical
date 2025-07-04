@@ -1,5 +1,51 @@
 # tugical Development Progress
 
+## 2025-07-05 01:39:19 (tugiMacMini.local)
+
+### 🎉 Phase 17: FullCalendar Timeline 統合準備 ✅ **完了**
+
+**FullCalendar Timeline 基盤実装:**
+
+- **FullCalendar Timeline 基盤**: @fullcalendar/resource-timeline 等のパッケージインストール
+- **表示モード切り替え**: リスト表示とタイムライン表示の切り替えボタン実装
+- **BookingTimelineView**: プレースホルダーコンポーネント作成
+- **UI 統合**: 予約管理画面にタイムライン表示統合
+
+**技術実装:**
+
+- **パッケージ**: @fullcalendar/core, @fullcalendar/react, @fullcalendar/resource-timeline
+- **状態管理**: viewMode（'list' | 'timeline'）追加
+- **型定義**: BookingTimelineViewProps 完備
+- **条件分岐**: 表示モードに応じた画面切り替え
+
+**UI/UX 改善:**
+
+- **ヘッダー**: リスト/タイムライン切り替えボタン追加
+- **アイコン**: Bars3Icon（リスト）、TableCellsIcon（タイムライン）
+- **プレースホルダー**: タイムライン実装予定内容表示
+- **美容室向け設計**: 横軸（時間）、縦軸（担当者）
+
+**パフォーマンス:**
+
+- **BookingsPage**: 56.76KB（新機能追加により増加）
+- **ビルド時間**: 3.21 秒
+- **全体バンドル**: 624.50KB（FullCalendar 追加）
+
+**次のステップ（Phase 18）:**
+
+1. **実際の FullCalendar Timeline 実装**
+   - resourceTimelinePlugin 設定
+   - 時間軸設定（9:00-20:00）
+   - リソース（担当者）設定
+2. **ドラッグ&ドロップ機能**
+   - 予約移動処理
+   - 時間変更処理
+   - リソース変更処理
+3. **イベント表示カスタマイズ**
+   - 顧客名、メニュー、料金表示
+   - ステータス別色分け
+   - ツールチップ実装
+
 ## 2025-07-04 23:34:41 (tugiMacAir.local)
 
 ### 🎉 Phase 5: 予約作成機能実装 ✅ **完了**
