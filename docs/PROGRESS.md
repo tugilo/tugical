@@ -1,5 +1,46 @@
 # tugical Development Progress
 
+## 2025-07-04 18:04:38 (tugiMacAir.local)
+
+### Phase 5: ResourceController実装完了
+
+**実装内容:**
+- CreateResourceRequest.php/UpdateResourceRequest.php 作成
+  - 統一リソース概念対応バリデーション
+  - タイプ別検証（staff/room/equipment/vehicle）
+  - 稼働時間・効率率・制約管理バリデーション
+  - アクティブな予約がある場合の更新制限
+  - 日本語エラーメッセージ完備
+- ResourceController.php 完成（計約650行）
+  - update() メソッド実装（配列フィールドマージ対応）
+  - destroy() メソッド実装（アクティブ予約チェック・ソフト/ハードデリート）
+  - updateOrder() メソッド実装（ドラッグ&ドロップ表示順序変更）
+  - マルチテナント分離・詳細ログ・エラーハンドリング完備
+- API Routes追加
+  - /api/v1/resources（全CRUD対応）
+  - /api/v1/resources-types（タイプ一覧）
+  - /api/v1/resources-order（表示順序更新）
+
+**技術特徴:**
+- 統一リソース概念（staff/room/equipment/vehicle）完全対応
+- アクティブな予約がある場合の安全な更新・削除制限
+- 効率率・稼働時間・制約管理の高度バリデーション
+- タイプ変更制限（予約履歴がある場合は変更不可）
+- 配列フィールド（attributes, working_hours等）のマージ更新対応
+- 論理削除・物理削除の自動判定
+
+**実装統計:**
+- 新規ファイル: 2ファイル（CreateResourceRequest, UpdateResourceRequest）
+- 更新ファイル: 2ファイル（ResourceController, routes/api.php）
+- 総追加行数: 約800行
+- バリデーションメソッド: 20+メソッド
+- APIエンドポイント: 8エンドポイント
+
+**次のステップ:**
+- フロントエンド ResourcesPage 実装
+- CRUD モーダル（作成/編集/詳細）実装
+- ドラッグ&ドロップ表示順序変更UI
+
 ## 2025-07-04 14:29:24 (tugiMacAir.local)
 
 ### Phase 4.8: メニューAPI統合エラー修正完了

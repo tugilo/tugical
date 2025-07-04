@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\NotificationTemplateController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\MenuController;
+use App\Http\Controllers\Api\ResourceController;
 
 /*
 |--------------------------------------------------------------------------
@@ -106,6 +107,11 @@ Route::prefix('v1')->middleware(['auth:sanctum'])->name('api.v1.')->group(functi
     Route::apiResource('menus', MenuController::class);
     Route::get('menus-categories', [MenuController::class, 'categories'])->name('menus.categories');
     Route::patch('menus-order', [MenuController::class, 'updateOrder'])->name('menus.update-order');
+
+    // リソース管理API（tugical_api_specification_v1.0.md Section 5）
+    Route::apiResource('resources', ResourceController::class);
+    Route::get('resources-types', [ResourceController::class, 'getTypes'])->name('resources.types');
+    Route::patch('resources-order', [ResourceController::class, 'updateOrder'])->name('resources.update-order');
 });
 
 // ===========================
