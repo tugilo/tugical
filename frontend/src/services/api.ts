@@ -34,6 +34,7 @@ import type {
   UpdateMenuRequest,
   MenuCategoriesResponse,
   MenuOption,
+  BookingListResponse,
 } from '../types';
 
 // ========================================
@@ -849,13 +850,63 @@ export const authApi = {
 
 export const bookingApi = {
   getList: (filters?: FilterOptions) => apiClient.getBookings(filters),
-  get: (id: number) => apiClient.getBooking(id),
+  getById: (id: number) => apiClient.getBooking(id),
   create: (data: CreateBookingRequest) => apiClient.createBooking(data),
   update: (id: number, data: Partial<CreateBookingRequest>) =>
     apiClient.updateBooking(id, data),
   updateStatus: (id: number, status: string) =>
     apiClient.updateBookingStatus(id, status),
   delete: (id: number) => apiClient.deleteBooking(id),
+
+  /**
+   * 空き時間取得（仮実装）
+   */
+  getAvailability: async (params: {
+    date: string;
+    resource_id?: number;
+    menu_id?: number;
+  }): Promise<{
+    available_slots: Array<{
+      start_time: string;
+      end_time: string;
+      is_available: boolean;
+      booking_id?: number;
+      customer_name?: string;
+    }>;
+    business_hours: {
+      start: string;
+      end: string;
+    };
+  }> => {
+    // 仮実装：営業時間内のスロットを生成
+    const slots = [];
+    for (let hour = 9; hour <= 20; hour++) {
+      for (let minute = 0; minute < 60; minute += 30) {
+        const timeStr = `${hour.toString().padStart(2, '0')}:${minute
+          .toString()
+          .padStart(2, '0')}`;
+
+        // ランダムで一部を予約済みにする（デモ用）
+        const isAvailable = Math.random() > 0.3;
+
+        slots.push({
+          start_time: timeStr,
+          end_time: timeStr,
+          is_available: isAvailable,
+          booking_id: isAvailable ? undefined : Math.floor(Math.random() * 100),
+          customer_name: isAvailable ? undefined : '山田太郎',
+        });
+      }
+    }
+
+    return {
+      available_slots: slots,
+      business_hours: {
+        start: '09:00',
+        end: '20:00',
+      },
+    };
+  },
 };
 
 export const customerApi = {

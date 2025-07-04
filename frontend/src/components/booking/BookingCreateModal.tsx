@@ -80,6 +80,7 @@ const BookingCreateModal: React.FC<BookingCreateModalProps> = ({
   const [selectedMenu, setSelectedMenu] = useState<Menu | null>(null);
   const [menuOptions, setMenuOptions] = useState<MenuOption[]>([]);
   const [selectedOptions, setSelectedOptions] = useState<number[]>([]);
+  const [availableSlots, setAvailableSlots] = useState<any[]>([]);
 
   // UI状態
   const [customerSearch, setCustomerSearch] = useState('');
@@ -91,6 +92,7 @@ const BookingCreateModal: React.FC<BookingCreateModalProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
+  const [isLoadingAvailability, setIsLoadingAvailability] = useState(false);
 
   // 計算値
   const [calculatedPrice, setCalculatedPrice] = useState(0);
@@ -149,6 +151,13 @@ const BookingCreateModal: React.FC<BookingCreateModalProps> = ({
     }
   }, [formData.start_time, calculatedDuration]);
 
+  // 空き時間取得（日付・担当者・メニュー変更時）
+  useEffect(() => {
+    if (formData.booking_date) {
+      loadAvailability();
+    }
+  }, [formData.booking_date, formData.resource_id, formData.menu_id]);
+
   /**
    * 初期データ取得
    */
@@ -189,6 +198,31 @@ const BookingCreateModal: React.FC<BookingCreateModalProps> = ({
     } catch (error) {
       console.error('メニューオプション取得エラー:', error);
       setMenuOptions([]);
+    }
+  };
+
+  /**
+   * 空き時間取得
+   */
+  const loadAvailability = async () => {
+    if (!formData.booking_date) {
+      setAvailableSlots([]);
+      return;
+    }
+
+    try {
+      setIsLoadingAvailability(true);
+      const response = await bookingApi.getAvailability({
+        date: formData.booking_date,
+        resource_id: formData.resource_id,
+        menu_id: formData.menu_id || undefined,
+      });
+      setAvailableSlots(response.available_slots || []);
+    } catch (error) {
+      console.error('空き時間取得エラー:', error);
+      setAvailableSlots([]);
+    } finally {
+      setIsLoadingAvailability(false);
     }
   };
 
@@ -711,21 +745,76 @@ const BookingCreateModal: React.FC<BookingCreateModalProps> = ({
             <label className='block text-sm font-medium text-pink-700 mb-2'>
               開始時間
             </label>
-            <div className='grid grid-cols-4 md:grid-cols-6 gap-2'>
-              {timeSlots.map(time => (
-                <button
-                  key={time}
-                  onClick={() => selectTime(time)}
-                  className={`p-3 rounded-lg border-2 text-center font-medium transition-all ${
-                    formData.start_time === time
-                      ? 'border-pink-500 bg-pink-100 text-pink-900'
-                      : 'border-gray-200 bg-white hover:border-pink-300 text-gray-700'
-                  }`}
-                >
-                  {time}
-                </button>
-              ))}
-            </div>
+
+            {isLoadingAvailability ? (
+              <div className='flex items-center justify-center py-8'>
+                <div className='animate-spin rounded-full h-6 w-6 border-b-2 border-pink-500'></div>
+                <span className='ml-2 text-gray-600'>空き時間を確認中...</span>
+              </div>
+            ) : (
+              <div className='space-y-3'>
+                {/* 営業時間内の時間スロット表示 */}
+                <div className='grid grid-cols-4 md:grid-cols-6 gap-2'>
+                  {timeSlots.map(time => {
+                    // 空き時間情報から該当時間の状態を取得
+                    const slot = availableSlots.find(
+                      s => s.start_time === time
+                    );
+                    const isAvailable = slot ? slot.is_available : true;
+                    const customerName = slot?.customer_name;
+
+                    return (
+                      <button
+                        key={time}
+                        onClick={() => isAvailable && selectTime(time)}
+                        disabled={!isAvailable}
+                        className={`p-3 rounded-lg border-2 text-center font-medium transition-all relative ${
+                          formData.start_time === time
+                            ? 'border-pink-500 bg-pink-100 text-pink-900'
+                            : isAvailable
+                            ? 'border-gray-200 bg-white hover:border-pink-300 text-gray-700'
+                            : 'border-red-200 bg-red-50 text-red-400 cursor-not-allowed'
+                        }`}
+                        title={
+                          !isAvailable && customerName
+                            ? `予約済み: ${customerName}様`
+                            : isAvailable
+                            ? '予約可能'
+                            : '予約不可'
+                        }
+                      >
+                        <div className='text-sm font-mono'>{time}</div>
+                        {!isAvailable && (
+                          <div className='text-xs mt-1 text-red-500'>
+                            予約済み
+                          </div>
+                        )}
+                        {isAvailable && formData.start_time === time && (
+                          <div className='absolute -top-1 -right-1 w-3 h-3 bg-pink-500 rounded-full'></div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* 凡例 */}
+                <div className='flex items-center gap-4 text-sm text-gray-600 mt-3'>
+                  <div className='flex items-center gap-1'>
+                    <div className='w-3 h-3 bg-white border-2 border-gray-200 rounded'></div>
+                    <span>空いています</span>
+                  </div>
+                  <div className='flex items-center gap-1'>
+                    <div className='w-3 h-3 bg-red-50 border-2 border-red-200 rounded'></div>
+                    <span>予約済み</span>
+                  </div>
+                  <div className='flex items-center gap-1'>
+                    <div className='w-3 h-3 bg-pink-100 border-2 border-pink-500 rounded'></div>
+                    <span>選択中</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {errors.start_time && (
               <p className='text-sm text-red-600 mt-2'>{errors.start_time}</p>
             )}

@@ -214,6 +214,27 @@ export interface CreateBookingRequest {
   hold_token?: string;
 }
 
+export interface BookingListResponse {
+  bookings: Booking[];
+  pagination: PaginationData;
+}
+
+export interface AvailabilitySlot {
+  start_time: string;
+  end_time: string;
+  is_available: boolean;
+  booking_id?: number;
+  customer_name?: string;
+}
+
+export interface AvailabilityResponse {
+  available_slots: AvailabilitySlot[];
+  business_hours: {
+    start: string;
+    end: string;
+  };
+}
+
 // ========================================
 // 顧客関連型定義
 // ========================================
