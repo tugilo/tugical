@@ -29,7 +29,10 @@ import type {
   DashboardStats,
   RecentActivity,
   CreateCustomerRequest,
-  UpdateCustomerRequest
+  UpdateCustomerRequest,
+  CreateMenuRequest,
+  UpdateMenuRequest,
+  MenuCategoriesResponse
 } from '../types';
 
 // ========================================
@@ -386,7 +389,7 @@ class ApiClient {
   /**
    * メニュー一覧取得
    */
-  async getMenus(filters?: FilterOptions): Promise<Menu[]> {
+  async getMenus(filters?: FilterOptions): Promise<PaginatedResponse<Menu>> {
     const params = new URLSearchParams();
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
@@ -396,7 +399,7 @@ class ApiClient {
       });
     }
 
-    const response = await this.client.get<ApiResponse<Menu[]>>(
+    const response = await this.client.get<ApiResponse<PaginatedResponse<Menu>>>(
       `/menus?${params.toString()}`
     );
     
@@ -405,6 +408,80 @@ class ApiClient {
     }
     
     throw new Error(response.data.error?.message || 'メニュー一覧の取得に失敗しました');
+  }
+
+  /**
+   * メニュー詳細取得
+   */
+  async getMenu(id: number): Promise<Menu> {
+    const response = await this.client.get<ApiResponse<{ menu: Menu }>>(`/menus/${id}`);
+    
+    if (response.data.success && response.data.data) {
+      return response.data.data.menu;
+    }
+    
+    throw new Error(response.data.error?.message || 'メニュー詳細の取得に失敗しました');
+  }
+
+  /**
+   * メニュー作成
+   */
+  async createMenu(menuData: CreateMenuRequest): Promise<Menu> {
+    const response = await this.client.post<ApiResponse<{ menu: Menu }>>('/menus', menuData);
+    
+    if (response.data.success && response.data.data) {
+      return response.data.data.menu;
+    }
+    
+    throw new Error(response.data.error?.message || 'メニューの作成に失敗しました');
+  }
+
+  /**
+   * メニュー更新
+   */
+  async updateMenu(id: number, menuData: UpdateMenuRequest): Promise<Menu> {
+    const response = await this.client.put<ApiResponse<{ menu: Menu }>>(`/menus/${id}`, menuData);
+    
+    if (response.data.success && response.data.data) {
+      return response.data.data.menu;
+    }
+    
+    throw new Error(response.data.error?.message || 'メニューの更新に失敗しました');
+  }
+
+  /**
+   * メニュー削除
+   */
+  async deleteMenu(id: number): Promise<void> {
+    const response = await this.client.delete<ApiResponse>(`/menus/${id}`);
+    
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'メニューの削除に失敗しました');
+    }
+  }
+
+  /**
+   * メニューカテゴリ一覧取得
+   */
+  async getMenuCategories(): Promise<MenuCategoriesResponse> {
+    const response = await this.client.get<ApiResponse<MenuCategoriesResponse>>('/menus-categories');
+    
+    if (response.data.success && response.data.data) {
+      return response.data.data;
+    }
+    
+    throw new Error(response.data.error?.message || 'メニューカテゴリの取得に失敗しました');
+  }
+
+  /**
+   * メニュー表示順序更新
+   */
+  async updateMenuOrder(menuOrders: Array<{ id: number; sort_order: number }>): Promise<void> {
+    const response = await this.client.patch<ApiResponse>('/menus-order', { menu_orders: menuOrders });
+    
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'メニューの表示順序更新に失敗しました');
+    }
   }
 
   // ========================================
@@ -503,6 +580,12 @@ export const resourceApi = {
 
 export const menuApi = {
   getList: (filters?: FilterOptions) => apiClient.getMenus(filters),
+  get: (id: number) => apiClient.getMenu(id),
+  create: (data: CreateMenuRequest) => apiClient.createMenu(data),
+  update: (id: number, data: UpdateMenuRequest) => apiClient.updateMenu(id, data),
+  delete: (id: number) => apiClient.deleteMenu(id),
+  getCategories: () => apiClient.getMenuCategories(),
+  updateOrder: (menuOrders: Array<{ id: number; sort_order: number }>) => apiClient.updateMenuOrder(menuOrders),
 };
 
 export const dashboardApi = {

@@ -884,4 +884,17 @@ curl -X POST http://localhost/api/v1/auth/logout \
   - 仕様書（tugical_requirements_specification_v1.0.md）に追記済み
   - 実装時期: LIFF 開発フェーズで実装予定
 
+### 2025-07-04 14:18 (tugiMacAir.local)
+- **メニュー管理API実装完了**
+  - MenuController CRUD 実装（index/show/store/update/destroy）
+  - 高度なフィルタリング機能（検索、カテゴリ、価格帯、時間帯、アクティブ状態）
+  - CreateMenuRequest/UpdateMenuRequest バリデーションクラス作成
+  - MenuResource/MenuOptionResource API出力形式統一
+  - 業種別カテゴリ取得、表示順序更新機能
+  - メニューオプション統合管理（4つの価格タイプ、在庫管理対応）
+  - routes/api.php にメニュー関連ルート追加
+  - フロントエンド型定義拡張（Menu/MenuOption/CreateMenuRequest等）
+  - APIクライアント関数追加（menuApi.getList/get/create/update/delete等）
+- **次のステップ**: フロントエンドMenusPageコンポーネント実装
+
 ---

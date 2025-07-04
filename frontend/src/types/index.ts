@@ -274,25 +274,143 @@ export interface Resource {
 
 export interface Menu {
   id: number;
+  store_id: number;
   name: string;
-  description?: string;
-  duration: number;
-  price: number;
+  display_name: string;
   category?: string;
+  description?: string;
+  base_price: number;
+  base_duration: number;
+  prep_duration: number;
+  cleanup_duration: number;
+  total_duration: number;
+  booking_constraints?: MenuBookingConstraints;
+  resource_requirements?: MenuResourceRequirements;
+  industry_settings?: Record<string, any>;
   is_active: boolean;
+  requires_approval: boolean;
+  sort_order: number;
+  image_url?: string;
   options?: MenuOption[];
+  options_count?: number;
+  bookings_count?: number;
+  industry_display_name: string;
+  category_info?: MenuCategoryInfo;
+  formatted_price: string;
+  formatted_duration: string;
+  formatted_total_duration: string;
   created_at: string;
   updated_at: string;
 }
 
 export interface MenuOption {
   id: number;
+  menu_id: number;
   name: string;
+  display_name: string;
   description?: string;
-  price: number;
-  duration_modifier: number;
+  price_type: 'fixed' | 'percentage' | 'duration_based' | 'free';
+  price_value: number;
+  duration_minutes: number;
+  constraints?: Record<string, any>;
+  stock_quantity?: number;
+  stock_used: number;
+  available_stock?: number;
   is_required: boolean;
   is_active: boolean;
+  sort_order: number;
+  price_type_info: MenuOptionPriceTypeInfo;
+  formatted_price: string;
+  formatted_duration: string;
+  has_stock_management: boolean;
+  in_stock: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MenuBookingConstraints {
+  advance_booking_days?: number;
+  same_day_booking?: boolean;
+  minimum_advance_hours?: number;
+  cancellation_hours?: number;
+}
+
+export interface MenuResourceRequirements {
+  staff_type?: string;
+  room_required?: boolean;
+  equipment?: number[];
+}
+
+export interface MenuCategoryInfo {
+  current?: string;
+  available: string[];
+  industry_type: string;
+}
+
+export interface MenuOptionPriceTypeInfo {
+  name: string;
+  description: string;
+  value_unit: string;
+  example: string;
+}
+
+export interface CreateMenuRequest {
+  name: string;
+  display_name?: string;
+  category?: string;
+  description?: string;
+  base_price: number;
+  base_duration: number;
+  prep_duration?: number;
+  cleanup_duration?: number;
+  booking_constraints?: MenuBookingConstraints;
+  resource_requirements?: MenuResourceRequirements;
+  industry_settings?: Record<string, any>;
+  image_url?: string;
+  is_active?: boolean;
+  requires_approval?: boolean;
+  sort_order?: number;
+  options?: CreateMenuOptionRequest[];
+}
+
+export interface UpdateMenuRequest {
+  name?: string;
+  display_name?: string;
+  category?: string;
+  description?: string;
+  base_price?: number;
+  base_duration?: number;
+  prep_duration?: number;
+  cleanup_duration?: number;
+  booking_constraints?: MenuBookingConstraints;
+  resource_requirements?: MenuResourceRequirements;
+  industry_settings?: Record<string, any>;
+  image_url?: string;
+  is_active?: boolean;
+  requires_approval?: boolean;
+  sort_order?: number;
+  options?: CreateMenuOptionRequest[];
+}
+
+export interface CreateMenuOptionRequest {
+  name: string;
+  display_name?: string;
+  description?: string;
+  price_type: 'fixed' | 'percentage' | 'duration_based' | 'free';
+  price_value?: number;
+  duration_minutes?: number;
+  constraints?: Record<string, any>;
+  stock_quantity?: number;
+  is_required?: boolean;
+  is_active?: boolean;
+  sort_order?: number;
+}
+
+export interface MenuCategoriesResponse {
+  categories: string[];
+  industry_type: string;
+  used_categories: string[];
+  default_categories: string[];
 }
 
 // ========================================
