@@ -37,6 +37,9 @@ interface FormErrors {
   general?: string;
 }
 
+// ローカルストレージのキー
+const STORAGE_KEY = 'tugical_login_credentials';
+
 /**
  * ログインページコンポーネント
  */
@@ -54,6 +57,27 @@ const LoginPage: React.FC = () => {
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+
+  // 保存された認証情報を読み込み
+  useEffect(() => {
+    try {
+      const savedCredentials = localStorage.getItem(STORAGE_KEY);
+      if (savedCredentials) {
+        const { email, password, store_id, remember } = JSON.parse(savedCredentials);
+        if (remember) {
+          setFormData({
+            email: email || '',
+            password: password || '',
+            store_id: store_id || '1',
+          });
+          setRememberMe(true);
+        }
+      }
+    } catch (error) {
+      console.warn('保存された認証情報の読み込みに失敗しました:', error);
+    }
+  }, []);
 
   // 認証済みの場合はリダイレクト
   useEffect(() => {
@@ -110,6 +134,18 @@ const LoginPage: React.FC = () => {
       };
 
       await login(loginData);
+
+      // 認証情報の保存/削除
+      if (rememberMe) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          store_id: formData.store_id,
+          remember: true,
+        }));
+      } else {
+        localStorage.removeItem(STORAGE_KEY);
+      }
       
       toast.success('ログインしました', 'tugical管理画面へようこそ');
       
@@ -279,6 +315,21 @@ const LoginPage: React.FC = () => {
                 )}
               </div>
 
+              {/* ログイン情報を保存 */}
+              <div className="flex items-center">
+                <input
+                  id="remember-me"
+                  name="remember-me"
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                />
+                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
+                  ログイン情報を保存する
+                </label>
+              </div>
+
               {/* ログインボタン */}
               <div>
                 <Button
@@ -305,10 +356,74 @@ const LoginPage: React.FC = () => {
         >
           <h3 className="text-sm font-medium text-blue-800 mb-2">テスト用ログイン情報</h3>
           <div className="text-xs text-blue-700 space-y-1">
-            <div><strong>オーナー:</strong> owner@tugical.test / password123</div>
-            <div><strong>マネージャー:</strong> manager@tugical.test / password123</div>
-            <div><strong>スタッフ:</strong> staff@tugical.test / password123</div>
-            <div><strong>受付:</strong> reception@tugical.test / password123</div>
+            <div className="flex items-center justify-between">
+              <span><strong>オーナー:</strong> owner@tugical.test / password123</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setFormData({
+                    email: 'owner@tugical.test',
+                    password: 'password123',
+                    store_id: '1',
+                  });
+                  setErrors({});
+                }}
+                className="ml-2 px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+              >
+                入力
+              </button>
+            </div>
+            <div className="flex items-center justify-between">
+              <span><strong>マネージャー:</strong> manager@tugical.test / password123</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setFormData({
+                    email: 'manager@tugical.test',
+                    password: 'password123',
+                    store_id: '1',
+                  });
+                  setErrors({});
+                }}
+                className="ml-2 px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+              >
+                入力
+              </button>
+            </div>
+            <div className="flex items-center justify-between">
+              <span><strong>スタッフ:</strong> staff@tugical.test / password123</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setFormData({
+                    email: 'staff@tugical.test',
+                    password: 'password123',
+                    store_id: '1',
+                  });
+                  setErrors({});
+                }}
+                className="ml-2 px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+              >
+                入力
+              </button>
+            </div>
+            <div className="flex items-center justify-between">
+              <span><strong>受付:</strong> reception@tugical.test / password123</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setFormData({
+                    email: 'reception@tugical.test',
+                    password: 'password123',
+                    store_id: '1',
+                  });
+                  setErrors({});
+                }}
+                className="ml-2 px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+              >
+                入力
+              </button>
+            </div>
           </div>
         </motion.div>
       </motion.div>
