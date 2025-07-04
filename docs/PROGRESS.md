@@ -656,27 +656,33 @@ curl -X POST http://localhost/api/v1/auth/logout \
 - コミット: 3913d9043c3006e0aaf47b741ea1755959e5dca5
 - 残タスク: 顧客管理ページ CRUD & 詳細モーダル実装 (進行中)
 
-### ✅ Phase 3.4 完了: CustomerController実装 【2025-07-04 10:45 完了】
+### ✅ Phase 4.3 完了: 顧客管理ページ実装 【2025-07-04 10:58 完了】
 
 #### 🎯 実装内容
-- **CustomerController.php** (一覧取得)
-  - index() – 検索・ステータスフィルタ・ページネーション対応
-  - TenantScope による store_id 分離
-- **CustomerResource.php** – フロント用データ整形
-- **routes/api.php** – `Route::apiResource('customers', CustomerController::class)` 追加
-- ルートキャッシュ再生成 (`php artisan route:cache`)
+- **CustomerCard.tsx** コンポーネント作成
+  - compact/detailed モード対応
+  - ロイヤリティランクバッジ表示
+  - 統計情報（予約回数・総額・最終予約）
+  - Framer Motion アニメーション
+- **CustomersPage.tsx** 完全実装
+  - customerApi 統合（一覧取得・検索・フィルタ）
+  - ページネーション機能
+  - LoadingScreen/エラーハンドリング
+- **deleted_at カラム追加**
+  - Customer モデルの SoftDeletes 対応
+  - マイグレーション作成・実行
 
 #### 📊 実装統計
-- **追加行数**: 約150行追加
-- **新規ファイル**: 2ファイル (Controller, Resource)
-- **既存ファイル変更**: routes/api.php
-- **APIエンドポイント**: GET /api/v1/customers 完了
+- **追加行数**: 約600行追加
+- **新規ファイル**: 2ファイル (CustomerCard, migration)
+- **既存ファイル変更**: CustomersPage.tsx
+- **データベース変更**: customers テーブルに deleted_at 追加
 
 #### 🎯 技術特徴
-- ✅ **API仕様準拠**: tugical_api_specification_v1.0.md Section 4 (Customer)
-- ✅ **マルチテナント**: store_id 自動分離
-- ✅ **バリデーション**: キーワード検索・ステータスフィルタ
-- ✅ **レスポンス統一**: CustomerResource で整形
-- ✅ **ログ出力**: 取得件数・店舗ID を記録
+- ✅ **UI仕様準拠**: tugical_ui_design_system_v1.0.md 準拠
+- ✅ **TypeScript**: 完全型安全実装
+- ✅ **API統合**: 検索・フィルタ・ページネーション
+- ✅ **エラーハンドリング**: LoadingScreen・エラー表示
+- ✅ **ソフトデリート**: deleted_at カラム追加
 
 ---

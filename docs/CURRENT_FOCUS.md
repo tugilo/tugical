@@ -1,22 +1,24 @@
 # tugical Current Focus - セッション継続管理
-**Updated**: 2025-07-04 10:45
+**Updated**: 2025-07-04 10:58
 
-## ✅ 完了タスク: CustomerController 顧客一覧API 実装
-- backend/app/Http/Controllers/Api/CustomerController.php 作成
-- CustomerResource 作成
-- routes/api.php に顧客ルート追加
-- フロント顧客一覧表示 404 解消
+## ✅ 完了タスク: 顧客管理ページ実装
+- CustomerCard コンポーネント作成
+- CustomersPage API 連携（検索・フィルタ・ページネーション）
+- deleted_at カラム追加（SoftDeletes 対応）
+- LoadingScreen/エラーハンドリング統合
 
-## 🔄 現在作業中：顧客管理ページ CRUD & 詳細モーダル
-- CustomerCard コンポーネント
-- 顧客一覧取得 API 連携・フィルタ・検索
-- 詳細モーダルで編集 / ランク管理
-- 進捗ドキュメント更新 → commit/push
+## 🔄 現在作業中：顧客管理 CRUD 詳細機能
+- 顧客詳細モーダル実装
+- 編集・新規作成フォーム
+- ランク管理機能
+- 削除（ソフトデリート）機能
 
 ## 🚧 次回予定
-1. API 実接続のモック切替完了確認（全ページ）
-2. リアルタイム更新 (WebSocket/SSE) 統合
-3. テスト追加・UI 調整
+1. CustomerController CRUD メソッド追加（show/store/update/destroy）
+2. 顧客詳細モーダルコンポーネント作成
+3. API 実接続のモック切替完了確認（全ページ）
+4. リアルタイム更新 (WebSocket/SSE) 統合
+5. テスト追加・UI 調整
 
 ---
 
