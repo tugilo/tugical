@@ -159,24 +159,35 @@ class BookingController extends Controller
      * - Hold Token対応
      * - 自動通知送信
      * 
-     * @param CreateBookingRequest $request
-     * @return JsonResponse
+     * @param CreateBookingRequest $request バリデーション済みリクエスト
+     * @return JsonResponse 予約作成結果
      */
     public function store(CreateBookingRequest $request): JsonResponse
     {
         try {
-            $storeId = auth()->user()->store_id;
-            $bookingData = $request->validated();
-
-            Log::info('予約作成開始（管理者）', [
-                'store_id' => $storeId,
-                'customer_id' => $bookingData['customer_id'],
-                'menu_id' => $bookingData['menu_id'],
-                'booking_date' => $bookingData['booking_date']
+            // デバッグ: リクエストデータをログに記録
+            Log::info('予約作成リクエスト受信', [
+                'all_data' => $request->all(),
+                'validated_data' => $request->validated(),
+                'user_id' => auth()->id(),
+                'store_id' => auth()->user()->store_id,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
             ]);
 
-            // BookingServiceで予約作成
-            $booking = $this->bookingService->createBooking($storeId, $bookingData);
+            $booking = $this->bookingService->createBooking(
+                storeId: auth()->user()->store_id,
+                bookingData: $request->validated()
+            );
+
+            // 成功ログ
+            Log::info('予約作成成功', [
+                'booking_id' => $booking->id,
+                'booking_number' => $booking->booking_number,
+                'customer_id' => $booking->customer_id,
+                'menu_id' => $booking->menu_id,
+                'store_id' => $booking->store_id,
+            ]);
 
             return response()->json([
                 'success' => true,
@@ -250,7 +261,7 @@ class BookingController extends Controller
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'store_id' => auth()->user()->store_id,
-                'request_data' => $request->validated()
+                'request_data' => $request->all(),
             ]);
 
             return response()->json([
