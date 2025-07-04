@@ -103,14 +103,14 @@ class BookingOption extends Model
      */
     protected static function booted()
     {
-
-
         // 作成時の処理
         static::creating(function ($bookingOption) {
             // 数量のデフォルト値
             $bookingOption->quantity = $bookingOption->quantity ?? 1;
 
             // MenuOptionからスナップショットデータを自動設定
+            // テーブル構造と一致しないためコメントアウト
+            /*
             if ($bookingOption->menu_option_id && !$bookingOption->option_name) {
                 $menuOption = MenuOption::find($bookingOption->menu_option_id);
                 if ($menuOption) {
@@ -129,6 +129,7 @@ class BookingOption extends Model
             // 合計料金・時間の自動計算
             $bookingOption->total_price = $bookingOption->calculateTotalPrice();
             $bookingOption->total_duration = $bookingOption->calculateTotalDuration();
+            */
         });
 
         // 更新時の処理

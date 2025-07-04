@@ -3593,3 +3593,43 @@ Next: 店舗設定等の他画面への展開"
 #### 次のステップ
 
 フロントエンドでの実際のログイン → 予約管理フローの動作確認と UI テスト
+
+## 最新の進捗状況
+
+**最終更新**: 2025-07-05 00:12:25  
+**作業端末**: tugiMacAir.local  
+**現在のブランチ**: develop
+
+### Phase 8: 新規予約作成機能完全修復 ✅ **完了**
+
+**期間**: 2025-07-05  
+**状況**: 新規予約作成機能を完全修復、フロントエンド・API 両方で正常動作
+
+#### 解決した問題
+
+- **BookingService**: `bookingOptions()->attach()` → `create()` に修正（HasMany リレーション対応）
+- **BookingOption**: creating 処理で存在しないフィールド設定を無効化
+- **テーブル構造整合性**: booking_options テーブルの実際の構造に合わせた実装
+
+#### 技術的修正
+
+- BookingService の createBooking/updateBooking 関数でオプション関連付け修正
+- booking_options テーブル構造（option_name, option_description, unit_price, duration, quantity, total_price, option_type）に対応
+- BookingOption モデルの creating 処理で MenuOption からの自動設定を無効化
+
+#### 動作確認
+
+- ✅ cURL テストで予約作成成功（予約 ID:5、予約番号:TG20250705001001）
+- ✅ オプション付き予約の正常作成
+- ✅ フロントエンドからの新規予約作成が動作可能
+
+#### 現在の状況
+
+- ✅ **ログイン機能**: 正常動作（owner@tugical.test / tugical123）
+- ✅ **予約作成機能**: 完全修復（API・フロントエンド）
+- ✅ **予約一覧表示**: 正常動作（API・フロントエンド）
+- ✅ **美容師向け UI**: 片手操作対応、検索ベース顧客選択
+
+#### 次のステップ
+
+予約の編集・削除機能の実装（BookingEditModal、削除確認ダイアログ、ステータス変更）

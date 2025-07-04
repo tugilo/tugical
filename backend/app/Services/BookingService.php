@@ -163,7 +163,19 @@ class BookingService
             // オプション関連付け
             if (!empty($bookingData['option_ids'])) {
                 foreach ($bookingData['option_ids'] as $optionId) {
-                    $booking->options()->attach($optionId);
+                    $menuOption = \App\Models\MenuOption::find($optionId);
+                    if ($menuOption) {
+                        $booking->bookingOptions()->create([
+                            'menu_option_id' => $optionId,
+                            'option_name' => $menuOption->name,
+                            'option_description' => $menuOption->description,
+                            'unit_price' => $menuOption->price,
+                            'duration' => $menuOption->duration,
+                            'quantity' => 1,
+                            'total_price' => $menuOption->price,
+                            'option_type' => 'addon',
+                        ]);
+                    }
                 }
             }
 
@@ -216,7 +228,26 @@ class BookingService
 
             // オプション更新
             if (isset($updateData['option_ids'])) {
-                $booking->options()->sync($updateData['option_ids']);
+                // 既存オプションを削除
+                $booking->bookingOptions()->delete();
+
+                // 新しいオプションを作成
+                foreach ($updateData['option_ids'] as $optionId) {
+                    $menuOption = \App\Models\MenuOption::find($optionId);
+                    if ($menuOption) {
+                        $booking->bookingOptions()->create([
+                            'menu_option_id' => $optionId,
+                            'option_name' => $menuOption->name,
+                            'option_description' => $menuOption->description,
+                            'unit_price' => $menuOption->price,
+                            'duration' => $menuOption->duration,
+                            'quantity' => 1,
+                            'total_price' => $menuOption->price,
+                            'option_type' => 'addon',
+                        ]);
+                    }
+                }
+
                 unset($updateData['option_ids']);
             }
 
