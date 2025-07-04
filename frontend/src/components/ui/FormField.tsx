@@ -54,9 +54,16 @@ const FormField: React.FC<FormFieldProps> = ({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     if (type === 'number') {
       const stringValue = e.target.value;
-      // 空文字列の場合はそのまま渡す（0に変換しない）
-      const newValue = stringValue === '' ? '' : Number(stringValue);
-      onChange(newValue);
+      // 空文字列の場合は0を渡す（バリデーションエラーを避けるため）
+      if (stringValue === '') {
+        onChange(0);
+      } else {
+        const numValue = Number(stringValue);
+        // NaNチェック - 有効な数値でない場合は現在の値を保持
+        if (!isNaN(numValue)) {
+          onChange(numValue);
+        }
+      }
     } else {
       onChange(e.target.value);
     }

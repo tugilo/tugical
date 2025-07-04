@@ -66,7 +66,17 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
 
   // フォーム値更新
   const updateFormData = (field: keyof CreateMenuRequest, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    // 数値フィールドの場合は明示的に数値に変換
+    let processedValue = value;
+    if (['base_price', 'base_duration', 'prep_duration', 'cleanup_duration', 'advance_booking_hours', 'sort_order'].includes(field)) {
+      processedValue = typeof value === 'string' ? Number(value) : value;
+      // NaNの場合は0にフォールバック
+      if (isNaN(processedValue)) {
+        processedValue = 0;
+      }
+    }
+    
+    setFormData(prev => ({ ...prev, [field]: processedValue }));
     
     // エラーをクリア
     if (errors[field]) {
@@ -94,34 +104,42 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
       newErrors.category = 'カテゴリは必須です';
     }
 
-    if (formData.base_price < 0) {
-      newErrors.base_price = '基本料金は0円以上で入力してください';
+    // 数値バリデーション
+    const basePrice = Number(formData.base_price);
+    if (isNaN(basePrice) || basePrice < 0) {
+      newErrors.base_price = '基本料金は0円以上の有効な数値を入力してください';
     }
 
-    if (formData.base_duration < 1) {
-      newErrors.base_duration = '基本時間は1分以上で入力してください';
+    const baseDuration = Number(formData.base_duration);
+    if (isNaN(baseDuration) || baseDuration < 1) {
+      newErrors.base_duration = '基本時間は1分以上の有効な数値を入力してください';
     }
 
-    if (formData.base_duration > 1440) {
+    if (!isNaN(baseDuration) && baseDuration > 1440) {
       newErrors.base_duration = '基本時間は24時間以内で入力してください';
     }
 
-    if ((formData.prep_duration || 0) < 0) {
-      newErrors.prep_duration = '準備時間は0分以上で入力してください';
+    const prepDuration = Number(formData.prep_duration || 0);
+    if (isNaN(prepDuration) || prepDuration < 0) {
+      newErrors.prep_duration = '準備時間は0分以上の有効な数値を入力してください';
     }
 
-    if ((formData.cleanup_duration || 0) < 0) {
-      newErrors.cleanup_duration = '片付け時間は0分以上で入力してください';
+    const cleanupDuration = Number(formData.cleanup_duration || 0);
+    if (isNaN(cleanupDuration) || cleanupDuration < 0) {
+      newErrors.cleanup_duration = '片付け時間は0分以上の有効な数値を入力してください';
     }
 
-    if ((formData.advance_booking_hours || 0) < 0) {
-      newErrors.advance_booking_hours = '事前予約時間は0時間以上で入力してください';
+    const advanceBookingHours = Number(formData.advance_booking_hours || 0);
+    if (isNaN(advanceBookingHours) || advanceBookingHours < 0) {
+      newErrors.advance_booking_hours = '事前予約時間は0時間以上の有効な数値を入力してください';
     }
 
     // 総時間チェック（24時間以内）
-    const totalDuration = formData.base_duration + (formData.prep_duration || 0) + (formData.cleanup_duration || 0);
-    if (totalDuration > 1440) {
-      newErrors.base_duration = '総所要時間（基本時間+準備時間+片付け時間）は24時間以内にしてください';
+    if (!isNaN(baseDuration) && !isNaN(prepDuration) && !isNaN(cleanupDuration)) {
+      const totalDuration = baseDuration + prepDuration + cleanupDuration;
+      if (totalDuration > 1440) {
+        newErrors.base_duration = '総所要時間（基本時間+準備時間+片付け時間）は24時間以内にしてください';
+      }
     }
 
     setErrors(newErrors);
