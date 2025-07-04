@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Modal from '../ui/Modal';
+import Modal from '../modal/Modal';
 import FormField from '../ui/FormField';
 import Button from '../ui/Button';
 import { CreateMenuRequest } from '../../types';
@@ -14,7 +14,7 @@ interface MenuCreateModalProps {
 
 /**
  * メニュー作成モーダル
- * 
+ *
  * 新規メニューの作成フォーム
  * バリデーション、API送信、エラーハンドリング対応
  */
@@ -24,7 +24,7 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
   onSuccess,
 }) => {
   const { addNotification } = useUIStore();
-  
+
   // フォーム状態
   const [formData, setFormData] = useState<CreateMenuRequest>({
     name: '',
@@ -68,16 +68,25 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
   const updateFormData = (field: keyof CreateMenuRequest, value: any) => {
     // 数値フィールドの場合は明示的に数値に変換
     let processedValue = value;
-    if (['base_price', 'base_duration', 'prep_duration', 'cleanup_duration', 'advance_booking_hours', 'sort_order'].includes(field)) {
+    if (
+      [
+        'base_price',
+        'base_duration',
+        'prep_duration',
+        'cleanup_duration',
+        'advance_booking_hours',
+        'sort_order',
+      ].includes(field)
+    ) {
       processedValue = typeof value === 'string' ? Number(value) : value;
       // NaNの場合は0にフォールバック
       if (isNaN(processedValue)) {
         processedValue = 0;
       }
     }
-    
+
     setFormData(prev => ({ ...prev, [field]: processedValue }));
-    
+
     // エラーをクリア
     if (errors[field]) {
       setErrors(prev => {
@@ -112,7 +121,8 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
 
     const baseDuration = Number(formData.base_duration);
     if (isNaN(baseDuration) || baseDuration < 1) {
-      newErrors.base_duration = '基本時間は1分以上の有効な数値を入力してください';
+      newErrors.base_duration =
+        '基本時間は1分以上の有効な数値を入力してください';
     }
 
     if (!isNaN(baseDuration) && baseDuration > 1440) {
@@ -121,24 +131,32 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
 
     const prepDuration = Number(formData.prep_duration || 0);
     if (isNaN(prepDuration) || prepDuration < 0) {
-      newErrors.prep_duration = '準備時間は0分以上の有効な数値を入力してください';
+      newErrors.prep_duration =
+        '準備時間は0分以上の有効な数値を入力してください';
     }
 
     const cleanupDuration = Number(formData.cleanup_duration || 0);
     if (isNaN(cleanupDuration) || cleanupDuration < 0) {
-      newErrors.cleanup_duration = '片付け時間は0分以上の有効な数値を入力してください';
+      newErrors.cleanup_duration =
+        '片付け時間は0分以上の有効な数値を入力してください';
     }
 
     const advanceBookingHours = Number(formData.advance_booking_hours || 0);
     if (isNaN(advanceBookingHours) || advanceBookingHours < 0) {
-      newErrors.advance_booking_hours = '事前予約時間は0時間以上の有効な数値を入力してください';
+      newErrors.advance_booking_hours =
+        '事前予約時間は0時間以上の有効な数値を入力してください';
     }
 
     // 総時間チェック（24時間以内）
-    if (!isNaN(baseDuration) && !isNaN(prepDuration) && !isNaN(cleanupDuration)) {
+    if (
+      !isNaN(baseDuration) &&
+      !isNaN(prepDuration) &&
+      !isNaN(cleanupDuration)
+    ) {
       const totalDuration = baseDuration + prepDuration + cleanupDuration;
       if (totalDuration > 1440) {
-        newErrors.base_duration = '総所要時間（基本時間+準備時間+片付け時間）は24時間以内にしてください';
+        newErrors.base_duration =
+          '総所要時間（基本時間+準備時間+片付け時間）は24時間以内にしてください';
       }
     }
 
@@ -158,7 +176,7 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
 
     try {
       await menuApi.create(formData);
-      
+
       addNotification({
         type: 'success',
         title: 'メニュー作成',
@@ -170,14 +188,16 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
       handleClose();
     } catch (error: any) {
       console.error('メニュー作成エラー:', error);
-      
+
       if (error.response?.data?.error?.details) {
         setErrors(error.response.data.error.details);
       } else {
         addNotification({
           type: 'error',
           title: 'メニュー作成エラー',
-          message: error.response?.data?.error?.message || 'メニューの作成に失敗しました',
+          message:
+            error.response?.data?.error?.message ||
+            'メニューの作成に失敗しました',
           duration: 5000,
         });
       }
@@ -212,78 +232,78 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title="新規メニュー作成"
-      size="lg"
-      className="max-h-[90vh] overflow-y-auto"
+      title='新規メニュー作成'
+      size='lg'
+      className='max-h-[90vh] overflow-y-auto'
     >
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className='space-y-6'>
         {/* 基本情報 */}
-        <div className="space-y-4">
-          <h4 className="text-sm font-medium text-gray-900 border-b border-gray-200 pb-2">
+        <div className='space-y-4'>
+          <h4 className='text-sm font-medium text-gray-900 border-b border-gray-200 pb-2'>
             基本情報
           </h4>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
             <FormField
-              label="メニュー名"
-              name="name"
-              type="text"
+              label='メニュー名'
+              name='name'
+              type='text'
               value={formData.name}
-              onChange={(value) => updateFormData('name', value)}
-              placeholder="例: cut"
+              onChange={value => updateFormData('name', value)}
+              placeholder='例: cut'
               error={errors.name}
               required
             />
 
             <FormField
-              label="表示名"
-              name="display_name"
-              type="text"
+              label='表示名'
+              name='display_name'
+              type='text'
               value={formData.display_name || ''}
-              onChange={(value) => updateFormData('display_name', value)}
-              placeholder="例: カット"
+              onChange={value => updateFormData('display_name', value)}
+              placeholder='例: カット'
               error={errors.display_name}
               required
             />
           </div>
 
           <FormField
-            label="カテゴリ"
-            name="category"
-            type="select"
+            label='カテゴリ'
+            name='category'
+            type='select'
             value={formData.category || ''}
-            onChange={(value) => updateFormData('category', value)}
+            onChange={value => updateFormData('category', value)}
             options={categoryOptions}
             error={errors.category}
             required
           />
 
           <FormField
-            label="説明"
-            name="description"
-            type="textarea"
+            label='説明'
+            name='description'
+            type='textarea'
             value={formData.description || ''}
-            onChange={(value) => updateFormData('description', value)}
-            placeholder="メニューの詳細説明を入力してください"
+            onChange={value => updateFormData('description', value)}
+            placeholder='メニューの詳細説明を入力してください'
             error={errors.description}
             rows={3}
           />
         </div>
 
         {/* 料金・時間設定 */}
-        <div className="space-y-4">
-          <h4 className="text-sm font-medium text-gray-900 border-b border-gray-200 pb-2">
+        <div className='space-y-4'>
+          <h4 className='text-sm font-medium text-gray-900 border-b border-gray-200 pb-2'>
             料金・時間設定
           </h4>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
             <FormField
-              label="基本料金"
-              name="base_price"
-              type="number"
+              label='基本料金'
+              name='base_price'
+              type='number'
               value={formData.base_price}
-              onChange={(value) => updateFormData('base_price', value)}
-              placeholder="円"
+              onChange={value => updateFormData('base_price', value)}
+              placeholder='円'
               error={errors.base_price}
               min={0}
               step={100}
@@ -291,12 +311,12 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
             />
 
             <FormField
-              label="基本時間"
-              name="base_duration"
-              type="number"
+              label='基本時間'
+              name='base_duration'
+              type='number'
               value={formData.base_duration}
-              onChange={(value) => updateFormData('base_duration', value)}
-              placeholder="分"
+              onChange={value => updateFormData('base_duration', value)}
+              placeholder='分'
               error={errors.base_duration}
               min={1}
               max={1440}
@@ -305,14 +325,14 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
             <FormField
-              label="準備時間"
-              name="prep_duration"
-              type="number"
+              label='準備時間'
+              name='prep_duration'
+              type='number'
               value={formData.prep_duration || 0}
-              onChange={(value) => updateFormData('prep_duration', value)}
-              placeholder="分"
+              onChange={value => updateFormData('prep_duration', value)}
+              placeholder='分'
               error={errors.prep_duration}
               min={0}
               max={120}
@@ -320,12 +340,12 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
             />
 
             <FormField
-              label="片付け時間"
-              name="cleanup_duration"
-              type="number"
+              label='片付け時間'
+              name='cleanup_duration'
+              type='number'
               value={formData.cleanup_duration || 0}
-              onChange={(value) => updateFormData('cleanup_duration', value)}
-              placeholder="分"
+              onChange={value => updateFormData('cleanup_duration', value)}
+              placeholder='分'
               error={errors.cleanup_duration}
               min={0}
               max={120}
@@ -335,58 +355,66 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
         </div>
 
         {/* 予約設定 */}
-        <div className="space-y-4">
-          <h4 className="text-sm font-medium text-gray-900 border-b border-gray-200 pb-2">
+        <div className='space-y-4'>
+          <h4 className='text-sm font-medium text-gray-900 border-b border-gray-200 pb-2'>
             予約設定
           </h4>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
             <FormField
-              label="事前予約時間"
-              name="advance_booking_hours"
-              type="number"
+              label='事前予約時間'
+              name='advance_booking_hours'
+              type='number'
               value={formData.advance_booking_hours || 0}
-              onChange={(value) => updateFormData('advance_booking_hours', value)}
-              placeholder="時間"
+              onChange={value => updateFormData('advance_booking_hours', value)}
+              placeholder='時間'
               error={errors.advance_booking_hours}
               min={0}
               max={720}
             />
 
             <FormField
-              label="性別制限"
-              name="gender_restriction"
-              type="select"
+              label='性別制限'
+              name='gender_restriction'
+              type='select'
               value={formData.gender_restriction || 'none'}
-              onChange={(value) => updateFormData('gender_restriction', value)}
+              onChange={value => updateFormData('gender_restriction', value)}
               options={genderOptions}
               error={errors.gender_restriction}
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex items-center space-x-3">
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+            <div className='flex items-center space-x-3'>
               <input
-                type="checkbox"
-                id="is_active"
+                type='checkbox'
+                id='is_active'
                 checked={formData.is_active}
-                onChange={(e) => updateFormData('is_active', e.target.checked)}
-                className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                onChange={e => updateFormData('is_active', e.target.checked)}
+                className='w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500'
               />
-              <label htmlFor="is_active" className="text-sm font-medium text-gray-700">
+              <label
+                htmlFor='is_active'
+                className='text-sm font-medium text-gray-700'
+              >
                 アクティブ状態
               </label>
             </div>
 
-            <div className="flex items-center space-x-3">
+            <div className='flex items-center space-x-3'>
               <input
-                type="checkbox"
-                id="requires_approval"
+                type='checkbox'
+                id='requires_approval'
                 checked={formData.requires_approval || false}
-                onChange={(e) => updateFormData('requires_approval', e.target.checked)}
-                className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                onChange={e =>
+                  updateFormData('requires_approval', e.target.checked)
+                }
+                className='w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500'
               />
-              <label htmlFor="requires_approval" className="text-sm font-medium text-gray-700">
+              <label
+                htmlFor='requires_approval'
+                className='text-sm font-medium text-gray-700'
+              >
                 承認必要
               </label>
             </div>
@@ -394,19 +422,19 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
         </div>
 
         {/* アクションボタン */}
-        <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+        <div className='flex justify-end space-x-3 pt-6 border-t border-gray-200'>
           <Button
-            variant="outline"
-            size="md"
+            variant='outline'
+            size='md'
             onClick={handleClose}
             disabled={isSubmitting}
           >
             キャンセル
           </Button>
           <Button
-            variant="primary"
-            size="md"
-            type="submit"
+            variant='primary'
+            size='md'
+            type='submit'
             loading={isSubmitting}
             disabled={isSubmitting}
           >
@@ -418,4 +446,4 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
   );
 };
 
-export default MenuCreateModal; 
+export default MenuCreateModal;

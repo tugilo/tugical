@@ -15,7 +15,7 @@ import React, { useState, useEffect } from 'react';
 import { Resource } from '../../types';
 import { resourceApi } from '../../services/api';
 import { useUIStore } from '../../stores/uiStore';
-import Modal from '../ui/Modal';
+import Modal from '../modal/Modal';
 import Button from '../ui/Button';
 import {
   UserIcon,

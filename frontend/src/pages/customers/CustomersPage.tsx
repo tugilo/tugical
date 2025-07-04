@@ -17,11 +17,11 @@ import type { Customer, PaginatedResponse, FilterOptions } from '../../types';
 import { cn } from '../../utils';
 import Card from '../../components/ui/Card';
 import LoadingScreen from '../../components/ui/LoadingScreen';
-import CustomerCard from '../../components/customer/CustomerCard';
+import CustomerCard from '../../components/customers/CustomerCard';
 import { useUIStore } from '../../stores/uiStore';
 import Button from '../../components/ui/Button';
-import CustomerDetailModal from '../../components/customer/CustomerDetailModal';
-import CustomerCreateModal from '../../components/customer/CustomerCreateModal';
+import { CustomerDetailModal } from '../../components/customers/CustomerDetailModal';
+import { CustomerCreateModal } from '../../components/customers/CustomerCreateModal';
 
 const CustomersPage: React.FC = () => {
   const { setPageTitle } = useUIStore();

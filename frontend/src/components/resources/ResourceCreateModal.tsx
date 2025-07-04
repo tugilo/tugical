@@ -8,7 +8,7 @@ import {
   CurrencyYenIcon,
   PhotoIcon,
 } from '@heroicons/react/24/outline';
-import Modal from '../ui/Modal';
+import Modal from '../modal/Modal';
 import Button from '../ui/Button';
 import { resourceApi } from '../../services/api';
 import { useUIStore } from '../../stores/uiStore';
