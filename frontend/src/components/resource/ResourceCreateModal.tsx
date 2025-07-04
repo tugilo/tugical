@@ -12,7 +12,7 @@ import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import { resourceApi } from '../../services/api';
 import { useUIStore } from '../../stores/uiStore';
-import type { CreateResourceRequest, Resource, ResourceType } from '../../types';
+import type { Resource, ResourceType } from '../../types';
 
 interface ResourceCreateModalProps {
   /** モーダルの開閉状態 */
@@ -35,6 +35,7 @@ interface ResourceFormData {
   working_hours: Record<string, any>;
   efficiency_rate: number;
   hourly_rate_diff: number;
+  capacity: number;
   sort_order: number;
   is_active: boolean;
 }
@@ -68,6 +69,7 @@ const ResourceCreateModal: React.FC<ResourceCreateModalProps> = ({
     working_hours: {},
     efficiency_rate: 1.0,
     hourly_rate_diff: 0,
+    capacity: 1,
     sort_order: 0,
     is_active: true,
   });
@@ -209,6 +211,7 @@ const ResourceCreateModal: React.FC<ResourceCreateModalProps> = ({
       working_hours: {},
       efficiency_rate: 1.0,
       hourly_rate_diff: 0,
+      capacity: 1,
       sort_order: 0,
       is_active: true,
     });

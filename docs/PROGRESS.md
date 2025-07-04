@@ -2567,3 +2567,86 @@ POST /api/v1/resources
 - フロントエンドでのcapacity表示・編集UI実装
 
 ### ファイル変更履歴
+
+
+## Phase 5.10: 削除ダイアログ仕様統一 (2025-07-04 20:23:32)
+
+### 作業概要
+- **目的**: tugical UI設計書に準拠した削除ダイアログの統一
+- **方針**: ConfirmDialogコンポーネントによる統一的な削除確認機能
+- **作業端末**: tugiMacMini.local
+
+### 完了事項
+
+#### 1. 削除ダイアログ仕様確認
+- **tugical_ui_design_system_v1.0.md**: 削除ダイアログの仕様を確認
+- **既存実装**: ConfirmDialogコンポーネントが正しく実装済み
+- **問題発見**: MenusPageでnative confirm()を使用している箇所を発見
+
+#### 2. MenusPage削除機能修正
+- **削除方法変更**: `confirm()` → `ConfirmDialog`コンポーネント
+- **状態管理追加**: 
+  - `showDeleteDialog`: 削除ダイアログ表示状態
+  - `deletingMenu`: 削除対象メニュー
+  - `isDeleting`: 削除処理中フラグ
+- **ConfirmDialog実装**:
+  - title: "メニューを削除"
+  - message: メニュー名を含む確認メッセージ
+  - confirmText: "削除する"
+  - cancelText: "キャンセル"
+  - isDanger: true（危険な操作）
+  - isLoading: 削除処理中の表示
+
+#### 3. TypeScript型定義修正
+- **PaginationData追加**: frontend/src/types/index.ts
+  - from/toフィールドを含む完全なページネーション型
+- **ResourceFormData修正**: capacity フィールドを追加
+- **型エラー解決**: response.pagination の型安全な処理
+
+#### 4. フロントエンドビルド成功
+- **ビルド結果**: 正常完了（2.57s）
+- **バンドルサイズ**: 適切（最大66.36kB gzip後10.37kB）
+- **TypeScriptエラー**: 全て解決
+
+### tugical削除ダイアログ仕様
+
+#### 統一仕様
+```typescript
+<ConfirmDialog
+  isOpen={showDeleteDialog}
+  onClose={() => setShowDeleteDialog(false)}
+  onConfirm={handleDelete}
+  title="[対象]を削除"
+  message="「[対象名]」を削除しますか？この操作は取り消せません。"
+  confirmText="削除する"
+  cancelText="キャンセル"
+  isDanger={true}
+  isLoading={isDeleting}
+/>
+```
+
+#### デザイン特徴
+- **危険操作の視覚化**: 赤色のアイコンとボタン
+- **明確なメッセージ**: 対象名と不可逆性の明示
+- **ローディング状態**: 処理中の適切なフィードバック
+- **モーダル形式**: オーバーレイによる集中表示
+
+### 影響範囲
+- **MenusPage**: 削除ダイアログをConfirmDialogに統一
+- **CustomerDetailModal**: 既に正しくConfirmDialogを使用
+- **他のページ**: 今後の実装で同様の仕様を適用
+
+### 次のステップ
+- Phase 5.11: ResourceEditModal実装（仕様書厳守）
+- 他のページでの削除機能統一確認
+- UI/UXの一貫性向上
+
+### ファイル変更履歴
+- `frontend/src/pages/menus/MenusPage.tsx`: 削除ダイアログ修正
+- `frontend/src/types/index.ts`: PaginationData型追加
+- `frontend/src/components/resource/ResourceCreateModal.tsx`: capacity型修正
+- `docs/PROGRESS.md`: 進捗記録更新
+
+### 重要な学習
+**tugical UI設計思想**: 統一されたConfirmDialogコンポーネントにより、全ての削除操作で一貫したユーザー体験を提供。危険な操作には適切な視覚的フィードバックと確認プロセスを実装。
+

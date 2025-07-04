@@ -28,7 +28,8 @@ import MenuCreateModal from '../../components/menus/MenuCreateModal';
 import MenuEditModal from '../../components/menus/MenuEditModal';
 import MenuDetailModal from '../../components/menus/MenuDetailModal';
 import { menuApi } from '../../services/api';
-import type { Menu, FilterOptions, MenuCategoriesResponse } from '../../types';
+import type { Menu, FilterOptions, MenuCategoriesResponse, PaginationData } from '../../types';
+import ConfirmDialog from '../../components/ui/ConfirmDialog';
 
 const MenusPage: React.FC = () => {
   const { setPageTitle, addNotification } = useUIStore();
@@ -42,17 +43,24 @@ const MenusPage: React.FC = () => {
   const [selectedStatus, setSelectedStatus] = useState<string>('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
-  const [pagination, setPagination] = useState({
+  const [pagination, setPagination] = useState<PaginationData>({
     current_page: 1,
     last_page: 1,
     per_page: 20,
     total: 0,
+    from: 0,
+    to: 0,
   });
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [editingMenuId, setEditingMenuId] = useState<number | null>(null);
   const [viewingMenuId, setViewingMenuId] = useState<number | null>(null);
+
+  // 削除確認ダイアログ
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deletingMenu, setDeletingMenu] = useState<Menu | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     setPageTitle('メニュー管理');
@@ -78,11 +86,14 @@ const MenusPage: React.FC = () => {
       const response = await menuApi.getList(filters);
       setMenus(response.menus);
       // API レスポンスの pagination オブジェクトを安全に設定
+      const paginationData = response.pagination as any;
       setPagination({
-        current_page: response.pagination?.current_page || 1,
-        last_page: response.pagination?.last_page || 1,
-        per_page: response.pagination?.per_page || 20,
-        total: response.pagination?.total || 0,
+        current_page: paginationData?.current_page || 1,
+        last_page: paginationData?.last_page || 1,
+        per_page: paginationData?.per_page || 20,
+        total: paginationData?.total || 0,
+        from: paginationData?.from || ((paginationData?.current_page || 1) - 1) * (paginationData?.per_page || 20) + 1,
+        to: Math.min((paginationData?.current_page || 1) * (paginationData?.per_page || 20), paginationData?.total || 0),
       });
     } catch (error: any) {
       addNotification({
@@ -154,24 +165,8 @@ const MenusPage: React.FC = () => {
    * メニュー削除
    */
   const handleDeleteMenu = async (menu: Menu) => {
-    if (!confirm(`「${menu.name}」を削除しますか？この操作は取り消せません。`)) {
-      return;
-    }
-
-    try {
-      await menuApi.delete(menu.id);
-      addNotification({
-        type: 'success',
-        title: 'メニューを削除しました',
-      });
-      loadMenus(pagination.current_page);
-    } catch (error: any) {
-      addNotification({
-        type: 'error',
-        title: '削除に失敗しました',
-        message: error.message || 'メニューの削除に失敗しました',
-      });
-    }
+    setDeletingMenu(menu);
+    setShowDeleteDialog(true);
   };
 
   /**
@@ -283,8 +278,7 @@ const MenusPage: React.FC = () => {
       {/* 表示切り替え・統計 */}
       <div className="flex items-center justify-between">
         <div className="text-sm text-gray-600">
-          {pagination.total}件中 {((pagination.current_page - 1) * pagination.per_page) + 1}-
-          {Math.min(pagination.current_page * pagination.per_page, pagination.total)}件を表示
+          {pagination.total}件中 {pagination.from}-{pagination.to}件を表示
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -443,6 +437,44 @@ const MenusPage: React.FC = () => {
           setEditingMenuId(null);
         }}
         menuId={editingMenuId}
+      />
+
+      {/* 削除確認ダイアログ */}
+      <ConfirmDialog
+        isOpen={showDeleteDialog}
+        onClose={() => {
+          setShowDeleteDialog(false);
+          setDeletingMenu(null);
+        }}
+        onConfirm={async () => {
+          if (deletingMenu) {
+            setIsDeleting(true);
+            try {
+              await menuApi.delete(deletingMenu.id);
+              addNotification({
+                type: 'success',
+                title: 'メニューを削除しました',
+              });
+              loadMenus(pagination.current_page);
+              setShowDeleteDialog(false);
+              setDeletingMenu(null);
+            } catch (error: any) {
+              addNotification({
+                type: 'error',
+                title: '削除に失敗しました',
+                message: error.message || 'メニューの削除に失敗しました',
+              });
+            } finally {
+              setIsDeleting(false);
+            }
+          }
+        }}
+        title="メニューを削除"
+        message={deletingMenu ? `「${deletingMenu.name}」を削除しますか？この操作は取り消せません。` : ''}
+        confirmText="削除する"
+        cancelText="キャンセル"
+        isDanger={true}
+        isLoading={isDeleting}
       />
     </div>
   );

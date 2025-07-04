@@ -48,6 +48,15 @@ export interface PaginatedResponse<T> {
   };
 }
 
+export interface PaginationData {
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
+  from: number;
+  to: number;
+}
+
 // ========================================
 // 認証関連型定義
 // ========================================
