@@ -157,6 +157,7 @@ export interface Booking {
   resource?: BookingResource;
   options?: BookingOption[];
   total_price: number;
+  payment_status?: 'pending' | 'paid' | 'refunded';
   customer_notes?: string;
   staff_notes?: string;
   created_at: string;
@@ -168,6 +169,7 @@ export interface BookingCustomer {
   name: string;
   phone: string;
   email?: string;
+  loyalty_rank?: 'new' | 'regular' | 'vip' | 'premium';
 }
 
 export interface BookingMenu {
@@ -363,12 +365,14 @@ export interface FormField {
 export interface FilterOptions {
   search?: string;
   status?: string;
+  date?: string;
   date_from?: string;
   date_to?: string;
   resource_id?: number;
   customer_id?: number;
   page?: number;
   per_page?: number;
+  sort?: string;
   sort_by?: string;
   sort_order?: 'asc' | 'desc';
 }

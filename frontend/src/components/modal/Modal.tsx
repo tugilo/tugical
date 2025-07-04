@@ -82,34 +82,34 @@ const Modal: React.FC<ModalProps> = ({
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* オーバーレイ */}
+          {/* オーバーレイとモーダルコンテナ */}
           <motion.div
-            className="fixed inset-0 bg-black/50 z-40"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={closeOnOverlayClick ? onClose : undefined}
-          />
-
-          {/* モーダル本体 */}
-          <motion.div
-            className="fixed inset-0 flex items-center justify-center p-4 z-50"
+            className="fixed inset-0 z-[9999] overflow-y-auto"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            <motion.div
-              className={cn(
-                'bg-white rounded-lg shadow-xl w-full',
-                sizeClasses[size],
-                className
-              )}
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              onClick={(e) => e.stopPropagation()}
+            {/* 背景オーバーレイ */}
+            <div className="fixed inset-0 bg-black/50 z-[9998]" />
+            
+            {/* モーダルコンテナ */}
+            <div 
+              className="relative flex min-h-full items-center justify-center p-4 z-[9999]"
+              onClick={closeOnOverlayClick ? onClose : undefined}
             >
+              {/* モーダル本体 */}
+              <motion.div
+                className={cn(
+                  'relative bg-white rounded-lg shadow-xl w-full z-[10000]',
+                  sizeClasses[size],
+                  className
+                )}
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                onClick={(e) => e.stopPropagation()}
+              >
               {/* ヘッダー */}
               {(title || showCloseButton) && (
                 <div className="flex items-center justify-between p-6 border-b border-gray-200">
@@ -122,6 +122,7 @@ const Modal: React.FC<ModalProps> = ({
                     <button
                       onClick={onClose}
                       className="p-1 rounded-md hover:bg-gray-100 transition-colors"
+                      aria-label="モーダルを閉じる"
                     >
                       <XMarkIcon className="w-6 h-6 text-gray-400" />
                     </button>
@@ -140,7 +141,8 @@ const Modal: React.FC<ModalProps> = ({
                   {footer}
                 </div>
               )}
-            </motion.div>
+                          </motion.div>
+            </div>
           </motion.div>
         </>
       )}
