@@ -25,6 +25,7 @@ import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import LoadingScreen from '../../components/ui/LoadingScreen';
 import MenuCreateModal from '../../components/menus/MenuCreateModal';
+import MenuEditModal from '../../components/menus/MenuEditModal';
 import { menuApi } from '../../services/api';
 import type { Menu, FilterOptions, MenuCategoriesResponse } from '../../types';
 
@@ -47,6 +48,8 @@ const MenusPage: React.FC = () => {
     total: 0,
   });
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingMenuId, setEditingMenuId] = useState<number | null>(null);
 
   useEffect(() => {
     setPageTitle('メニュー管理');
@@ -116,6 +119,14 @@ const MenusPage: React.FC = () => {
     setSelectedCategory('');
     setSelectedStatus('');
     setTimeout(() => loadMenus(1), 100);
+  };
+
+  /**
+   * メニュー編集
+   */
+  const handleEditMenu = (menu: Menu) => {
+    setEditingMenuId(menu.id);
+    setShowEditModal(true);
   };
 
   /**
@@ -300,14 +311,7 @@ const MenusPage: React.FC = () => {
                 <MenuCard
                   key={menu.id}
                   menu={menu}
-                  onEdit={() => {
-                    // TODO: 編集モーダルを開く
-                    addNotification({
-                      type: 'info',
-                      title: 'メニュー編集',
-                      message: '編集モーダルは次回実装予定です',
-                    });
-                  }}
+                  onEdit={() => handleEditMenu(menu)}
                   onDelete={() => handleDeleteMenu(menu)}
                 />
               ))}
@@ -343,14 +347,7 @@ const MenusPage: React.FC = () => {
                       <MenuTableRow
                         key={menu.id}
                         menu={menu}
-                        onEdit={() => {
-                          // TODO: 編集モーダルを開く
-                          addNotification({
-                            type: 'info',
-                            title: 'メニュー編集',
-                            message: '編集モーダルは次回実装予定です',
-                          });
-                        }}
+                        onEdit={() => handleEditMenu(menu)}
                         onDelete={() => handleDeleteMenu(menu)}
                       />
                     ))}
@@ -397,6 +394,21 @@ const MenusPage: React.FC = () => {
           loadMenus(1);
           setShowCreateModal(false);
         }}
+      />
+
+      {/* メニュー編集モーダル */}
+      <MenuEditModal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setEditingMenuId(null);
+        }}
+        onSuccess={() => {
+          loadMenus(pagination.current_page);
+          setShowEditModal(false);
+          setEditingMenuId(null);
+        }}
+        menuId={editingMenuId}
       />
     </div>
   );
