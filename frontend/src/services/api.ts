@@ -27,7 +27,9 @@ import type {
   FilterOptions,
   CreateBookingRequest,
   DashboardStats,
-  RecentActivity
+  RecentActivity,
+  CreateCustomerRequest,
+  UpdateCustomerRequest
 } from '../types';
 
 // ========================================
@@ -303,13 +305,50 @@ class ApiClient {
    * 顧客詳細取得
    */
   async getCustomer(id: number): Promise<Customer> {
-    const response = await this.client.get<ApiResponse<Customer>>(`/customers/${id}`);
+    const response = await this.client.get<ApiResponse<{ customer: Customer }>>(`/customers/${id}`);
     
     if (response.data.success && response.data.data) {
-      return response.data.data;
+      return response.data.data.customer;
     }
     
     throw new Error(response.data.error?.message || '顧客詳細の取得に失敗しました');
+  }
+
+  /**
+   * 顧客作成
+   */
+  async createCustomer(customerData: CreateCustomerRequest): Promise<Customer> {
+    const response = await this.client.post<ApiResponse<{ customer: Customer }>>('/customers', customerData);
+    
+    if (response.data.success && response.data.data) {
+      return response.data.data.customer;
+    }
+    
+    throw new Error(response.data.error?.message || '顧客の作成に失敗しました');
+  }
+
+  /**
+   * 顧客更新
+   */
+  async updateCustomer(id: number, customerData: UpdateCustomerRequest): Promise<Customer> {
+    const response = await this.client.put<ApiResponse<{ customer: Customer }>>(`/customers/${id}`, customerData);
+    
+    if (response.data.success && response.data.data) {
+      return response.data.data.customer;
+    }
+    
+    throw new Error(response.data.error?.message || '顧客の更新に失敗しました');
+  }
+
+  /**
+   * 顧客削除
+   */
+  async deleteCustomer(id: number): Promise<void> {
+    const response = await this.client.delete<ApiResponse>(`/customers/${id}`);
+    
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || '顧客の削除に失敗しました');
+    }
   }
 
   // ========================================
@@ -453,6 +492,9 @@ export const bookingApi = {
 export const customerApi = {
   getList: (filters?: FilterOptions) => apiClient.getCustomers(filters),
   get: (id: number) => apiClient.getCustomer(id),
+  create: (data: CreateCustomerRequest) => apiClient.createCustomer(data),
+  update: (id: number, data: UpdateCustomerRequest) => apiClient.updateCustomer(id, data),
+  delete: (id: number) => apiClient.deleteCustomer(id),
 };
 
 export const resourceApi = {

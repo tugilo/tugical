@@ -214,13 +214,37 @@ export interface Customer {
   birth_date?: string;
   address?: string;
   notes?: string;
-  loyalty_rank: 'bronze' | 'silver' | 'gold' | 'platinum';
+  loyalty_rank: 'new' | 'regular' | 'vip' | 'premium';
   total_bookings: number;
   total_spent: number;
   last_booking_at?: string;
+  last_booking_date?: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export interface CreateCustomerRequest {
+  name: string;
+  phone: string;
+  email?: string;
+  address?: string;
+  birth_date?: string;
+  gender?: 'male' | 'female' | 'other';
+  notes?: string;
+  is_active?: boolean;
+}
+
+export interface UpdateCustomerRequest {
+  name?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  birth_date?: string;
+  gender?: 'male' | 'female' | 'other';
+  notes?: string;
+  is_active?: boolean;
+  loyalty_rank?: 'new' | 'regular' | 'vip' | 'premium';
 }
 
 // ========================================

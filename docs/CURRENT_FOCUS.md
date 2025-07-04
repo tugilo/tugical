@@ -1,27 +1,28 @@
 # tugical Current Focus - セッション継続管理
-**Updated**: 2025-07-04 11:08
+**Updated**: 2025-07-04 12:38:36
 
-## ✅ 完了タスク: 顧客一覧API修正
-- CustomerController ページネーション形式修正
-- stores テーブル deleted_at カラム追加
-- Customer モデル fillable/casts 修正
-- TestUserSeeder でテナント・店舗作成
-- CustomerSeeder で10件のテストデータ作成
-- 暗号化機能の再有効化
+## ✅ 完了タスク: CustomerController CRUD実装
+- CreateCustomerRequest/UpdateCustomerRequest バリデーションクラス作成
+- show/store/update/destroy メソッド実装（マルチテナント対応）
+- CustomerResource 詳細表示モード追加
+- フロントエンド API クライアント CRUD メソッド追加
+- TypeScript 型定義（CreateCustomerRequest/UpdateCustomerRequest）
+- loyalty_rank を new/regular/vip/premium に統一
+- ログイン画面の利便性向上（記憶機能・クイックフィル）
+- フロントエンドビルド成功
 
-## 🔄 現在作業中：顧客管理 CRUD 詳細機能
+## 🔄 現在作業中：顧客管理 UI 詳細機能
 - 顧客詳細モーダル実装
 - 編集・新規作成フォーム
-- ランク管理機能
-- 削除（ソフトデリート）機能
-- CustomerController の show/store/update/destroy メソッド追加
+- 削除確認ダイアログ
+- リアルタイム更新統合
 
 ## 🚧 次回予定
-1. CustomerController CRUD メソッド追加（show/store/update/destroy）
-2. 顧客詳細モーダルコンポーネント作成
-3. API 実接続のモック切替完了確認（全ページ）
-4. リアルタイム更新 (WebSocket/SSE) 統合
-5. テスト追加・UI 調整
+1. 顧客詳細モーダルコンポーネント作成
+2. 顧客作成・編集フォーム実装
+3. 削除確認ダイアログ実装
+4. 予約管理ページ完全実装
+5. リアルタイム更新 (WebSocket/SSE) 統合
 
 ---
 

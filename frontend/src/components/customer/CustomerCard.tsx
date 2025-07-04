@@ -34,17 +34,17 @@ const CustomerCard: React.FC<CustomerCardProps> = ({
   /* ランク表示設定                     */
   /* ---------------------------------- */
   const rankColors: Record<Customer['loyalty_rank'], string> = {
-    bronze: 'bg-amber-200 text-amber-800',
-    silver: 'bg-gray-200 text-gray-700',
-    gold: 'bg-yellow-300 text-yellow-900',
-    platinum: 'bg-indigo-200 text-indigo-800',
+    new: 'bg-green-200 text-green-800',
+    regular: 'bg-blue-200 text-blue-800',
+    vip: 'bg-purple-200 text-purple-800',
+    premium: 'bg-yellow-200 text-yellow-800',
   };
 
   const rankLabels: Record<Customer['loyalty_rank'], string> = {
-    bronze: 'ブロンズ',
-    silver: 'シルバー',
-    gold: 'ゴールド',
-    platinum: 'プラチナ',
+    new: '新規',
+    regular: 'レギュラー',
+    vip: 'VIP',
+    premium: 'プレミアム',
   };
 
   const isActive = customer.is_active;
