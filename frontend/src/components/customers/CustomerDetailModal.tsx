@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import {
-  X,
-  Edit2,
-  Save,
   User,
   Phone,
   Mail,
   MapPin,
   MessageCircle,
+  Edit2,
+  Save,
 } from 'lucide-react';
 import { Customer, UpdateCustomerRequest } from '../../types';
 import Button from '../ui/Button';
+import Modal from '../ui/Modal';
 import { apiClient } from '../../services/api';
 import { usePostalCodeSearch } from '../../hooks/usePostalCodeSearch';
 
@@ -28,6 +28,7 @@ export const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
   onUpdate,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<UpdateCustomerRequest>({
     name: '',
     phone: '',
@@ -43,7 +44,6 @@ export const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
     loyalty_rank: 'new',
     notes: '',
   });
-  const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // 郵便番号自動補完フック
@@ -53,7 +53,7 @@ export const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
     formatPostalCode,
   } = usePostalCodeSearch();
 
-  // 顧客データをフォームデータに設定
+  // 顧客データが変更された時にフォームデータを更新
   useEffect(() => {
     if (customer) {
       setFormData({
@@ -119,9 +119,6 @@ export const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
   };
 
   const handleCancel = () => {
-    setIsEditing(false);
-    setErrors({});
-    // フォームデータをリセット
     if (customer) {
       setFormData({
         name: customer.name || '',
@@ -139,6 +136,14 @@ export const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
         notes: customer.notes || '',
       });
     }
+    setErrors({});
+    setIsEditing(false);
+  };
+
+  const handleClose = () => {
+    setIsEditing(false);
+    setErrors({});
+    onClose();
   };
 
   const getLoyaltyRankLabel = (rank: string) => {
@@ -153,48 +158,47 @@ export const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
 
   const getLoyaltyRankColor = (rank: string) => {
     const colors = {
-      new: 'bg-gray-100 text-gray-800',
-      regular: 'bg-blue-100 text-blue-800',
+      new: 'bg-blue-100 text-blue-800',
+      regular: 'bg-green-100 text-green-800',
       vip: 'bg-purple-100 text-purple-800',
       premium: 'bg-yellow-100 text-yellow-800',
     };
     return colors[rank as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
 
-  if (!isOpen || !customer) return null;
+  if (!customer) return null;
 
   return (
-    <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'>
-      <div className='bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto'>
-        <div className='flex justify-between items-center mb-6'>
-          <h2 className='text-xl font-semibold text-gray-900'>顧客詳細</h2>
-          <div className='flex items-center space-x-2'>
-            {!isEditing && (
-              <Button
-                variant='outline'
-                size='sm'
-                onClick={() => setIsEditing(true)}
-                leftIcon={<Edit2 size={16} />}
-              >
-                編集
-              </Button>
-            )}
-            <button
-              onClick={onClose}
-              className='text-gray-400 hover:text-gray-600 transition-colors'
-            >
-              <X size={24} />
-            </button>
-          </div>
-        </div>
-
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title={`顧客詳細: ${customer.name}`}
+      size='xl'
+      className='max-h-[90vh] overflow-y-auto'
+    >
+      <div className='space-y-6'>
+        {/* 一般エラー */}
         {errors.general && (
-          <div className='bg-red-50 border border-red-200 rounded-md p-3 mb-6'>
+          <div className='bg-red-50 border border-red-200 rounded-md p-3'>
             <p className='text-sm text-red-600'>{errors.general}</p>
           </div>
         )}
 
-        <div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>
+        {/* 編集モードトグル */}
+        {!isEditing && (
+          <div className='flex justify-end'>
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={() => setIsEditing(true)}
+              leftIcon={<Edit2 size={16} />}
+            >
+              編集
+            </Button>
+          </div>
+        )}
+
+        <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
           {/* 左側：基本情報 */}
           <div className='space-y-6'>
             {/* 基本情報 */}
@@ -649,7 +653,40 @@ export const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
               )}
             </div>
 
-            {/* 作成・更新日時 */}
+            {/* 統計情報 */}
+            <div className='bg-gray-50 rounded-lg p-4'>
+              <h3 className='text-lg font-medium text-gray-900 mb-4'>
+                予約実績
+              </h3>
+
+              <div className='grid grid-cols-2 gap-4'>
+                <div className='text-center'>
+                  <p className='text-2xl font-bold text-primary-600'>
+                    {customer.total_bookings || 0}
+                  </p>
+                  <p className='text-sm text-gray-600'>総予約数</p>
+                </div>
+                <div className='text-center'>
+                  <p className='text-2xl font-bold text-primary-600'>
+                    ¥{(customer.total_spent || 0).toLocaleString()}
+                  </p>
+                  <p className='text-sm text-gray-600'>総利用金額</p>
+                </div>
+              </div>
+
+              {customer.last_booking_at && (
+                <div className='mt-4 pt-4 border-t border-gray-200'>
+                  <p className='text-sm text-gray-600'>
+                    最終予約日:{' '}
+                    {new Date(customer.last_booking_at).toLocaleDateString(
+                      'ja-JP'
+                    )}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* システム情報 */}
             <div className='bg-gray-50 rounded-lg p-4'>
               <h3 className='text-lg font-medium text-gray-900 mb-4'>
                 システム情報
@@ -657,43 +694,55 @@ export const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
 
               <div className='space-y-2 text-sm text-gray-600'>
                 <div>
-                  <span className='font-medium'>作成日時:</span>{' '}
-                  {customer.created_at
-                    ? new Date(customer.created_at).toLocaleString('ja-JP')
-                    : '―'}
+                  <span className='font-medium'>顧客ID:</span>
+                  <span className='ml-2 font-mono'>{customer.id}</span>
                 </div>
                 <div>
-                  <span className='font-medium'>更新日時:</span>{' '}
-                  {customer.updated_at
-                    ? new Date(customer.updated_at).toLocaleString('ja-JP')
-                    : '―'}
+                  <span className='font-medium'>作成日:</span>
+                  <span className='ml-2'>
+                    {new Date(customer.created_at).toLocaleDateString('ja-JP')}
+                  </span>
+                </div>
+                <div>
+                  <span className='font-medium'>更新日:</span>
+                  <span className='ml-2'>
+                    {new Date(customer.updated_at).toLocaleDateString('ja-JP')}
+                  </span>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* 編集モード時のボタン */}
-        {isEditing && (
-          <div className='flex justify-end space-x-3 pt-6 border-t mt-8'>
-            <Button
-              variant='secondary'
-              onClick={handleCancel}
-              disabled={loading}
-            >
-              キャンセル
+        {/* アクションボタン */}
+        <div className='flex justify-end space-x-3 pt-6 border-t border-gray-200'>
+          {isEditing ? (
+            <>
+              <Button
+                variant='outline'
+                size='md'
+                onClick={handleCancel}
+                disabled={loading}
+              >
+                キャンセル
+              </Button>
+              <Button
+                variant='primary'
+                size='md'
+                onClick={handleSave}
+                loading={loading}
+                leftIcon={<Save size={16} />}
+              >
+                {loading ? '保存中...' : '保存'}
+              </Button>
+            </>
+          ) : (
+            <Button variant='outline' size='md' onClick={handleClose}>
+              閉じる
             </Button>
-            <Button
-              variant='primary'
-              onClick={handleSave}
-              disabled={loading}
-              leftIcon={<Save size={16} />}
-            >
-              {loading ? '保存中...' : '保存'}
-            </Button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
-    </div>
+    </Modal>
   );
 };

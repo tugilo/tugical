@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { X } from 'lucide-react';
 import { Customer, CreateCustomerRequest } from '../../types';
 import Button from '../ui/Button';
+import Modal from '../ui/Modal';
 import { apiClient } from '../../services/api';
 import { usePostalCodeSearch } from '../../hooks/usePostalCodeSearch';
 
@@ -101,33 +101,51 @@ export const CustomerCreateModal: React.FC<CustomerCreateModalProps> = ({
     }
   };
 
-  if (!isOpen) return null;
+  const handleClose = () => {
+    if (loading) return;
+
+    // フォームをリセット
+    setFormData({
+      name: '',
+      phone: '',
+      email: '',
+      postal_code: '',
+      prefecture: '',
+      city: '',
+      address_line1: '',
+      address_line2: '',
+      address: '',
+      line_user_id: '',
+      line_display_name: '',
+      line_picture_url: '',
+      loyalty_rank: 'new',
+      notes: '',
+    });
+    setErrors({});
+    onClose();
+  };
 
   return (
-    <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'>
-      <div className='bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto'>
-        <div className='flex justify-between items-center mb-6'>
-          <h2 className='text-xl font-semibold text-gray-900'>顧客新規登録</h2>
-          <button
-            onClick={onClose}
-            className='text-gray-400 hover:text-gray-600 transition-colors'
-          >
-            <X size={24} />
-          </button>
-        </div>
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title='顧客新規登録'
+      size='lg'
+      className='max-h-[90vh] overflow-y-auto'
+    >
+      <form onSubmit={handleSubmit} className='space-y-6'>
+        {/* 一般エラー */}
+        {errors.general && (
+          <div className='bg-red-50 border border-red-200 rounded-md p-3'>
+            <p className='text-sm text-red-600'>{errors.general}</p>
+          </div>
+        )}
 
-        <form onSubmit={handleSubmit} className='space-y-6'>
-          {/* 一般エラー */}
-          {errors.general && (
-            <div className='bg-red-50 border border-red-200 rounded-md p-3'>
-              <p className='text-sm text-red-600'>{errors.general}</p>
-            </div>
-          )}
+        {/* 基本情報 */}
+        <div className='bg-gray-50 rounded-lg p-4'>
+          <h3 className='text-lg font-medium text-gray-900 mb-4'>基本情報</h3>
 
-          {/* 基本情報 */}
           <div className='space-y-4'>
-            <h3 className='text-lg font-medium text-gray-900'>基本情報</h3>
-
             <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
               <div>
                 <label className='block text-sm font-medium text-gray-700 mb-1'>
@@ -211,11 +229,13 @@ export const CustomerCreateModal: React.FC<CustomerCreateModalProps> = ({
               </select>
             </div>
           </div>
+        </div>
 
-          {/* 住所情報 */}
+        {/* 住所情報 */}
+        <div className='bg-gray-50 rounded-lg p-4'>
+          <h3 className='text-lg font-medium text-gray-900 mb-4'>住所情報</h3>
+
           <div className='space-y-4'>
-            <h3 className='text-lg font-medium text-gray-900'>住所情報</h3>
-
             <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
               <div>
                 <label className='block text-sm font-medium text-gray-700 mb-1'>
@@ -361,13 +381,15 @@ export const CustomerCreateModal: React.FC<CustomerCreateModalProps> = ({
               )}
             </div>
           </div>
+        </div>
 
-          {/* LINE情報 */}
+        {/* LINE情報 */}
+        <div className='bg-gray-50 rounded-lg p-4'>
+          <h3 className='text-lg font-medium text-gray-900 mb-4'>
+            LINE情報（任意）
+          </h3>
+
           <div className='space-y-4'>
-            <h3 className='text-lg font-medium text-gray-900'>
-              LINE情報（任意）
-            </h3>
-
             <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
               <div>
                 <label className='block text-sm font-medium text-gray-700 mb-1'>
@@ -447,44 +469,43 @@ export const CustomerCreateModal: React.FC<CustomerCreateModalProps> = ({
               )}
             </div>
           </div>
+        </div>
 
-          {/* 備考 */}
-          <div>
-            <label className='block text-sm font-medium text-gray-700 mb-1'>
-              備考
-            </label>
-            <textarea
-              value={formData.notes || ''}
-              onChange={e =>
-                setFormData(prev => ({ ...prev, notes: e.target.value }))
-              }
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
-                errors.notes ? 'border-red-300' : 'border-gray-300'
-              }`}
-              rows={3}
-              placeholder='特記事項があれば入力してください'
-            />
-            {errors.notes && (
-              <p className='mt-1 text-sm text-red-600'>{errors.notes}</p>
-            )}
-          </div>
+        {/* 備考 */}
+        <div className='bg-gray-50 rounded-lg p-4'>
+          <h3 className='text-lg font-medium text-gray-900 mb-4'>備考</h3>
+          <textarea
+            value={formData.notes || ''}
+            onChange={e =>
+              setFormData(prev => ({ ...prev, notes: e.target.value }))
+            }
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+              errors.notes ? 'border-red-300' : 'border-gray-300'
+            }`}
+            rows={3}
+            placeholder='特記事項があれば入力してください'
+          />
+          {errors.notes && (
+            <p className='mt-1 text-sm text-red-600'>{errors.notes}</p>
+          )}
+        </div>
 
-          {/* ボタン */}
-          <div className='flex justify-end space-x-3 pt-6 border-t'>
-            <Button
-              type='button'
-              variant='secondary'
-              onClick={onClose}
-              disabled={loading}
-            >
-              キャンセル
-            </Button>
-            <Button type='submit' variant='primary' disabled={loading}>
-              {loading ? '作成中...' : '顧客を作成'}
-            </Button>
-          </div>
-        </form>
-      </div>
-    </div>
+        {/* アクションボタン */}
+        <div className='flex justify-end space-x-3 pt-6 border-t border-gray-200'>
+          <Button
+            type='button'
+            variant='outline'
+            size='md'
+            onClick={handleClose}
+            disabled={loading}
+          >
+            キャンセル
+          </Button>
+          <Button type='submit' variant='primary' size='md' loading={loading}>
+            {loading ? '作成中...' : '顧客を作成'}
+          </Button>
+        </div>
+      </form>
+    </Modal>
   );
 };
