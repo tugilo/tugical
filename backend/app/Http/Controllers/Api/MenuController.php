@@ -174,6 +174,9 @@ class MenuController extends Controller
             $storeId = auth()->user()->store_id;
 
             $menu = DB::transaction(function () use ($request, $storeId) {
+                // sort_order のデフォルト値を計算（最大値 + 1）
+                $maxSortOrder = Menu::where('store_id', $storeId)->max('sort_order') ?? 0;
+                
                 // メニュー作成
                 $menu = Menu::create([
                     'store_id' => $storeId,
@@ -185,30 +188,32 @@ class MenuController extends Controller
                     'base_duration' => $request->base_duration,
                     'prep_duration' => $request->prep_duration ?? 0,
                     'cleanup_duration' => $request->cleanup_duration ?? 0,
-                    'booking_constraints' => $request->booking_constraints,
-                    'resource_requirements' => $request->resource_requirements,
-                    'industry_settings' => $request->industry_settings,
+                    'advance_booking_hours' => $request->advance_booking_hours ?? 1,
+                    'booking_rules' => $request->booking_constraints,
+                    'required_resources' => $request->resource_requirements,
+                    'settings' => $request->industry_settings,
+                    'gender_restriction' => $request->gender_restriction ?? 'none',
                     'image_url' => $request->image_url,
                     'is_active' => $request->is_active ?? true,
-                    'requires_approval' => $request->requires_approval ?? false,
-                    'sort_order' => $request->sort_order,
+                    'require_approval' => $request->requires_approval ?? false,
+                    'sort_order' => $request->sort_order ?? ($maxSortOrder + 1),
                 ]);
 
                 // オプション作成
                 if ($request->filled('options')) {
-                    foreach ($request->options as $optionData) {
+                    foreach ($request->options as $index => $optionData) {
                         $menu->options()->create([
                             'name' => $optionData['name'],
                             'display_name' => $optionData['display_name'] ?? $optionData['name'],
                             'description' => $optionData['description'] ?? null,
-                            'price_type' => $optionData['price_type'],
-                            'price_value' => $optionData['price_value'] ?? 0,
-                            'duration_minutes' => $optionData['duration_minutes'] ?? 0,
-                            'constraints' => $optionData['constraints'] ?? null,
+                            'option_type' => $optionData['option_type'] ?? 'addon',
+                            'pricing_type' => $optionData['price_type'] ?? 'fixed',
+                            'price' => $optionData['price_value'] ?? 0,
+                            'duration' => $optionData['duration_minutes'] ?? 0,
                             'stock_quantity' => $optionData['stock_quantity'] ?? null,
                             'is_required' => $optionData['is_required'] ?? false,
                             'is_active' => $optionData['is_active'] ?? true,
-                            'sort_order' => $optionData['sort_order'] ?? null,
+                            'sort_order' => $optionData['sort_order'] ?? ($index + 1),
                         ]);
                     }
                 }
@@ -277,12 +282,14 @@ class MenuController extends Controller
                     'base_duration' => $request->base_duration ?? $menu->base_duration,
                     'prep_duration' => $request->prep_duration ?? $menu->prep_duration,
                     'cleanup_duration' => $request->cleanup_duration ?? $menu->cleanup_duration,
-                    'booking_constraints' => $request->booking_constraints ?? $menu->booking_constraints,
-                    'resource_requirements' => $request->resource_requirements ?? $menu->resource_requirements,
-                    'industry_settings' => $request->industry_settings ?? $menu->industry_settings,
+                    'advance_booking_hours' => $request->advance_booking_hours ?? $menu->advance_booking_hours,
+                    'booking_rules' => $request->booking_constraints ?? $menu->booking_rules,
+                    'required_resources' => $request->resource_requirements ?? $menu->required_resources,
+                    'settings' => $request->industry_settings ?? $menu->settings,
+                    'gender_restriction' => $request->gender_restriction ?? $menu->gender_restriction,
                     'image_url' => $request->image_url ?? $menu->image_url,
                     'is_active' => $request->is_active ?? $menu->is_active,
-                    'requires_approval' => $request->requires_approval ?? $menu->requires_approval,
+                    'require_approval' => $request->requires_approval ?? $menu->require_approval,
                     'sort_order' => $request->sort_order ?? $menu->sort_order,
                 ]);
 
@@ -292,19 +299,19 @@ class MenuController extends Controller
                     $menu->options()->delete();
                     
                     // 新しいオプションを作成
-                    foreach ($request->options as $optionData) {
+                    foreach ($request->options as $index => $optionData) {
                         $menu->options()->create([
                             'name' => $optionData['name'],
                             'display_name' => $optionData['display_name'] ?? $optionData['name'],
                             'description' => $optionData['description'] ?? null,
-                            'price_type' => $optionData['price_type'],
-                            'price_value' => $optionData['price_value'] ?? 0,
-                            'duration_minutes' => $optionData['duration_minutes'] ?? 0,
-                            'constraints' => $optionData['constraints'] ?? null,
+                            'option_type' => $optionData['option_type'] ?? 'addon',
+                            'pricing_type' => $optionData['price_type'] ?? 'fixed',
+                            'price' => $optionData['price_value'] ?? 0,
+                            'duration' => $optionData['duration_minutes'] ?? 0,
                             'stock_quantity' => $optionData['stock_quantity'] ?? null,
                             'is_required' => $optionData['is_required'] ?? false,
                             'is_active' => $optionData['is_active'] ?? true,
-                            'sort_order' => $optionData['sort_order'] ?? null,
+                            'sort_order' => $optionData['sort_order'] ?? ($index + 1),
                         ]);
                     }
                 }

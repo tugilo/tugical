@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests;
 
-use App\Models\MenuOption;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
@@ -38,6 +37,7 @@ class CreateMenuRequest extends FormRequest
             'base_duration' => 'required|integer|min:1|max:1440', // 最大24時間
             'prep_duration' => 'nullable|integer|min:0|max:180', // 最大3時間
             'cleanup_duration' => 'nullable|integer|min:0|max:180', // 最大3時間
+            'advance_booking_hours' => 'nullable|integer|min:0|max:168', // 最大1週間
             
             // 制約・要件
             'booking_constraints' => 'nullable|array',
@@ -56,6 +56,7 @@ class CreateMenuRequest extends FormRequest
             'industry_settings' => 'nullable|array',
             
             // その他
+            'gender_restriction' => 'nullable|in:none,male_only,female_only',
             'image_url' => 'nullable|url|max:500',
             'is_active' => 'nullable|boolean',
             'requires_approval' => 'nullable|boolean',
@@ -66,15 +67,10 @@ class CreateMenuRequest extends FormRequest
             'options.*.name' => 'required|string|max:100',
             'options.*.display_name' => 'nullable|string|max:100',
             'options.*.description' => 'nullable|string|max:500',
-            'options.*.price_type' => 'required|in:' . implode(',', [
-                MenuOption::PRICE_TYPE_FIXED,
-                MenuOption::PRICE_TYPE_PERCENTAGE,
-                MenuOption::PRICE_TYPE_DURATION_BASED,
-                MenuOption::PRICE_TYPE_FREE,
-            ]),
+            'options.*.option_type' => 'nullable|in:addon,upgrade,material,service',
+            'options.*.price_type' => 'required|in:fixed,percentage,per_unit',
             'options.*.price_value' => 'nullable|integer|min:0|max:999999',
             'options.*.duration_minutes' => 'nullable|integer|min:0|max:480', // 最大8時間
-            'options.*.constraints' => 'nullable|array',
             'options.*.stock_quantity' => 'nullable|integer|min:1|max:9999',
             'options.*.is_required' => 'nullable|boolean',
             'options.*.is_active' => 'nullable|boolean',
@@ -114,6 +110,10 @@ class CreateMenuRequest extends FormRequest
             'cleanup_duration.min' => '片付け時間は0分以上で入力してください',
             'cleanup_duration.max' => '片付け時間は3時間以下で入力してください',
             
+            'advance_booking_hours.integer' => '事前予約時間は整数で入力してください',
+            'advance_booking_hours.min' => '事前予約時間は0時間以上で入力してください',
+            'advance_booking_hours.max' => '事前予約時間は168時間以下で入力してください',
+            
             // 制約
             'booking_constraints.advance_booking_days.integer' => '事前予約日数は整数で入力してください',
             'booking_constraints.advance_booking_days.min' => '事前予約日数は0日以上で入力してください',
@@ -128,6 +128,7 @@ class CreateMenuRequest extends FormRequest
             'booking_constraints.cancellation_hours.max' => 'キャンセル期限は168時間以下で入力してください',
             
             // その他
+            'gender_restriction.in' => '性別制限は「制限なし」「男性のみ」「女性のみ」から選択してください',
             'image_url.url' => '画像URLの形式が正しくありません',
             'image_url.max' => '画像URLは500文字以内で入力してください',
             'sort_order.integer' => '表示順序は整数で入力してください',
@@ -139,8 +140,9 @@ class CreateMenuRequest extends FormRequest
             'options.*.name.max' => 'オプション名は100文字以内で入力してください',
             'options.*.display_name.max' => 'オプション表示名は100文字以内で入力してください',
             'options.*.description.max' => 'オプション説明は500文字以内で入力してください',
+            'options.*.option_type.in' => 'オプションタイプは「追加」「アップグレード」「材料」「サービス」から選択してください',
             'options.*.price_type.required' => 'オプション価格タイプは必須です',
-            'options.*.price_type.in' => '有効な価格タイプを選択してください',
+            'options.*.price_type.in' => '価格タイプは「固定」「割合」「単位」から選択してください',
             'options.*.price_value.integer' => 'オプション価格は整数で入力してください',
             'options.*.price_value.min' => 'オプション価格は0以上で入力してください',
             'options.*.price_value.max' => 'オプション価格は999,999以下で入力してください',
@@ -223,13 +225,13 @@ class CreateMenuRequest extends FormRequest
                     $priceType = $option['price_type'] ?? null;
                     $priceValue = $option['price_value'] ?? null;
                     
-                    // 無料以外は価格値が必要
-                    if ($priceType !== MenuOption::PRICE_TYPE_FREE && ($priceValue === null || $priceValue === 0)) {
+                    // 固定・割合・単位タイプは価格値が必要
+                    if (in_array($priceType, ['fixed', 'percentage', 'per_unit']) && ($priceValue === null || $priceValue === 0)) {
                         $validator->errors()->add("options.{$index}.price_value", 'このオプションタイプには価格値が必要です');
                     }
                     
                     // パーセンテージタイプは100%以下
-                    if ($priceType === MenuOption::PRICE_TYPE_PERCENTAGE && $priceValue > 100) {
+                    if ($priceType === 'percentage' && $priceValue > 100) {
                         $validator->errors()->add("options.{$index}.price_value", '割合価格は100%以下で入力してください');
                     }
                 }

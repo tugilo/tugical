@@ -71,6 +71,7 @@ class Menu extends Model
         'display_name',
         'category',
         'description',
+        'detailed_description',
         'base_price',
         'base_duration',
         'prep_duration',
@@ -84,6 +85,7 @@ class Menu extends Model
         'is_active',
         'require_approval',
         'sort_order',
+        'settings',
     ];
 
     /**
@@ -93,6 +95,11 @@ class Menu extends Model
         'booking_rules' => 'array',
         'allowed_resource_types' => 'array',
         'required_resources' => 'array',
+        'settings' => 'array',
+        'tags' => 'array',
+        'pricing_options' => 'array',
+        'time_based_pricing' => 'array',
+        'image_gallery' => 'array',
         'base_price' => 'integer',
         'base_duration' => 'integer',
         'prep_duration' => 'integer',

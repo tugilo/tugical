@@ -1339,7 +1339,47 @@ curl -X POST http://localhost/api/v1/auth/logout \
 **ブランチ**: develop  
 **最終コミット**: 2025-07-04 14:58:42予定
 
-### 最新更新: 2025-07-04 17:15:22
+### 最新更新: 2025-07-04 17:25:48
+
+---
+
+## Phase 4.12.3: 新規メニュー作成機能修正 ✅ 完了
+
+### 修正内容
+- **データベースカラム不整合を解決**
+- **Menu モデル fillable 修正**: 実際のDBカラム名に合わせて修正
+- **MenuController 修正**: データベースカラム名とフィールド名の対応
+- **CreateMenuRequest 修正**: バリデーションルールを実際のDBスキーマに合わせて修正
+- **MenuOption 対応**: option_type, pricing_type, price, duration カラム対応
+
+### 技術的解決
+- **fillable フィールド統一**: booking_rules, required_resources, settings, require_approval
+- **sort_order デフォルト値**: 最大値+1で自動設定
+- **advance_booking_hours 追加**: 事前予約時間の管理
+- **gender_restriction 対応**: 性別制限機能の実装
+
+### 修正結果
+- ✅ **API テスト成功**: curl でメニュー作成確認済み
+- ✅ **エラー解消**: SQLSTATE[23000] sort_order エラー解決
+- ✅ **フロントエンドビルド成功**: UI からの作成も可能
+- ✅ **データベース整合性確認**: 実際のスキーマと完全一致
+
+### API レスポンス例
+```json
+{
+  "success": true,
+  "data": {
+    "menu": {
+      "id": 9,
+      "name": "テストメニュー",
+      "base_price": 10000,
+      "base_duration": 120,
+      "sort_order": 6
+    }
+  },
+  "message": "メニューを作成しました"
+}
+```
 
 ---
 
