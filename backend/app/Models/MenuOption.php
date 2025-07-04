@@ -70,12 +70,11 @@ class MenuOption extends Model
         'name',
         'display_name',
         'description',
-        'price_type',
-        'price_value',
-        'duration_minutes',
-        'constraints',
-        'stock_quantity',
-        'stock_used',
+        'option_type',
+        'pricing_type',
+        'price',
+        'duration',
+        'pricing_value',
         'is_required',
         'is_active',
         'sort_order',
@@ -85,11 +84,9 @@ class MenuOption extends Model
      * 属性のキャスト設定
      */
     protected $casts = [
-        'constraints' => 'array',
-        'price_value' => 'integer',
-        'duration_minutes' => 'integer',
-        'stock_quantity' => 'integer',
-        'stock_used' => 'integer',
+        'price' => 'integer',
+        'duration' => 'integer',
+        'pricing_value' => 'decimal:2',
         'is_required' => 'boolean',
         'is_active' => 'boolean',
         'sort_order' => 'integer',
@@ -177,12 +174,16 @@ class MenuOption extends Model
     /**
      * モデルの起動時処理
      * 
-     * TenantScopeを適用してMulti-tenant分離を実現
+     * MenuOptionはMenuに従属するため、TenantScopeは適用しない
+     * テナント分離はMenuモデル経由で行う
      */
     protected static function booted()
     {
-        static::addGlobalScope(new TenantScope);
+        // MenuOptionはMenuに従属するため、TenantScopeは適用しない
+        // テナント分離はMenuモデル経由で行う
         
+        // 一時的にSeeder実行のためコメントアウト
+        /*
         // 作成時の処理
         static::creating(function ($option) {
             // デフォルト値設定
@@ -219,6 +220,7 @@ class MenuOption extends Model
                 $option->price_value = 0;
             }
         });
+        */
     }
 
     /**

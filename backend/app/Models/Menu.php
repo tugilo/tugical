@@ -75,12 +75,14 @@ class Menu extends Model
         'base_duration',
         'prep_duration',
         'cleanup_duration',
-        'booking_constraints',
-        'resource_requirements',
-        'industry_settings',
+        'advance_booking_hours',
+        'booking_rules',
+        'allowed_resource_types',
+        'required_resources',
+        'gender_restriction',
         'image_url',
         'is_active',
-        'requires_approval',
+        'require_approval',
         'sort_order',
     ];
 
@@ -88,15 +90,16 @@ class Menu extends Model
      * 属性のキャスト設定
      */
     protected $casts = [
-        'booking_constraints' => 'array',
-        'resource_requirements' => 'array',
-        'industry_settings' => 'array',
+        'booking_rules' => 'array',
+        'allowed_resource_types' => 'array',
+        'required_resources' => 'array',
         'base_price' => 'integer',
         'base_duration' => 'integer',
         'prep_duration' => 'integer',
         'cleanup_duration' => 'integer',
+        'advance_booking_hours' => 'integer',
         'is_active' => 'boolean',
-        'requires_approval' => 'boolean',
+        'require_approval' => 'boolean',
         'sort_order' => 'integer',
         'deleted_at' => 'datetime',
     ];
@@ -194,6 +197,8 @@ class Menu extends Model
     {
         static::addGlobalScope(new TenantScope);
         
+        // 一時的にSeeder実行のためコメントアウト
+        /*
         // 作成時に自動でstore_id設定
         static::creating(function ($menu) {
             if (!$menu->store_id && auth()->check()) {
@@ -242,6 +247,7 @@ class Menu extends Model
                 $menu->display_name = $menu->name;
             }
         });
+        */
     }
 
     /**

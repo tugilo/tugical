@@ -1142,3 +1142,44 @@ curl -X POST http://localhost/api/v1/auth/logout \
 - **進捗トラッキング**: 本ファイル（PROGRESS.md）で詳細管理
 
 ---
+
+## 最新更新情報
+- **更新日時**: 2025-07-04 14:48:04
+- **作業端末**: tugiMacAir.local
+- **現在ブランチ**: develop
+
+## Phase 4.9: メニューテストデータ作成 ✅ 完了
+
+### 実装内容
+- **MenuSeeder作成**: 美容室向けサンプルメニューとオプション
+- **テストデータ**: 6種類のメニュー（カット、カラー、パーマ、ストレート、ヘッドスパ、旧メニュー）
+- **オプション**: 各メニューに適切なオプション（シャンプー、トリートメント、プレミアム等）
+
+### 技術的解決
+1. **マイグレーション構造対応**: 実際のテーブル構造に合わせてSeeder修正
+2. **Menuモデル修正**: fillableプロパティとcastsを実際のカラムに合わせて修正
+3. **MenuOptionモデル修正**: TenantScope削除（Menuに従属するため不要）
+4. **bootedメソッド**: 一時的にコメントアウトしてSeeder実行可能に
+
+### 作成されたテストデータ
+- カット (¥4,500, 60分) + シャンプー・トリートメント、ヘッドスパ
+- カラー (¥6,800, 90分) + プレミアムカラー、ヘアトリートメント
+- パーマ (¥8,500, 120分) + デジタルパーマ
+- ストレート (¥12,000, 180分, 要承認)
+- ヘッドスパコース (¥3,500, 45分) + アロマオイル、頭皮トリートメント
+- 旧セットメニュー (非アクティブ)
+
+### 変更ファイル
+1. `backend/database/seeders/MenuSeeder.php` - 新規作成
+2. `backend/database/seeders/DatabaseSeeder.php` - MenuSeeder追加
+3. `backend/app/Models/Menu.php` - fillable/casts修正、booted一時無効化
+4. `backend/app/Models/MenuOption.php` - fillable/casts修正、TenantScope削除、booted一時無効化
+5. `docs/PROGRESS.md` - 進捗更新
+
+### 検証済み
+- Seeder実行成功
+- API `/api/v1/menus` 正常レスポンス
+- フロントエンドビルド成功
+- メニューデータ表示確認
+
+---
