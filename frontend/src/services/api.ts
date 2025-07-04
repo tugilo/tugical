@@ -388,6 +388,69 @@ class ApiClient {
     throw new Error(response.data.error?.message || 'リソース一覧の取得に失敗しました');
   }
 
+  /**
+   * リソース詳細取得
+   */
+  async getResource(id: number): Promise<Resource> {
+    const response = await this.client.get<ApiResponse<{ resource: Resource }>>(`/resources/${id}`);
+    
+    if (response.data.success && response.data.data) {
+      return response.data.data.resource;
+    }
+    
+    throw new Error(response.data.error?.message || 'リソース詳細の取得に失敗しました');
+  }
+
+  /**
+   * リソース作成
+   */
+  async createResource(resourceData: any): Promise<Resource> {
+    const response = await this.client.post<ApiResponse<{ resource: Resource }>>('/resources', resourceData);
+    
+    if (response.data.success && response.data.data) {
+      return response.data.data.resource;
+    }
+    
+    throw new Error(response.data.error?.message || 'リソースの作成に失敗しました');
+  }
+
+  /**
+   * リソース更新
+   */
+  async updateResource(id: number, resourceData: any): Promise<Resource> {
+    const response = await this.client.put<ApiResponse<{ resource: Resource }>>(`/resources/${id}`, resourceData);
+    
+    if (response.data.success && response.data.data) {
+      return response.data.data.resource;
+    }
+    
+    throw new Error(response.data.error?.message || 'リソースの更新に失敗しました');
+  }
+
+  /**
+   * リソース削除
+   */
+  async deleteResource(id: number): Promise<void> {
+    const response = await this.client.delete<ApiResponse>(`/resources/${id}`);
+    
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'リソースの削除に失敗しました');
+    }
+  }
+
+  /**
+   * リソースタイプ一覧取得
+   */
+  async getResourceTypes(): Promise<any> {
+    const response = await this.client.get<ApiResponse<any>>('/resources-types');
+    
+    if (response.data.success && response.data.data) {
+      return response.data.data;
+    }
+    
+    throw new Error(response.data.error?.message || 'リソースタイプの取得に失敗しました');
+  }
+
   // ========================================
   // メニューAPI
   // ========================================
@@ -582,6 +645,11 @@ export const customerApi = {
 
 export const resourceApi = {
   getList: (filters?: FilterOptions) => apiClient.getResources(filters),
+  get: (id: number) => apiClient.getResource(id),
+  create: (data: any) => apiClient.createResource(data),
+  update: (id: number, data: any) => apiClient.updateResource(id, data),
+  delete: (id: number) => apiClient.deleteResource(id),
+  getTypes: () => apiClient.getResourceTypes(),
 };
 
 export const menuApi = {

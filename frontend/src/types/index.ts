@@ -259,6 +259,7 @@ export interface Resource {
   name: string;
   display_name: string;
   description?: string;
+  capacity?: number;
   attributes: Record<string, any>;
   working_hours: Record<string, any>;
   efficiency_rate: number;
@@ -485,6 +486,7 @@ export interface FormField {
 export interface FilterOptions {
   search?: string;
   status?: string;
+  type?: string;
   category?: string;
   date?: string;
   date_from?: string;
