@@ -3357,3 +3357,40 @@ git commit -m "feat(address): 郵便番号自動補完機能の共通化
 Progress: 郵便番号UX大幅改善、他画面でも利用可能
 Next: 店舗設定等の他画面への展開"
 ```
+
+## 📊 最新の進捗状況
+
+### 2025-07-04 22:29:59 - 顧客管理の郵便番号自動補完機能修正完了
+
+#### 🔧 修正内容
+
+- **問題**: 顧客管理画面で郵便番号自動補完機能が動作していなかった
+- **原因**: 古い `components/customer/` ディレクトリのファイルが使用されていた
+- **解決**: 新しい `components/customers/` のファイルを古いディレクトリにコピー
+
+#### 📁 修正ファイル
+
+- `frontend/src/components/customer/CustomerCreateModal.tsx` - 郵便番号自動補完対応版に更新
+- `frontend/src/components/customer/CustomerDetailModal.tsx` - 郵便番号自動補完対応版に更新
+- `frontend/src/types/index.ts` - Customer 型定義に is_active, last_booking_at, total_bookings, total_spent 追加
+- `frontend/src/components/customer/CustomerCard.tsx` - undefined プロパティの適切な処理
+
+#### ✅ 動作確認
+
+- フロントエンドビルド成功（3.10 秒、エラー 0 件）
+- 郵便番号 API 動作確認（150-0001 → 東京都渋谷区神宮前）
+- 自動ハイフン挿入機能実装済み
+- 構造化住所フィールド対応完了
+
+#### 🎯 現在の状況
+
+- 顧客管理の新規登録・編集モーダルで郵便番号自動補完が正常動作
+- 住所の構造化入力（郵便番号・都道府県・市区町村・番地・建物名）完全対応
+- 後方互換性維持（従来の address フィールドも併用可能）
+
+#### 📋 次回作業予定
+
+- 他の管理画面での郵便番号自動補完機能の展開検討
+- 顧客管理のその他機能拡張（検索・フィルタリング等）
+
+---

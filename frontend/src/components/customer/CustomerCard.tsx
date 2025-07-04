@@ -62,8 +62,8 @@ const CustomerCard: React.FC<CustomerCardProps> = ({
       transition={{ duration: 0.2 }}
     >
       {/* ヘッダー: 名前 & ランク */}
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="font-semibold text-gray-900 truncate mr-2">
+      <div className='flex items-center justify-between mb-3'>
+        <h3 className='font-semibold text-gray-900 truncate mr-2'>
           {customer.name}
         </h3>
         <span
@@ -78,29 +78,31 @@ const CustomerCard: React.FC<CustomerCardProps> = ({
 
       {/* 連絡先・統計（mode=detailed のみ） */}
       {mode === 'detailed' && (
-        <div className="mb-3 space-y-1 text-sm text-gray-700">
+        <div className='mb-3 space-y-1 text-sm text-gray-700'>
           <div>
-            <span className="font-medium mr-1">電話:</span>
+            <span className='font-medium mr-1'>電話:</span>
             {customer.phone || '―'}
           </div>
           <div>
-            <span className="font-medium mr-1">メール:</span>
+            <span className='font-medium mr-1'>メール:</span>
             {customer.email || '―'}
           </div>
           <div>
-            <span className="font-medium mr-1">最終予約:</span>
-            {customer.last_booking_at ? formatRelativeTime(customer.last_booking_at) : '―'}
+            <span className='font-medium mr-1'>最終予約:</span>
+            {customer.last_booking_at
+              ? formatRelativeTime(customer.last_booking_at)
+              : '―'}
           </div>
           <div>
-            <span className="font-medium mr-1">累計予約数:</span>
-            {formatNumber(customer.total_bookings)}
+            <span className='font-medium mr-1'>累計予約数:</span>
+            {formatNumber(customer.total_bookings || 0)}
           </div>
           <div>
-            <span className="font-medium mr-1">累計売上:</span>
-            ¥{formatNumber(customer.total_spent)}
+            <span className='font-medium mr-1'>累計売上:</span>¥
+            {formatNumber(customer.total_spent || 0)}
           </div>
           <div>
-            <span className="font-medium mr-1">登録日:</span>
+            <span className='font-medium mr-1'>登録日:</span>
             {formatDate(customer.created_at, 'yyyy/MM/dd')}
           </div>
         </div>
@@ -108,20 +110,22 @@ const CustomerCard: React.FC<CustomerCardProps> = ({
 
       {/* 基本情報（compact モード） */}
       {mode === 'compact' && (
-        <div className="space-y-2 text-sm">
-          <div className="text-gray-600">
-            <span className="font-medium">電話:</span> {customer.phone || '―'}
+        <div className='space-y-2 text-sm'>
+          <div className='text-gray-600'>
+            <span className='font-medium'>電話:</span> {customer.phone || '―'}
           </div>
-          <div className="flex items-center justify-between text-gray-600">
+          <div className='flex items-center justify-between text-gray-600'>
             <span>
-              <span className="font-medium">予約:</span> {customer.total_bookings}回
+              <span className='font-medium'>予約:</span>{' '}
+              {customer.total_bookings || 0}回
             </span>
             <span>
-              <span className="font-medium">売上:</span> ¥{formatNumber(customer.total_spent)}
+              <span className='font-medium'>売上:</span> ¥
+              {formatNumber(customer.total_spent || 0)}
             </span>
           </div>
           {customer.last_booking_at && (
-            <div className="text-xs text-gray-500">
+            <div className='text-xs text-gray-500'>
               最終予約: {formatRelativeTime(customer.last_booking_at)}
             </div>
           )}
@@ -130,16 +134,20 @@ const CustomerCard: React.FC<CustomerCardProps> = ({
 
       {/* アクションボタン（mode=detailed のみ） */}
       {mode === 'detailed' && (onEdit || onToggleActive) && (
-        <div className="flex gap-2 pt-3 border-t border-gray-100">
+        <div className='flex gap-2 pt-3 border-t border-gray-100'>
           {onEdit && (
-            <Button variant="outline" size="sm" onClick={() => onEdit(customer)}>
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={() => onEdit(customer)}
+            >
               編集
             </Button>
           )}
           {onToggleActive && (
             <Button
               variant={isActive ? 'danger' : 'primary'}
-              size="sm"
+              size='sm'
               onClick={() => onToggleActive(customer)}
             >
               {isActive ? '無効化' : '再有効化'}
@@ -151,4 +159,4 @@ const CustomerCard: React.FC<CustomerCardProps> = ({
   );
 };
 
-export default CustomerCard; 
+export default CustomerCard;

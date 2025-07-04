@@ -231,6 +231,10 @@ export interface Customer {
   line_picture_url?: string;
   loyalty_rank: 'new' | 'regular' | 'vip' | 'premium';
   notes?: string;
+  is_active?: boolean;
+  last_booking_at?: string;
+  total_bookings?: number;
+  total_spent?: number;
   created_at: string;
   updated_at: string;
 }
