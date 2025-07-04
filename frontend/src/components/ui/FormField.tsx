@@ -52,8 +52,14 @@ const FormField: React.FC<FormFieldProps> = ({
   `;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const newValue = type === 'number' ? Number(e.target.value) : e.target.value;
-    onChange(newValue);
+    if (type === 'number') {
+      const stringValue = e.target.value;
+      // 空文字列の場合はそのまま渡す（0に変換しない）
+      const newValue = stringValue === '' ? '' : Number(stringValue);
+      onChange(newValue);
+    } else {
+      onChange(e.target.value);
+    }
   };
 
   const renderInput = () => {

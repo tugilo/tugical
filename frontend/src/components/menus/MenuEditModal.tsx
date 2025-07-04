@@ -133,10 +133,11 @@ const MenuEditModal: React.FC<MenuEditModalProps> = ({
     }
 
     if (formData.base_duration !== undefined) {
-      if (formData.base_duration < 1) {
+      const baseDuration = typeof formData.base_duration === 'string' ? parseFloat(formData.base_duration) : formData.base_duration;
+      if (isNaN(baseDuration) || baseDuration <= 0) {
         newErrors.base_duration = '基本時間は1分以上で入力してください';
       }
-      if (formData.base_duration > 1440) {
+      if (baseDuration > 1440) {
         newErrors.base_duration = '基本時間は24時間以内で入力してください';
       }
     }
@@ -151,17 +152,19 @@ const MenuEditModal: React.FC<MenuEditModalProps> = ({
 
     // 総時間チェック（24時間以内）
     if (formData.base_duration !== undefined) {
-      const baseDuration = formData.base_duration;
+      const baseDuration = typeof formData.base_duration === 'string' ? parseFloat(formData.base_duration) : formData.base_duration;
       const prepDuration = formData.prep_duration !== undefined 
-        ? formData.prep_duration 
+        ? (typeof formData.prep_duration === 'string' ? parseFloat(formData.prep_duration) : formData.prep_duration)
         : (originalMenu?.prep_duration || 0);
       const cleanupDuration = formData.cleanup_duration !== undefined 
-        ? formData.cleanup_duration 
+        ? (typeof formData.cleanup_duration === 'string' ? parseFloat(formData.cleanup_duration) : formData.cleanup_duration)
         : (originalMenu?.cleanup_duration || 0);
       
-      const totalDuration = baseDuration + prepDuration + cleanupDuration;
-      if (totalDuration > 1440) {
-        newErrors.base_duration = '総所要時間（基本時間+準備時間+片付け時間）は24時間以内にしてください';
+      if (!isNaN(baseDuration) && !isNaN(prepDuration) && !isNaN(cleanupDuration)) {
+        const totalDuration = baseDuration + prepDuration + cleanupDuration;
+        if (totalDuration > 1440) {
+          newErrors.base_duration = '総所要時間（基本時間+準備時間+片付け時間）は24時間以内にしてください';
+        }
       }
     }
 
@@ -372,7 +375,7 @@ const MenuEditModal: React.FC<MenuEditModalProps> = ({
               onChange={(value) => updateFormData('base_duration', value)}
               placeholder="分"
               error={errors.base_duration}
-              min={1}
+              min={0}
               max={1440}
               step={5}
               required
