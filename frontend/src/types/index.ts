@@ -238,22 +238,22 @@ export interface Customer {
 export interface CreateCustomerRequest {
   name: string;
   phone: string;
-  email?: string;
-  address?: string;
-  birth_date?: string;
-  gender?: 'male' | 'female' | 'other';
-  notes?: string;
+  email?: string | null;
+  address?: string | null;
+  birth_date?: string | null;
+  gender?: 'male' | 'female' | 'other' | null;
+  notes?: string | null;
   is_active?: boolean;
 }
 
 export interface UpdateCustomerRequest {
   name?: string;
   phone?: string;
-  email?: string;
-  address?: string;
-  birth_date?: string;
-  gender?: 'male' | 'female' | 'other';
-  notes?: string;
+  email?: string | null;
+  address?: string | null;
+  birth_date?: string | null;
+  gender?: 'male' | 'female' | 'other' | null;
+  notes?: string | null;
   is_active?: boolean;
   loyalty_rank?: 'new' | 'regular' | 'vip' | 'premium';
 }
@@ -317,6 +317,20 @@ export interface UpdateResourceRequest {
   image_url?: string;
   is_active?: boolean;
   sort_order?: number;
+}
+
+export interface ResourceFormData {
+  type: 'staff' | 'room' | 'equipment' | 'vehicle';
+  name: string;
+  display_name: string;
+  description: string;
+  capacity: number;
+  photo_url: string;
+  attributes: Record<string, any>;
+  working_hours: Record<string, any>;
+  efficiency_rate: number;
+  hourly_rate_diff: number;
+  is_active: boolean;
 }
 
 // ========================================
@@ -429,8 +443,8 @@ export interface CreateMenuRequest {
 export interface UpdateMenuRequest {
   name?: string;
   display_name?: string;
-  category?: string;
-  description?: string;
+  category?: string | null;
+  description?: string | null;
   base_price?: number;
   base_duration?: number;
   prep_duration?: number;
@@ -438,7 +452,7 @@ export interface UpdateMenuRequest {
   booking_constraints?: MenuBookingConstraints;
   resource_requirements?: MenuResourceRequirements;
   industry_settings?: Record<string, any>;
-  image_url?: string;
+  image_url?: string | null;
   is_active?: boolean;
   requires_approval?: boolean;
   sort_order?: number;
@@ -515,8 +529,8 @@ export interface ToastNotification {
   id: string;
   type: 'success' | 'error' | 'warning' | 'info';
   title: string;
-  message?: string;
-  duration?: number;
+  message?: string | null;
+  duration?: number | null;
 }
 
 // ========================================
@@ -534,21 +548,21 @@ export interface FormField {
 }
 
 export interface FilterOptions {
-  search?: string;
-  status?: string;
-  type?: string;
-  category?: string;
-  date?: string;
-  date_from?: string;
-  date_to?: string;
-  resource_id?: number;
-  customer_id?: number;
-  menu_id?: number;
-  is_active?: boolean;
+  search?: string | null;
+  status?: string | null;
+  type?: string | null;
+  category?: string | null;
+  date?: string | null;
+  date_from?: string | null;
+  date_to?: string | null;
+  resource_id?: number | null;
+  customer_id?: number | null;
+  menu_id?: number | null;
+  is_active?: boolean | null;
   page?: number;
   per_page?: number;
   sort?: string;
-  sort_by?: string;
+  sort_by?: string | null;
   sort_order?: 'asc' | 'desc';
 }
 

@@ -4,7 +4,7 @@ interface FormFieldProps {
   label: string;
   name: string;
   type?: 'text' | 'email' | 'password' | 'number' | 'tel' | 'url' | 'textarea' | 'select';
-  value: string | number;
+  value: string | number | null;
   onChange: (value: string | number) => void;
   placeholder?: string;
   error?: string;
@@ -69,6 +69,9 @@ const FormField: React.FC<FormFieldProps> = ({
     }
   };
 
+  // nullの場合は空文字列に変換
+  const displayValue = value === null ? '' : value;
+
   const renderInput = () => {
     switch (type) {
       case 'textarea':
@@ -76,7 +79,7 @@ const FormField: React.FC<FormFieldProps> = ({
           <textarea
             id={name}
             name={name}
-            value={value}
+            value={displayValue}
             onChange={handleChange}
             placeholder={placeholder}
             required={required}
@@ -91,7 +94,7 @@ const FormField: React.FC<FormFieldProps> = ({
           <select
             id={name}
             name={name}
-            value={value}
+            value={displayValue}
             onChange={handleChange}
             required={required}
             disabled={disabled}
@@ -112,7 +115,7 @@ const FormField: React.FC<FormFieldProps> = ({
             type={type}
             id={name}
             name={name}
-            value={value}
+            value={displayValue}
             onChange={handleChange}
             placeholder={placeholder}
             required={required}
