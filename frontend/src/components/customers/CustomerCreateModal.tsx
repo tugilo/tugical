@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Customer, CreateCustomerRequest } from '../../types';
 import Button from '../ui/Button';
-import Modal from '../ui/Modal';
+import Modal from '../modal/Modal';
 import { apiClient } from '../../services/api';
 import { usePostalCodeSearch } from '../../hooks/usePostalCodeSearch';
 

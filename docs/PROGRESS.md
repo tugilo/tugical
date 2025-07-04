@@ -1,5 +1,34 @@
 # tugical Development Progress
 
+## 2025-07-04 22:49:56 (tugiMacAir.local)
+
+### ⚠️ 重要な反省: 共通コンポーネント重複問題
+
+**発覚した問題:**
+
+- 顧客モーダルでオーバーレイクリックが動作しない
+- 間違った Modal コンポーネント（`components/ui/Modal`）を使用
+- 他のモーダルは正しく`components/modal/Modal`を使用
+- **根本原因**: 重複する Modal コンポーネントの存在
+
+**重複コンポーネント問題:**
+
+1. `frontend/src/components/ui/Modal.tsx` - オーバーレイクリック不具合
+2. `frontend/src/components/modal/Modal.tsx` - 正しい実装
+
+**緊急修正実施:**
+
+- CustomerCreateModal: `components/modal/Modal`に変更
+- CustomerDetailModal: `components/modal/Modal`に変更
+- ビルド成功: 3.26 秒、エラー 0 件
+
+**今後の開発方針（必須遵守）:**
+
+1. **既存コンポーネント優先**: 新規作成前に必ず既存確認
+2. **重複排除**: 同じ機能のコンポーネントは統一
+3. **共通化徹底**: 再利用可能な設計を最優先
+4. **仕様書厳守**: .cursorrules と設計書の完全遵守
+
 ## 2025-07-04 22:47:34 (tugiMacAir.local)
 
 ### Phase 4.6: 顧客管理モーダル UI 統一 ✅ **完了**
