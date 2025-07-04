@@ -113,7 +113,7 @@ class BookingService
                     'booking_date' => $bookingData['booking_date'],
                     'start_time' => $bookingData['start_time']
                 ]);
-                
+
                 throw new \Exception('指定時間は既に予約されています');
             }
 
@@ -129,12 +129,12 @@ class BookingService
 
             // 4. 料金計算
             $menu = Menu::where('store_id', $storeId)
-                       ->findOrFail($bookingData['menu_id']);
-            
+                ->findOrFail($bookingData['menu_id']);
+
             $resource = null;
             if (!empty($bookingData['resource_id'])) {
                 $resource = Resource::where('store_id', $storeId)
-                                  ->findOrFail($bookingData['resource_id']);
+                    ->findOrFail($bookingData['resource_id']);
             }
 
             $totalPrice = $this->calculateTotalPrice(
@@ -304,8 +304,8 @@ class BookingService
 
         // リソース指定がない場合は店舗全体での競合チェック
         $query = Booking::where('store_id', $storeId)
-                       ->whereDate('booking_date', $bookingDate)
-                       ->whereIn('status', ['confirmed', 'pending']);
+            ->whereDate('booking_date', $bookingDate)
+            ->whereIn('status', ['confirmed', 'pending']);
 
         // リソース指定がある場合はそのリソースのみチェック
         if ($resourceId) {
@@ -328,12 +328,12 @@ class BookingService
                 // ケース3: 新規予約が既存予約を完全に包含
                 ->orWhere(function ($innerQuery) use ($startTime, $endTime) {
                     $innerQuery->where('start_time', '<=', $startTime)
-                              ->where('end_time', '>=', $endTime);
+                        ->where('end_time', '>=', $endTime);
                 })
                 // ケース4: 既存予約が新規予約を完全に包含
                 ->orWhere(function ($innerQuery) use ($startTime, $endTime) {
                     $innerQuery->where('start_time', '>=', $startTime)
-                              ->where('end_time', '<=', $endTime);
+                        ->where('end_time', '<=', $endTime);
                 });
         })->exists();
 
@@ -377,9 +377,9 @@ class BookingService
         // 2. オプション料金加算
         if (!empty($optionIds)) {
             $options = \App\Models\MenuOption::whereIn('id', $optionIds)
-                                             ->where('menu_id', $menu->id)
-                                             ->get();
-            
+                ->where('menu_id', $menu->id)
+                ->get();
+
             foreach ($options as $option) {
                 $totalPrice += $option->price;
                 Log::debug('オプション料金加算', [
@@ -411,13 +411,13 @@ class BookingService
             }
 
             // 指名料（attributes.nomination_fee）
-            $attributes = is_string($resource->attributes) 
-                ? json_decode($resource->attributes, true) 
+            $attributes = is_string($resource->attributes)
+                ? json_decode($resource->attributes, true)
                 : $resource->attributes;
-            
+
             if (isset($attributes['nomination_fee']) && $attributes['nomination_fee'] > 0) {
                 $totalPrice += $attributes['nomination_fee'];
-                
+
                 Log::debug('指名料加算', [
                     'resource_id' => $resource->id,
                     'nomination_fee' => $attributes['nomination_fee'],
@@ -456,10 +456,10 @@ class BookingService
      * @throws \Exception Token期限切れ・データ不整合時
      */
     private function validateAndReleaseHoldToken(
-        string $holdToken, 
-        int $storeId, 
-        ?int $resourceId, 
-        string $date, 
+        string $holdToken,
+        int $storeId,
+        ?int $resourceId,
+        string $date,
         string $startTime
     ): bool {
         Log::info('Hold Token検証開始', [
@@ -508,7 +508,6 @@ class BookingService
                 ]);
                 throw new \Exception('Hold Token解放に失敗しました');
             }
-
         } catch (\Exception $e) {
             Log::error('Hold Token検証エラー', [
                 'hold_token' => substr($holdToken, 0, 10) . '...',
@@ -516,7 +515,7 @@ class BookingService
                 'store_id' => $storeId,
                 'resource_id' => $resourceId
             ]);
-            
+
             throw new \Exception('Hold Token検証失敗: ' . $e->getMessage());
         }
     }
@@ -553,9 +552,9 @@ class BookingService
 
             // 特別営業時間チェック
             if ($specialCalendar->start_time && $specialCalendar->end_time) {
-                $isWithinSpecialHours = $startTime >= $specialCalendar->start_time && 
-                                       $endTime <= $specialCalendar->end_time;
-                
+                $isWithinSpecialHours = $startTime >= $specialCalendar->start_time &&
+                    $endTime <= $specialCalendar->end_time;
+
                 Log::info('特別営業時間チェック', [
                     'store_id' => $storeId,
                     'date' => $date,
@@ -565,15 +564,15 @@ class BookingService
                     'booking_end' => $endTime,
                     'is_within' => $isWithinSpecialHours
                 ]);
-                
+
                 return $isWithinSpecialHours;
             }
         }
 
         // 2. 通常営業時間チェック（stores.business_hours）
         $store = Store::findOrFail($storeId);
-        $businessHours = is_string($store->business_hours) 
-            ? json_decode($store->business_hours, true) 
+        $businessHours = is_string($store->business_hours)
+            ? json_decode($store->business_hours, true)
             : $store->business_hours;
 
         if (!$businessHours) {
@@ -600,27 +599,28 @@ class BookingService
         }
 
         $dayHours = $businessHours[$dayName];
-        
-        // 休業日チェック
-        if (!$dayHours['is_open']) {
-            Log::info('営業時間外（定休日）', [
+
+        // 営業時間の存在チェック（openとcloseキーが存在するかチェック）
+        if (!isset($dayHours['open']) || !isset($dayHours['close'])) {
+            Log::info('営業時間外（営業時間設定なし）', [
                 'store_id' => $storeId,
                 'date' => $date,
-                'day_of_week' => $dayName
+                'day_of_week' => $dayName,
+                'day_hours' => $dayHours
             ]);
             return false;
         }
 
         // 営業時間内チェック
-        $isWithinBusinessHours = $startTime >= $dayHours['start_time'] && 
-                                 $endTime <= $dayHours['end_time'];
+        $isWithinBusinessHours = $startTime >= $dayHours['open'] &&
+            $endTime <= $dayHours['close'];
 
         Log::info('通常営業時間チェック', [
             'store_id' => $storeId,
             'date' => $date,
             'day_of_week' => $dayName,
-            'business_start' => $dayHours['start_time'],
-            'business_end' => $dayHours['end_time'],
+            'business_start' => $dayHours['open'],
+            'business_end' => $dayHours['close'],
             'booking_start' => $startTime,
             'booking_end' => $endTime,
             'is_within' => $isWithinBusinessHours
@@ -641,7 +641,7 @@ class BookingService
     {
         $startTime = $bookingData['start_time'];
         $menuId = $bookingData['menu_id'];
-        
+
         // メニュー取得
         $menu = Menu::find($menuId);
         if (!$menu) {
@@ -651,7 +651,7 @@ class BookingService
         // 開始時間に所要時間を加算
         $startDateTime = Carbon::createFromFormat('H:i', $startTime);
         $endDateTime = $startDateTime->addMinutes($menu->duration);
-        
+
         return $endDateTime->format('H:i');
     }
 
@@ -668,14 +668,14 @@ class BookingService
     {
         $date = now()->format('Ymd');
         $storeIdPadded = str_pad($storeId, 3, '0', STR_PAD_LEFT);
-        
+
         // 本日の店舗予約数を取得
         $todayBookingsCount = Booking::where('store_id', $storeId)
             ->whereDate('created_at', now()->toDateString())
             ->count();
-        
+
         $sequence = str_pad($todayBookingsCount + 1, 3, '0', STR_PAD_LEFT);
-        
+
         return "TG{$date}{$storeIdPadded}{$sequence}";
     }
 
@@ -733,7 +733,7 @@ class BookingService
 
         // ソート
         $query->orderBy('booking_date', 'asc')
-              ->orderBy('start_time', 'asc');
+            ->orderBy('start_time', 'asc');
 
         // ページング
         $perPage = $filters['per_page'] ?? 20;
@@ -741,4 +741,4 @@ class BookingService
 
         return $query->paginate($perPage, ['*'], 'page', $page);
     }
-} 
+}

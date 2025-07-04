@@ -285,15 +285,6 @@ class BusinessCalendar extends Model
     }
 
     /**
-     * 優先度情報取得
-     */
-    public function getPriorityInfo(): array
-    {
-        $priorities = self::getPriorityInfo();
-        return $priorities[$this->priority] ?? [];
-    }
-
-    /**
      * 繰り返しパターン情報取得
      */
     public function getRecurringPatternInfo(): array
@@ -402,7 +393,7 @@ class BusinessCalendar extends Model
             'type' => $this->getTypeInfo()['name'] ?? $this->type,
             'date' => $this->date->format('Y年n月j日'),
             'color' => $this->color,
-            'priority' => $this->getPriorityInfo()['name'] ?? $this->priority,
+            'priority' => self::getPriorityInfo()[$this->priority]['name'] ?? $this->priority,
         ];
 
         if ($this->start_time && $this->end_time) {

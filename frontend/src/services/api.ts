@@ -51,9 +51,11 @@ class ApiClient {
     this.client = axios.create({
       baseURL: API_BASE_URL,
       timeout: 30000,
+      // withCredentials: true, // 一時的に無効
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
+        // 'X-Requested-With': 'XMLHttpRequest', // 一時的に無効
       },
     });
 
@@ -155,9 +157,27 @@ class ApiClient {
   // ========================================
 
   /**
+   * CSRFクッキー取得
+   * Sanctum認証前に必要
+   */
+  async getCsrfCookie(): Promise<void> {
+    try {
+      await axios.get('http://localhost/sanctum/csrf-cookie', {
+        withCredentials: true,
+      });
+    } catch (error) {
+      console.warn('CSRF cookie取得失敗:', error);
+      // 開発環境では無視
+    }
+  }
+
+  /**
    * 管理者ログイン
    */
   async login(credentials: LoginRequest): Promise<LoginResponse> {
+    // CSRFクッキー取得を一時的に無効
+    // await this.getCsrfCookie();
+
     const response = await this.client.post<ApiResponse<LoginResponse>>(
       '/auth/login',
       credentials
