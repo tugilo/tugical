@@ -3,7 +3,16 @@ import React from 'react';
 interface FormFieldProps {
   label: string;
   name: string;
-  type?: 'text' | 'email' | 'password' | 'number' | 'tel' | 'url' | 'textarea' | 'select';
+  type?:
+    | 'text'
+    | 'email'
+    | 'password'
+    | 'number'
+    | 'tel'
+    | 'url'
+    | 'date'
+    | 'textarea'
+    | 'select';
   value: string | number | null;
   onChange: (value: string | number) => void;
   placeholder?: string;
@@ -20,7 +29,7 @@ interface FormFieldProps {
 
 /**
  * 統一フォームフィールドコンポーネント
- * 
+ *
  * ラベル、エラー表示、バリデーション状態を統合管理
  * text, number, textarea, select対応
  */
@@ -45,13 +54,18 @@ const FormField: React.FC<FormFieldProps> = ({
     w-full px-3 py-2 border rounded-md text-sm
     focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500
     disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed
-    ${error 
-      ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' 
-      : 'border-gray-300 text-gray-900 placeholder-gray-400'
+    ${
+      error
+        ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500'
+        : 'border-gray-300 text-gray-900 placeholder-gray-400'
     }
   `;
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
     if (type === 'number') {
       const stringValue = e.target.value;
       // 空文字列の場合は0を渡す（バリデーションエラーを避けるため）
@@ -100,8 +114,8 @@ const FormField: React.FC<FormFieldProps> = ({
             disabled={disabled}
             className={baseInputClasses}
           >
-            <option value="">選択してください</option>
-            {options.map((option) => (
+            <option value=''>選択してください</option>
+            {options.map(option => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
@@ -132,9 +146,9 @@ const FormField: React.FC<FormFieldProps> = ({
   return (
     <div className={`space-y-1 ${className}`}>
       {/* ラベル */}
-      <label htmlFor={name} className="block text-sm font-medium text-gray-700">
+      <label htmlFor={name} className='block text-sm font-medium text-gray-700'>
         {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
+        {required && <span className='text-red-500 ml-1'>*</span>}
       </label>
 
       {/* 入力フィールド */}
@@ -142,7 +156,7 @@ const FormField: React.FC<FormFieldProps> = ({
 
       {/* エラーメッセージ */}
       {error && (
-        <p className="text-sm text-red-600" role="alert">
+        <p className='text-sm text-red-600' role='alert'>
           {error}
         </p>
       )}
@@ -150,4 +164,4 @@ const FormField: React.FC<FormFieldProps> = ({
   );
 };
 
-export default FormField; 
+export default FormField;

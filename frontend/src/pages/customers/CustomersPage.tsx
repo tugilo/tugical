@@ -361,6 +361,7 @@ const CustomersPage: React.FC = () => {
           setSelectedCustomer(null);
         }}
         onUpdate={handleCustomerUpdate}
+        onDelete={handleCustomerDelete}
       />
 
       {/* 新規顧客登録モーダル */}
