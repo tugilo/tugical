@@ -64,15 +64,18 @@ const Modal: React.FC<ModalProps> = ({
   };
 
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
       {isOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
+        <motion.div 
+          className="fixed inset-0 z-50 overflow-y-auto"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15, ease: 'easeOut' }}
+        >
           {/* オーバーレイ */}
-          <motion.div
-            className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50"
             onClick={handleOverlayClick}
           />
 
@@ -84,9 +87,9 @@ const Modal: React.FC<ModalProps> = ({
                 bg-white rounded-lg shadow-xl 
                 ${className}
               `}
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.98 }}
+              initial={{ scale: 0.98 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.98 }}
               transition={{ duration: 0.15, ease: 'easeOut' }}
             >
               {/* ヘッダー */}
@@ -111,7 +114,7 @@ const Modal: React.FC<ModalProps> = ({
               </div>
             </motion.div>
           </div>
-        </div>
+        </motion.div>
       )}
     </AnimatePresence>
   );
