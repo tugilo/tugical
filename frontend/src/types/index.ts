@@ -164,6 +164,7 @@ export interface Booking {
   customer: BookingCustomer;
   menu: BookingMenu;
   resource?: BookingResource;
+  resource_id?: number;
   options?: BookingOption[];
   total_price: number;
   payment_status?: 'pending' | 'paid' | 'refunded';

@@ -119,33 +119,36 @@ const BookingCard: React.FC<BookingCardProps> = ({
       {/* カード本体 */}
       <div className='p-4'>
         {/* 日時情報 */}
-        <div className='flex items-center gap-4 mb-3'>
-          <div className='flex items-center gap-1 text-gray-700'>
-            <CalendarIcon className='w-4 h-4 text-gray-400' />
-            <span className='text-sm font-medium'>
-              {format(new Date(booking.booking_date), 'M月d日(E)', {
-                locale: ja,
-              })}
-            </span>
-          </div>
-          <div className='flex items-center gap-4 text-sm text-gray-600'>
+        <div className='mb-3'>
+          <div className='flex items-center gap-4 mb-2'>
+            <div className='flex items-center gap-1 text-gray-700'>
+              <CalendarIcon className='w-4 h-4 text-gray-400' />
+              <span className='text-sm font-medium'>
+                {format(new Date(booking.booking_date), 'M月d日(E)', {
+                  locale: ja,
+                })}
+              </span>
+            </div>
             <div className='flex items-center gap-1'>
               <ClockIcon className='w-4 h-4 text-gray-400' />
-              <span>
+              <span className='text-sm text-gray-600'>
                 {booking.start_time.substring(0, 5)} -{' '}
                 {booking.end_time.substring(0, 5)}
               </span>
             </div>
-
-            {booking.resource && (
-              <div className='flex items-center gap-1'>
-                <UserIcon className='w-4 h-4 text-gray-400' />
-                <span>
-                  担当: {booking.resource.display_name || booking.resource.name}
-                </span>
-              </div>
-            )}
           </div>
+
+          {(booking.resource || booking.resource_id) && (
+            <div className='flex items-center gap-1 text-sm text-gray-600 ml-1'>
+              <UserIcon className='w-4 h-4 text-gray-400' />
+              <span>
+                担当:{' '}
+                {booking.resource?.display_name ||
+                  booking.resource?.name ||
+                  '担当者あり'}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* 顧客情報 */}

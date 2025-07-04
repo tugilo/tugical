@@ -76,8 +76,8 @@ class BookingResource extends JsonResource
                 ];
             }),
 
-            'resource' => $this->when($this->resource, function () {
-                return [
+            'resource' => $this->whenLoaded('resource', function () {
+                return $this->resource ? [
                     'id' => $this->resource->id,
                     'type' => $this->resource->type,
                     'name' => $this->resource->name,
@@ -90,7 +90,7 @@ class BookingResource extends JsonResource
                         isset($this->resource->attributes['specialties']),
                         $this->resource->attributes['specialties'] ?? []
                     )
-                ];
+                ] : null;
             }),
 
             'options' => $this->whenLoaded('options', function () {
