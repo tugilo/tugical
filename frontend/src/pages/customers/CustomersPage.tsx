@@ -7,14 +7,21 @@
  */
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { 
+  MagnifyingGlassIcon, 
+  PlusIcon, 
+  UserGroupIcon
+} from '@heroicons/react/24/outline';
 import { customerApi } from '../../services/api';
 import type { Customer, PaginatedResponse, FilterOptions } from '../../types';
-import { cn, formatNumber } from '../../utils';
+import { cn } from '../../utils';
+import DashboardLayout from '../../components/layout/DashboardLayout';
 import Card from '../../components/ui/Card';
 import LoadingScreen from '../../components/ui/LoadingScreen';
 import CustomerCard from '../../components/customer/CustomerCard';
 import { useUIStore } from '../../stores/uiStore';
+import Button from '../../components/ui/Button';
+import CustomerDetailModal from '../../components/customer/CustomerDetailModal';
 
 const CustomersPage: React.FC = () => {
   const { setPageTitle } = useUIStore();
@@ -22,11 +29,12 @@ const CustomersPage: React.FC = () => {
   // -----------------------------
   // ローカル状態
   // -----------------------------
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [pagination, setPagination] = useState<PaginatedResponse<Customer> | null>(null);
-  const [search, setSearch] = useState('');
+  const [customers, setCustomers] = useState<PaginatedResponse<Customer> | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
-  const [isLoading, setIsLoading] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // -----------------------------
@@ -46,7 +54,7 @@ const CustomersPage: React.FC = () => {
     setError(null);
 
     const filters: FilterOptions = {
-      search: search.trim(),
+      search: searchTerm.trim(),
       status: statusFilter === 'all' ? undefined : statusFilter === 'active' ? 'active' : 'inactive',
       page,
       per_page: 20,
@@ -57,12 +65,35 @@ const CustomersPage: React.FC = () => {
       // API レスポンスの構造に合わせて修正
       if (response.data && Array.isArray(response.data)) {
         // data が配列の場合（ページネーションなし）
-        setCustomers(response.data);
-        setPagination(null);
+        setCustomers({
+          data: response.data,
+          meta: {
+            total: response.data.length,
+            per_page: 20,
+            current_page: 1,
+            last_page: 1,
+            from: 1,
+            to: response.data.length,
+          },
+          links: {
+            first: '',
+            last: '',
+            prev: null,
+            next: null,
+          },
+        });
       } else if (response.data && response.meta) {
         // data.data と data.meta がある場合（ページネーションあり）
-        setCustomers(response.data);
-        setPagination(response);
+        setCustomers({
+          data: response.data,
+          meta: response.meta,
+          links: response.links || {
+            first: '',
+            last: '',
+            prev: null,
+            next: null,
+          },
+        });
       } else {
         // 予期しない形式
         throw new Error('Unexpected API response format');
@@ -73,7 +104,7 @@ const CustomersPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [search, statusFilter]);
+  }, [searchTerm, statusFilter]);
 
   // -----------------------------
   // 検索フォーム送信
@@ -87,8 +118,49 @@ const CustomersPage: React.FC = () => {
   // ページネーション
   // -----------------------------
   const goToPage = (page: number) => {
-    if (pagination && page >= 1 && page <= pagination.meta.last_page) {
+    if (customers && page >= 1 && page <= customers.meta.last_page) {
       fetchCustomers(page);
+    }
+  };
+
+  // -----------------------------
+  // 顧客カードクリック時
+  // -----------------------------
+  const handleCustomerClick = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setIsDetailModalOpen(true);
+  };
+
+  // -----------------------------
+  // 顧客更新時
+  // -----------------------------
+  const handleCustomerUpdate = (updatedCustomer: Customer) => {
+    if (customers) {
+      const updatedData = customers.data.map(c => 
+        c.id === updatedCustomer.id ? updatedCustomer : c
+      );
+      setCustomers({
+        ...customers,
+        data: updatedData,
+      });
+    }
+    setSelectedCustomer(updatedCustomer);
+  };
+
+  // -----------------------------
+  // 顧客削除時
+  // -----------------------------
+  const handleCustomerDelete = (customerId: number) => {
+    if (customers) {
+      const updatedData = customers.data.filter(c => c.id !== customerId);
+      setCustomers({
+        ...customers,
+        data: updatedData,
+        meta: {
+          ...customers.meta,
+          total: customers.meta.total - 1,
+        },
+      });
     }
   };
 
@@ -100,13 +172,26 @@ const CustomersPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <DashboardLayout>
+      <div className="space-y-6">
       {/* ヘッダー */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">顧客管理</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">顧客管理</h1>
+          <p className="mt-1 text-sm text-gray-600">
+            顧客情報の管理・検索・編集ができます
+          </p>
+        </div>
+        <Button
+          variant="primary"
+          leftIcon={<PlusIcon className="w-5 h-5" />}
+          onClick={() => {/* TODO: 新規顧客作成モーダル */}}
+        >
+          新規顧客登録
+        </Button>
       </div>
 
-      {/* 検索・フィルタ */}
+      {/* 検索・フィルター */}
       <Card>
         <Card.Body>
           <form className="flex flex-wrap items-end gap-4" onSubmit={handleSearchSubmit}>
@@ -120,8 +205,8 @@ const CustomersPage: React.FC = () => {
                   type="text"
                   className="w-full border border-gray-300 rounded-md px-3 py-2 pr-10 focus:outline-none focus:ring-primary-500 focus:border-primary-500 text-sm"
                   placeholder="名前・電話・メールなど"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                 />
                 <MagnifyingGlassIcon className="w-5 h-5 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
               </div>
@@ -165,47 +250,66 @@ const CustomersPage: React.FC = () => {
       {/* 顧客リスト */}
       <Card>
         <Card.Body padding="sm">
-          {customers.length === 0 ? (
+          {customers && customers.data.length === 0 ? (
             <p className="text-gray-600 text-sm">顧客が見つかりませんでした。</p>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {customers.map((c) => (
-                <CustomerCard key={c.id} customer={c} />
-              ))}
-            </div>
+            <>
+              {/* 件数表示 */}
+              <div className="flex items-center justify-between text-sm text-gray-600">
+                <div className="flex items-center gap-2">
+                  <UserGroupIcon className="w-5 h-5" />
+                  <span>全 {customers?.meta.total} 件</span>
+                </div>
+                <span>
+                  {customers?.meta.from} - {customers?.meta.to} 件を表示
+                </span>
+              </div>
+
+              {/* 顧客カード */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {customers?.data.map((customer) => (
+                  <div
+                    key={customer.id}
+                    onClick={() => handleCustomerClick(customer)}
+                    className="cursor-pointer"
+                  >
+                    <CustomerCard
+                      customer={customer}
+                      mode="detailed"
+                    />
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </Card.Body>
 
         {/* ページネーション */}
-        {pagination && pagination.meta.total > pagination.meta.per_page && (
+        {customers && customers.meta.total > customers.meta.per_page && (
           <Card.Footer>
             <div className="flex items-center justify-between text-sm text-gray-600">
-              <div>
-                {formatNumber(pagination.meta.total)} 件中{' '}
-                {pagination.meta.from} - {pagination.meta.to} 件を表示
-              </div>
               <div className="space-x-2">
                 <button
                   className={cn(
                     'px-3 py-1 rounded-md border',
-                    pagination.meta.current_page === 1
+                    customers.meta.current_page === 1
                       ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                       : 'bg-white hover:bg-gray-50'
                   )}
-                  onClick={() => goToPage(pagination.meta.current_page - 1)}
-                  disabled={pagination.meta.current_page === 1}
+                  onClick={() => goToPage(customers.meta.current_page - 1)}
+                  disabled={customers.meta.current_page === 1}
                 >
                   前へ
                 </button>
                 <button
                   className={cn(
                     'px-3 py-1 rounded-md border',
-                    pagination.meta.current_page === pagination.meta.last_page
+                    customers.meta.current_page === customers.meta.last_page
                       ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                       : 'bg-white hover:bg-gray-50'
                   )}
-                  onClick={() => goToPage(pagination.meta.current_page + 1)}
-                  disabled={pagination.meta.current_page === pagination.meta.last_page}
+                  onClick={() => goToPage(customers.meta.current_page + 1)}
+                  disabled={customers.meta.current_page === customers.meta.last_page}
                 >
                   次へ
                 </button>
@@ -214,7 +318,20 @@ const CustomersPage: React.FC = () => {
           </Card.Footer>
         )}
       </Card>
+
+      {/* 顧客詳細モーダル */}
+      <CustomerDetailModal
+        customer={selectedCustomer}
+        isOpen={isDetailModalOpen}
+        onClose={() => {
+          setIsDetailModalOpen(false);
+          setSelectedCustomer(null);
+        }}
+        onUpdate={handleCustomerUpdate}
+        onDelete={handleCustomerDelete}
+      />
     </div>
+    </DashboardLayout>
   );
 };
 

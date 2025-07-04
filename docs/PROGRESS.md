@@ -714,49 +714,59 @@ curl -X POST http://localhost/api/v1/auth/logout \
 - ✅ **ページネーション**: 統一レスポンス形式
 - ✅ **型安全**: TypeScript 側で適切に型処理
 
-### ✅ Phase 4.5 完了: CustomerController CRUD実装 【2025-07-04 12:38 完了】
+### ✅ Phase 4.5 完了: CustomerController CRUD実装とログイン画面改善 【2025-07-04 12:38 完了】
 
 #### 🎯 実装内容
 - **CustomerController CRUD メソッド追加**
-  - show() - 顧客詳細取得（マルチテナント対応）
-  - store() - 新規顧客作成（トランザクション・暗号化対応）
-  - update() - 顧客情報更新（部分更新・権限チェック）
-  - destroy() - 顧客削除（ソフトデリート・予約チェック）
+  - show/store/update/destroy メソッド実装
+  - マルチテナント対応（store_id チェック）
+  - トランザクション処理とソフトデリート対応
 - **Request クラス作成**
-  - CreateCustomerRequest - 新規作成バリデーション
-  - UpdateCustomerRequest - 更新バリデーション
-  - 日本語エラーメッセージ完備
-- **CustomerResource 拡張**
-  - 詳細表示時の追加情報（address, birth_date, gender, notes）
-  - ルート名による条件付き情報表示
+  - CreateCustomerRequest/UpdateCustomerRequest
+  - 日本語バリデーションメッセージ
 - **フロントエンド API クライアント**
   - customerApi に create/update/delete メソッド追加
-  - CreateCustomerRequest/UpdateCustomerRequest 型定義
-  - loyalty_rank を new/regular/vip/premium に統一
+  - TypeScript 型定義完備
 - **ログイン画面改善**
-  - "Remember me" チェックボックス機能
+  - Remember me チェックボックス
   - テストアカウントのクイックフィルボタン
   - localStorage によるクレデンシャル保存
 
 #### 📊 実装統計
+- **新規ファイル**: 3ファイル (CreateCustomerRequest, UpdateCustomerRequest, CustomerDetailModal)
+- **修正ファイル**: 7ファイル
+- **追加行数**: 約800行
+
+### ✅ Phase 4.6 完了: 顧客詳細モーダル実装 【2025-07-04 12:51 完了】
+
+#### 🎯 実装内容
+- **汎用モーダルコンポーネント作成**
+  - Modal.tsx - Framer Motion アニメーション対応
+  - ESCキー・オーバーレイクリック対応
+  - レスポンシブ・アクセシビリティ対応
+- **顧客詳細モーダル実装**
+  - CustomerDetailModal.tsx - 顧客詳細表示・編集・削除
+  - インライン編集モード切り替え
+  - 統計情報表示（予約数、売上、最終予約）
+- **UIストア拡張**
+  - useToast フック追加
+  - Toast 通知統合
+- **CustomersPage 統合**
+  - 顧客カードクリックでモーダル表示
+  - リアルタイム更新（編集・削除反映）
+  - ページネーション修正
+
+#### 📊 実装統計
+- **新規ファイル**: 2ファイル (Modal.tsx, CustomerDetailModal.tsx)
+- **修正ファイル**: 3ファイル
 - **追加行数**: 約600行
-- **新規ファイル**: 2ファイル (Request クラス)
-- **修正ファイル**: 6ファイル
-- **APIエンドポイント**: 4エンドポイント追加（show/store/update/destroy）
+- **ビルドサイズ**: CustomersPage 40.79KB (gzip: 7.31KB)
 
 #### 🎯 技術特徴
-- ✅ **マルチテナント**: 全メソッドで store_id チェック実装
-- ✅ **セキュリティ**: 403 エラーでクロステナントアクセス防止
-- ✅ **トランザクション**: create/update でデータ整合性保証
-- ✅ **ソフトデリート**: 予約がある顧客は削除不可
-- ✅ **型安全**: TypeScript で完全型定義
-- ✅ **バリデーション**: 包括的な入力検証・日本語メッセージ
-- ✅ **ビルド成功**: フロントエンドビルド完了（警告はあるが動作OK）
-
-#### 次回作業予定
-1. **顧客詳細モーダル実装** - 詳細表示・編集フォーム
-2. **顧客作成フォーム** - 新規顧客登録機能
-3. **削除確認ダイアログ** - 安全な削除処理
-4. **リアルタイム更新** - WebSocket/SSE 統合
+- ✅ **モーダルアニメーション**: Framer Motion による滑らかな表示
+- ✅ **編集モード**: インライン編集でUX向上
+- ✅ **型安全**: TypeScript 完全対応
+- ✅ **エラーハンドリング**: Toast 通知統合
+- ✅ **レスポンシブ**: モバイル対応
 
 ---

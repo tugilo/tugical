@@ -1,28 +1,28 @@
 # tugical Current Focus - セッション継続管理
-**Updated**: 2025-07-04 12:38:36
+**Updated**: 2025-07-04 12:51:55
 
-## ✅ 完了タスク: CustomerController CRUD実装
-- CreateCustomerRequest/UpdateCustomerRequest バリデーションクラス作成
-- show/store/update/destroy メソッド実装（マルチテナント対応）
-- CustomerResource 詳細表示モード追加
-- フロントエンド API クライアント CRUD メソッド追加
-- TypeScript 型定義（CreateCustomerRequest/UpdateCustomerRequest）
-- loyalty_rank を new/regular/vip/premium に統一
-- ログイン画面の利便性向上（記憶機能・クイックフィル）
+## ✅ 完了タスク: 顧客詳細モーダル実装
+- 汎用モーダルコンポーネント（Modal.tsx）作成
+- 顧客詳細モーダル（CustomerDetailModal.tsx）実装
+- インライン編集機能（名前、電話、メール、住所、備考など）
+- 削除機能（確認ダイアログ付き）
+- 統計情報表示（累計予約数、累計売上、最終予約）
+- useToast フック追加（Toast 通知統合）
+- CustomersPage でモーダル統合
 - フロントエンドビルド成功
 
-## 🔄 現在作業中：顧客管理 UI 詳細機能
-- 顧客詳細モーダル実装
-- 編集・新規作成フォーム
-- 削除確認ダイアログ
-- リアルタイム更新統合
+## 🔄 現在作業中：顧客管理機能完成
+- 新規顧客作成モーダル
+- バルク操作（複数選択・一括削除）
+- CSV エクスポート機能
+- 高度な検索フィルター
 
 ## 🚧 次回予定
-1. 顧客詳細モーダルコンポーネント作成
-2. 顧客作成・編集フォーム実装
-3. 削除確認ダイアログ実装
-4. 予約管理ページ完全実装
-5. リアルタイム更新 (WebSocket/SSE) 統合
+1. 新規顧客作成モーダル実装
+2. 予約管理ページ（BookingsPage）完全実装
+3. カレンダービュー統合
+4. リアルタイム更新 (WebSocket/SSE)
+5. ダッシュボード統計情報の実装
 
 ---
 
