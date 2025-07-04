@@ -106,6 +106,28 @@ const CustomerCard: React.FC<CustomerCardProps> = ({
         </div>
       )}
 
+      {/* 基本情報（compact モード） */}
+      {mode === 'compact' && (
+        <div className="space-y-2 text-sm">
+          <div className="text-gray-600">
+            <span className="font-medium">電話:</span> {customer.phone || '―'}
+          </div>
+          <div className="flex items-center justify-between text-gray-600">
+            <span>
+              <span className="font-medium">予約:</span> {customer.total_bookings}回
+            </span>
+            <span>
+              <span className="font-medium">売上:</span> ¥{formatNumber(customer.total_spent)}
+            </span>
+          </div>
+          {customer.last_booking_at && (
+            <div className="text-xs text-gray-500">
+              最終予約: {formatRelativeTime(customer.last_booking_at)}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* アクションボタン（mode=detailed のみ） */}
       {mode === 'detailed' && (onEdit || onToggleActive) && (
         <div className="flex gap-2 pt-3 border-t border-gray-100">

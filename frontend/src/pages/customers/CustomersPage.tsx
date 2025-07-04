@@ -255,7 +255,7 @@ const CustomersPage: React.FC = () => {
           ) : (
             <>
               {/* 件数表示 */}
-              <div className="flex items-center justify-between text-sm text-gray-600">
+              <div className="flex items-center justify-between text-sm text-gray-600 mb-4">
                 <div className="flex items-center gap-2">
                   <UserGroupIcon className="w-5 h-5" />
                   <span>全 {customers?.meta.total} 件</span>
@@ -275,7 +275,7 @@ const CustomersPage: React.FC = () => {
                   >
                     <CustomerCard
                       customer={customer}
-                      mode="detailed"
+                      mode="compact"
                     />
                   </div>
                 ))}
