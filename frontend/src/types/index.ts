@@ -207,7 +207,7 @@ export interface CreateBookingRequest {
   booking_date: string;
   start_time: string;
   customer_notes?: string;
-  options?: number[];
+  option_ids?: number[];
   hold_token?: string;
 }
 
@@ -388,6 +388,8 @@ export interface MenuOption {
   name: string;
   display_name: string;
   description?: string;
+  price: number;
+  duration: number;
   price_type: 'fixed' | 'percentage' | 'duration_based' | 'free';
   price_value: number;
   duration_minutes: number;

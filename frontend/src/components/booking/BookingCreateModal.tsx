@@ -4,6 +4,12 @@ import {
   ClockIcon,
   UserIcon,
   TagIcon,
+  CurrencyYenIcon,
+  PlusIcon,
+  CheckCircleIcon,
+  MagnifyingGlassIcon,
+  PhoneIcon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline';
 import Modal from '../modal/Modal';
 import Button from '../ui/Button';
@@ -18,6 +24,7 @@ import type {
   Booking,
   Customer,
   Menu,
+  MenuOption,
   Resource,
   CreateBookingRequest,
 } from '../../types';
@@ -36,10 +43,14 @@ interface BookingCreateModalProps {
 }
 
 /**
- * 予約作成モーダル
+ * 予約作成モーダル - 美容師さん専用UI
  *
- * 管理者が新規予約を作成するためのモーダル
- * 顧客選択、メニュー選択、リソース選択、日時選択、備考入力に対応
+ * 🎯 ペルソナ: 電話を耳に挟んで片手で操作する美容師さん
+ * ✅ 大きなタッチターゲット（最小44px）
+ * ✅ 検索ベースの顧客選択
+ * ✅ ワンタップでメニュー選択
+ * ✅ 直感的な時間選択
+ * ✅ リアルタイム料金計算
  */
 const BookingCreateModal: React.FC<BookingCreateModalProps> = ({
   isOpen,
@@ -58,36 +69,84 @@ const BookingCreateModal: React.FC<BookingCreateModalProps> = ({
     booking_date: '',
     start_time: '',
     customer_notes: '',
-    options: [],
+    option_ids: [],
   });
 
-  // 選択肢データ
+  // データ状態
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [menus, setMenus] = useState<Menu[]>([]);
   const [resources, setResources] = useState<Resource[]>([]);
   const [selectedMenu, setSelectedMenu] = useState<Menu | null>(null);
+  const [menuOptions, setMenuOptions] = useState<MenuOption[]>([]);
+  const [selectedOptions, setSelectedOptions] = useState<number[]>([]);
 
-  // 状態管理
+  // UI状態
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
+  const [showCustomerList, setShowCustomerList] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
+    null
+  );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
+
+  // 計算値
+  const [calculatedPrice, setCalculatedPrice] = useState(0);
+  const [calculatedDuration, setCalculatedDuration] = useState(0);
+  const [calculatedEndTime, setCalculatedEndTime] = useState('');
 
   // データ取得
   useEffect(() => {
     if (isOpen) {
       loadInitialData();
+      resetForm();
     }
   }, [isOpen]);
+
+  // 顧客検索フィルタリング
+  useEffect(() => {
+    if (customerSearch.trim()) {
+      const filtered = customers.filter(
+        customer =>
+          customer.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
+          (customer.phone && customer.phone.includes(customerSearch))
+      );
+      setFilteredCustomers(filtered);
+      setShowCustomerList(true);
+    } else {
+      setFilteredCustomers([]);
+      setShowCustomerList(false);
+    }
+  }, [customerSearch, customers]);
 
   // 選択されたメニュー詳細取得
   useEffect(() => {
     if (formData.menu_id) {
       const menu = menus.find(m => m.id === formData.menu_id);
       setSelectedMenu(menu || null);
+      if (menu) {
+        loadMenuOptions(menu.id);
+      }
     } else {
       setSelectedMenu(null);
+      setMenuOptions([]);
     }
   }, [formData.menu_id, menus]);
+
+  // 料金・時間計算
+  useEffect(() => {
+    calculatePriceAndDuration();
+  }, [selectedOptions, selectedMenu]);
+
+  // 終了時間計算
+  useEffect(() => {
+    if (formData.start_time && calculatedDuration > 0) {
+      setCalculatedEndTime(
+        calculateEndTime(formData.start_time, calculatedDuration)
+      );
+    }
+  }, [formData.start_time, calculatedDuration]);
 
   /**
    * 初期データ取得
@@ -103,9 +162,9 @@ const BookingCreateModal: React.FC<BookingCreateModalProps> = ({
           resourceApi.getList({ per_page: 100, is_active: true }),
         ]);
 
-      setCustomers(customersResponse.data);
-      setMenus(menusResponse.menus);
-      setResources(resourcesResponse.resources);
+      setCustomers(customersResponse.data || []);
+      setMenus(menusResponse.menus || []);
+      setResources(resourcesResponse.resources || []);
     } catch (error: any) {
       console.error('初期データ取得エラー:', error);
       addNotification({
@@ -120,19 +179,184 @@ const BookingCreateModal: React.FC<BookingCreateModalProps> = ({
   };
 
   /**
-   * フォームデータ更新
+   * メニューオプション取得
    */
-  const updateFormData = (field: keyof CreateBookingRequest, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-
-    // エラーをクリア
-    if (errors[field]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
+  const loadMenuOptions = async (menuId: number) => {
+    try {
+      // TODO: メニューオプションAPI実装後に修正
+      setMenuOptions([
+        {
+          id: 1,
+          menu_id: menuId,
+          name: 'ヘッドスパ',
+          display_name: 'ヘッドスパ',
+          price: 1000,
+          duration: 15,
+          price_type: 'fixed' as const,
+          price_value: 1000,
+          duration_minutes: 15,
+          is_required: false,
+          is_active: true,
+          sort_order: 1,
+          price_type_info: {
+            name: '固定料金',
+            description: '',
+            value_unit: '円',
+            example: '',
+          },
+          formatted_price: '¥1,000',
+          formatted_duration: '15分',
+          has_stock_management: false,
+          in_stock: true,
+          stock_used: 0,
+          created_at: '',
+          updated_at: '',
+        },
+        {
+          id: 2,
+          menu_id: menuId,
+          name: 'トリートメント',
+          display_name: 'トリートメント',
+          price: 2000,
+          duration: 10,
+          price_type: 'fixed' as const,
+          price_value: 2000,
+          duration_minutes: 10,
+          is_required: false,
+          is_active: true,
+          sort_order: 2,
+          price_type_info: {
+            name: '固定料金',
+            description: '',
+            value_unit: '円',
+            example: '',
+          },
+          formatted_price: '¥2,000',
+          formatted_duration: '10分',
+          has_stock_management: false,
+          in_stock: true,
+          stock_used: 0,
+          created_at: '',
+          updated_at: '',
+        },
+        {
+          id: 3,
+          menu_id: menuId,
+          name: 'ブロー仕上げ',
+          display_name: 'ブロー仕上げ',
+          price: 500,
+          duration: 10,
+          price_type: 'fixed' as const,
+          price_value: 500,
+          duration_minutes: 10,
+          is_required: false,
+          is_active: true,
+          sort_order: 3,
+          price_type_info: {
+            name: '固定料金',
+            description: '',
+            value_unit: '円',
+            example: '',
+          },
+          formatted_price: '¥500',
+          formatted_duration: '10分',
+          has_stock_management: false,
+          in_stock: true,
+          stock_used: 0,
+          created_at: '',
+          updated_at: '',
+        },
+      ]);
+    } catch (error) {
+      console.error('メニューオプション取得エラー:', error);
     }
+  };
+
+  /**
+   * 料金・所要時間計算
+   */
+  const calculatePriceAndDuration = () => {
+    if (!selectedMenu) {
+      setCalculatedPrice(0);
+      setCalculatedDuration(0);
+      return;
+    }
+
+    let totalPrice = selectedMenu.base_price;
+    let totalDuration =
+      selectedMenu.base_duration +
+      (selectedMenu.prep_duration || 0) +
+      (selectedMenu.cleanup_duration || 0);
+
+    // 選択されたオプションの料金・時間を加算
+    selectedOptions.forEach(optionId => {
+      const option = menuOptions.find(opt => opt.id === optionId);
+      if (option) {
+        totalPrice += option.price;
+        totalDuration += option.duration;
+      }
+    });
+
+    setCalculatedPrice(totalPrice);
+    setCalculatedDuration(totalDuration);
+  };
+
+  /**
+   * 顧客選択
+   */
+  const selectCustomer = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setFormData(prev => ({ ...prev, customer_id: customer.id }));
+    setCustomerSearch(customer.name);
+    setShowCustomerList(false);
+    clearError('customer_id');
+  };
+
+  /**
+   * メニュー選択
+   */
+  const selectMenu = (menu: Menu) => {
+    setFormData(prev => ({ ...prev, menu_id: menu.id }));
+    clearError('menu_id');
+  };
+
+  /**
+   * オプション選択切り替え
+   */
+  const toggleOption = (optionId: number) => {
+    setSelectedOptions(prev => {
+      if (prev.includes(optionId)) {
+        return prev.filter(id => id !== optionId);
+      } else {
+        return [...prev, optionId];
+      }
+    });
+  };
+
+  /**
+   * リソース選択
+   */
+  const selectResource = (resourceId: number | undefined) => {
+    setFormData(prev => ({ ...prev, resource_id: resourceId }));
+  };
+
+  /**
+   * 時間選択
+   */
+  const selectTime = (time: string) => {
+    setFormData(prev => ({ ...prev, start_time: time }));
+    clearError('start_time');
+  };
+
+  /**
+   * エラークリア
+   */
+  const clearError = (field: string) => {
+    setErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors[field];
+      return newErrors;
+    });
   };
 
   /**
@@ -151,14 +375,6 @@ const BookingCreateModal: React.FC<BookingCreateModalProps> = ({
 
     if (!formData.booking_date) {
       newErrors.booking_date = '予約日を選択してください';
-    } else {
-      const bookingDate = new Date(formData.booking_date);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      if (bookingDate < today) {
-        newErrors.booking_date = '予約日は今日以降を選択してください';
-      }
     }
 
     if (!formData.start_time) {
@@ -170,7 +386,7 @@ const BookingCreateModal: React.FC<BookingCreateModalProps> = ({
   };
 
   /**
-   * 終了時間を計算
+   * 終了時間計算
    */
   const calculateEndTime = (
     startTime: string,
@@ -193,9 +409,7 @@ const BookingCreateModal: React.FC<BookingCreateModalProps> = ({
   /**
    * フォーム送信
    */
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const handleSubmit = async () => {
     if (!validateForm()) {
       return;
     }
@@ -203,20 +417,20 @@ const BookingCreateModal: React.FC<BookingCreateModalProps> = ({
     setIsSubmitting(true);
 
     try {
-      // 未選択の場合は undefined に変換
       const submissionData = {
         ...formData,
         resource_id:
           formData.resource_id === 0 ? undefined : formData.resource_id,
+        option_ids: selectedOptions,
       };
 
       const booking = await bookingApi.create(submissionData);
 
       addNotification({
         type: 'success',
-        title: '予約作成',
-        message: '予約が作成されました',
-        duration: 3000,
+        title: '予約作成完了',
+        message: `予約番号 ${booking.booking_number} で予約が作成されました`,
+        duration: 5000,
       });
 
       onCreate?.(booking);
@@ -241,9 +455,9 @@ const BookingCreateModal: React.FC<BookingCreateModalProps> = ({
   };
 
   /**
-   * モーダルクローズ処理
+   * フォームリセット
    */
-  const handleClose = () => {
+  const resetForm = () => {
     setFormData({
       customer_id: 0,
       menu_id: 0,
@@ -251,326 +465,417 @@ const BookingCreateModal: React.FC<BookingCreateModalProps> = ({
       booking_date: '',
       start_time: '',
       customer_notes: '',
-      options: [],
+      option_ids: [],
     });
+    setSelectedOptions([]);
+    setSelectedCustomer(null);
+    setCustomerSearch('');
+    setShowCustomerList(false);
     setErrors({});
     setIsSubmitting(false);
     setSelectedMenu(null);
+    setMenuOptions([]);
+    setCalculatedPrice(0);
+    setCalculatedDuration(0);
+    setCalculatedEndTime('');
+  };
+
+  /**
+   * モーダルクローズ処理
+   */
+  const handleClose = () => {
+    resetForm();
     onClose();
   };
 
-  // 選択肢を作成
-  const customerOptions = customers.map(customer => ({
-    value: customer.id,
-    label: `${customer.name} (${customer.phone || '電話番号未登録'})`,
-  }));
+  // 今日の日付（最小値として使用）
+  const today = new Date().toISOString().split('T')[0];
 
-  const menuOptions = menus.map(menu => ({
-    value: menu.id,
-    label: `${menu.display_name} (¥${menu.base_price.toLocaleString()}, ${
-      menu.base_duration
-    }分)`,
-  }));
-
-  const resourceOptions = [
-    { value: 0, label: '指定なし' },
-    ...resources.map(resource => ({
-      value: resource.id,
-      label: `${resource.display_name} (${resource.type})`,
-    })),
-  ];
-
-  // 時間選択肢（9:00-20:00、15分刻み）
-  const timeOptions = [];
+  // 時間選択肢（9:00-20:00、30分刻み - タッチしやすく）
+  const timeSlots = [];
   for (let hour = 9; hour <= 20; hour++) {
-    for (let minute = 0; minute < 60; minute += 15) {
+    for (let minute = 0; minute < 60; minute += 30) {
       const timeStr = `${hour.toString().padStart(2, '0')}:${minute
         .toString()
         .padStart(2, '0')}`;
-      timeOptions.push({
-        value: timeStr,
-        label: timeStr,
-      });
+      timeSlots.push(timeStr);
     }
+  }
+
+  if (isLoadingData) {
+    return (
+      <Modal
+        isOpen={isOpen}
+        onClose={handleClose}
+        title='新規予約作成'
+        size='xl'
+      >
+        <div className='flex items-center justify-center py-12'>
+          <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500'></div>
+          <span className='ml-3 text-gray-600'>
+            データを読み込んでいます...
+          </span>
+        </div>
+      </Modal>
+    );
   }
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title='新規予約作成'
-      size='lg'
-      className='max-h-[90vh] overflow-y-auto'
+      title='📞 新規予約作成'
+      size='xl'
+      className='max-h-[95vh] overflow-y-auto'
     >
-      {isLoadingData ? (
-        <div className='flex items-center justify-center py-8'>
-          <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500'></div>
-          <span className='ml-2 text-gray-600'>
-            データを読み込んでいます...
-          </span>
-        </div>
-      ) : (
-        <form onSubmit={handleSubmit} className='space-y-6'>
-          {/* 顧客選択 */}
-          <div className='space-y-4'>
-            <h4 className='text-sm font-medium text-gray-900 border-b border-gray-200 pb-2'>
-              顧客情報
-            </h4>
-
-            <div className='space-y-1'>
-              <label
-                htmlFor='customer_id'
-                className='block text-sm font-medium text-gray-700'
-              >
-                顧客<span className='text-red-500 ml-1'>*</span>
-              </label>
-              <select
-                id='customer_id'
-                value={formData.customer_id}
-                onChange={e =>
-                  updateFormData('customer_id', Number(e.target.value))
-                }
-                className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-                  errors.customer_id ? 'border-red-300' : 'border-gray-300'
-                }`}
-                required
-              >
-                <option value={0}>選択してください</option>
-                {customerOptions.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              {errors.customer_id && (
-                <p className='text-sm text-red-600'>{errors.customer_id}</p>
-              )}
-            </div>
+      <div className='space-y-6'>
+        {/* 顧客検索・選択 */}
+        <div className='bg-blue-50 rounded-lg p-4'>
+          <div className='flex items-center gap-2 mb-3'>
+            <UserIcon className='w-5 h-5 text-blue-600' />
+            <h3 className='text-lg font-semibold text-blue-900'>
+              1. お客様を選択
+            </h3>
           </div>
 
-          {/* メニュー選択 */}
-          <div className='space-y-4'>
-            <h4 className='text-sm font-medium text-gray-900 border-b border-gray-200 pb-2'>
-              メニュー情報
-            </h4>
-
-            <div className='space-y-1'>
-              <label
-                htmlFor='menu_id'
-                className='block text-sm font-medium text-gray-700'
-              >
-                メニュー<span className='text-red-500 ml-1'>*</span>
-              </label>
-              <select
-                id='menu_id'
-                value={formData.menu_id}
-                onChange={e =>
-                  updateFormData('menu_id', Number(e.target.value))
-                }
-                className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-                  errors.menu_id ? 'border-red-300' : 'border-gray-300'
-                }`}
-                required
-              >
-                <option value={0}>選択してください</option>
-                {menuOptions.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              {errors.menu_id && (
-                <p className='text-sm text-red-600'>{errors.menu_id}</p>
-              )}
+          {/* 検索ボックス */}
+          <div className='relative mb-3'>
+            <div className='absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none'>
+              <MagnifyingGlassIcon className='h-5 w-5 text-gray-400' />
             </div>
+            <input
+              type='text'
+              placeholder='お客様のお名前または電話番号で検索'
+              value={customerSearch}
+              onChange={e => setCustomerSearch(e.target.value)}
+              className='w-full pl-10 pr-4 py-4 text-lg border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+            />
+            {customerSearch && (
+              <button
+                onClick={() => {
+                  setCustomerSearch('');
+                  setSelectedCustomer(null);
+                  setFormData(prev => ({ ...prev, customer_id: 0 }));
+                }}
+                className='absolute inset-y-0 right-0 pr-3 flex items-center'
+              >
+                <XMarkIcon className='h-5 w-5 text-gray-400 hover:text-gray-600' />
+              </button>
+            )}
+          </div>
 
-            {/* 選択されたメニューの詳細表示 */}
-            {selectedMenu && (
-              <div className='bg-gray-50 rounded-lg p-4'>
-                <h5 className='font-medium text-gray-900 mb-2'>メニュー詳細</h5>
-                <div className='grid grid-cols-2 gap-4 text-sm'>
-                  <div>
-                    <span className='text-gray-600'>料金:</span>
-                    <span className='ml-2 font-medium'>
-                      ¥{selectedMenu.base_price.toLocaleString()}
+          {/* 選択された顧客の表示 */}
+          {selectedCustomer && (
+            <div className='bg-white rounded-lg p-4 border-2 border-blue-200'>
+              <div className='flex items-center justify-between'>
+                <div>
+                  <h4 className='font-semibold text-blue-900'>
+                    {selectedCustomer.name}
+                  </h4>
+                  <div className='flex items-center gap-4 text-sm text-blue-700'>
+                    <span className='flex items-center gap-1'>
+                      <PhoneIcon className='w-4 h-4' />
+                      {selectedCustomer.phone || '未登録'}
+                    </span>
+                    <span className='px-2 py-1 bg-blue-100 rounded-full text-xs'>
+                      {selectedCustomer.loyalty_rank?.toUpperCase() ||
+                        'REGULAR'}
                     </span>
                   </div>
-                  <div>
-                    <span className='text-gray-600'>所要時間:</span>
-                    <span className='ml-2 font-medium'>
-                      {selectedMenu.base_duration}分
-                    </span>
+                </div>
+                <CheckCircleIcon className='w-6 h-6 text-blue-600' />
+              </div>
+            </div>
+          )}
+
+          {/* 顧客検索結果 */}
+          {showCustomerList && filteredCustomers.length > 0 && (
+            <div className='bg-white border rounded-lg max-h-48 overflow-y-auto'>
+              {filteredCustomers.slice(0, 5).map(customer => (
+                <button
+                  key={customer.id}
+                  onClick={() => selectCustomer(customer)}
+                  className='w-full p-4 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0'
+                >
+                  <div className='font-medium'>{customer.name}</div>
+                  <div className='text-sm text-gray-600'>
+                    {customer.phone || '電話番号未登録'}
                   </div>
-                  {selectedMenu.description && (
-                    <div className='col-span-2'>
-                      <span className='text-gray-600'>説明:</span>
-                      <p className='mt-1 text-gray-800'>
-                        {selectedMenu.description}
-                      </p>
-                    </div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {errors.customer_id && (
+            <p className='text-sm text-red-600 mt-2'>{errors.customer_id}</p>
+          )}
+        </div>
+
+        {/* メニュー選択 */}
+        <div className='bg-green-50 rounded-lg p-4'>
+          <div className='flex items-center gap-2 mb-3'>
+            <TagIcon className='w-5 h-5 text-green-600' />
+            <h3 className='text-lg font-semibold text-green-900'>
+              2. メニューを選択
+            </h3>
+          </div>
+
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-3'>
+            {menus.map(menu => (
+              <button
+                key={menu.id}
+                onClick={() => selectMenu(menu)}
+                className={`p-4 rounded-lg border-2 text-left transition-all ${
+                  formData.menu_id === menu.id
+                    ? 'border-green-500 bg-green-100'
+                    : 'border-gray-200 bg-white hover:border-green-300'
+                }`}
+              >
+                <div className='flex items-center justify-between mb-2'>
+                  <h4 className='font-semibold text-gray-900'>
+                    {menu.display_name || menu.name}
+                  </h4>
+                  {formData.menu_id === menu.id && (
+                    <CheckCircleIcon className='w-5 h-5 text-green-600' />
                   )}
                 </div>
-              </div>
-            )}
-          </div>
-
-          {/* リソース選択 */}
-          <div className='space-y-4'>
-            <h4 className='text-sm font-medium text-gray-900 border-b border-gray-200 pb-2'>
-              リソース選択
-            </h4>
-
-            <div className='space-y-1'>
-              <label
-                htmlFor='resource_id'
-                className='block text-sm font-medium text-gray-700'
-              >
-                担当者・設備
-              </label>
-              <select
-                id='resource_id'
-                value={formData.resource_id || 0}
-                onChange={e =>
-                  updateFormData(
-                    'resource_id',
-                    Number(e.target.value) === 0
-                      ? undefined
-                      : Number(e.target.value)
-                  )
-                }
-                className='w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500'
-              >
-                {resourceOptions.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* 日時選択 */}
-          <div className='space-y-4'>
-            <h4 className='text-sm font-medium text-gray-900 border-b border-gray-200 pb-2'>
-              予約日時
-            </h4>
-
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-              <div className='space-y-1'>
-                <label
-                  htmlFor='booking_date'
-                  className='block text-sm font-medium text-gray-700'
-                >
-                  予約日<span className='text-red-500 ml-1'>*</span>
-                </label>
-                <input
-                  type='date'
-                  id='booking_date'
-                  value={formData.booking_date}
-                  onChange={e => updateFormData('booking_date', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-                    errors.booking_date ? 'border-red-300' : 'border-gray-300'
-                  }`}
-                  required
-                />
-                {errors.booking_date && (
-                  <p className='text-sm text-red-600'>{errors.booking_date}</p>
-                )}
-              </div>
-
-              <div className='space-y-1'>
-                <label
-                  htmlFor='start_time'
-                  className='block text-sm font-medium text-gray-700'
-                >
-                  開始時間<span className='text-red-500 ml-1'>*</span>
-                </label>
-                <select
-                  id='start_time'
-                  value={formData.start_time}
-                  onChange={e => updateFormData('start_time', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-                    errors.start_time ? 'border-red-300' : 'border-gray-300'
-                  }`}
-                  required
-                >
-                  <option value=''>選択してください</option>
-                  {timeOptions.map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                {errors.start_time && (
-                  <p className='text-sm text-red-600'>{errors.start_time}</p>
-                )}
-              </div>
-            </div>
-
-            {/* 終了時間表示 */}
-            {formData.start_time && selectedMenu && (
-              <div className='bg-blue-50 rounded-lg p-3'>
-                <div className='flex items-center text-sm text-blue-800'>
-                  <ClockIcon className='w-4 h-4 mr-1' />
-                  <span>
-                    終了予定時間:{' '}
-                    {calculateEndTime(
-                      formData.start_time,
-                      selectedMenu.base_duration
-                    )}
+                <div className='flex items-center justify-between text-sm'>
+                  <span className='text-gray-600'>{menu.base_duration}分</span>
+                  <span className='font-bold text-green-600'>
+                    ¥{menu.base_price.toLocaleString()}
                   </span>
                 </div>
-              </div>
+              </button>
+            ))}
+          </div>
+
+          {errors.menu_id && (
+            <p className='text-sm text-red-600 mt-2'>{errors.menu_id}</p>
+          )}
+        </div>
+
+        {/* オプション選択 */}
+        {selectedMenu && menuOptions.length > 0 && (
+          <div className='bg-purple-50 rounded-lg p-4'>
+            <div className='flex items-center gap-2 mb-3'>
+              <PlusIcon className='w-5 h-5 text-purple-600' />
+              <h3 className='text-lg font-semibold text-purple-900'>
+                3. オプション（任意）
+              </h3>
+            </div>
+
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-3'>
+              {menuOptions.map(option => (
+                <button
+                  key={option.id}
+                  onClick={() => toggleOption(option.id)}
+                  className={`p-3 rounded-lg border-2 text-left transition-all ${
+                    selectedOptions.includes(option.id)
+                      ? 'border-purple-500 bg-purple-100'
+                      : 'border-gray-200 bg-white hover:border-purple-300'
+                  }`}
+                >
+                  <div className='flex items-center justify-between'>
+                    <div>
+                      <h4 className='font-medium text-gray-900'>
+                        {option.name}
+                      </h4>
+                      <span className='text-sm text-gray-600'>
+                        +{option.duration}分
+                      </span>
+                    </div>
+                    <div className='text-right'>
+                      <div className='font-bold text-purple-600'>
+                        +¥{option.price.toLocaleString()}
+                      </div>
+                      {selectedOptions.includes(option.id) && (
+                        <CheckCircleIcon className='w-4 h-4 text-purple-600 ml-auto' />
+                      )}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 担当者選択 */}
+        <div className='bg-orange-50 rounded-lg p-4'>
+          <div className='flex items-center gap-2 mb-3'>
+            <UserIcon className='w-5 h-5 text-orange-600' />
+            <h3 className='text-lg font-semibold text-orange-900'>
+              4. 担当者（任意）
+            </h3>
+          </div>
+
+          <div className='grid grid-cols-2 md:grid-cols-3 gap-3'>
+            <button
+              onClick={() => selectResource(undefined)}
+              className={`p-3 rounded-lg border-2 text-center transition-all ${
+                !formData.resource_id
+                  ? 'border-orange-500 bg-orange-100'
+                  : 'border-gray-200 bg-white hover:border-orange-300'
+              }`}
+            >
+              <div className='font-medium'>指定なし</div>
+              <div className='text-sm text-gray-600'>お任せ</div>
+            </button>
+            {resources.map(resource => (
+              <button
+                key={resource.id}
+                onClick={() => selectResource(resource.id)}
+                className={`p-3 rounded-lg border-2 text-center transition-all ${
+                  formData.resource_id === resource.id
+                    ? 'border-orange-500 bg-orange-100'
+                    : 'border-gray-200 bg-white hover:border-orange-300'
+                }`}
+              >
+                <div className='font-medium'>{resource.display_name}</div>
+                {resource.hourly_rate_diff > 0 && (
+                  <div className='text-sm text-orange-600'>
+                    +¥{resource.hourly_rate_diff}
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* 日時選択 */}
+        <div className='bg-pink-50 rounded-lg p-4'>
+          <div className='flex items-center gap-2 mb-3'>
+            <CalendarIcon className='w-5 h-5 text-pink-600' />
+            <h3 className='text-lg font-semibold text-pink-900'>
+              5. 日時を選択
+            </h3>
+          </div>
+
+          {/* 日付選択 */}
+          <div className='mb-4'>
+            <label className='block text-sm font-medium text-pink-700 mb-2'>
+              予約日
+            </label>
+            <input
+              type='date'
+              value={formData.booking_date}
+              onChange={e =>
+                setFormData(prev => ({ ...prev, booking_date: e.target.value }))
+              }
+              min={today}
+              className='w-full p-4 text-lg border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500'
+            />
+            {errors.booking_date && (
+              <p className='text-sm text-red-600 mt-1'>{errors.booking_date}</p>
             )}
           </div>
 
-          {/* 備考 */}
-          <div className='space-y-4'>
-            <h4 className='text-sm font-medium text-gray-900 border-b border-gray-200 pb-2'>
-              備考
-            </h4>
+          {/* 時間選択 */}
+          <div>
+            <label className='block text-sm font-medium text-pink-700 mb-2'>
+              開始時間
+            </label>
+            <div className='grid grid-cols-4 md:grid-cols-6 gap-2'>
+              {timeSlots.map(time => (
+                <button
+                  key={time}
+                  onClick={() => selectTime(time)}
+                  className={`p-3 rounded-lg border-2 text-center font-medium transition-all ${
+                    formData.start_time === time
+                      ? 'border-pink-500 bg-pink-100 text-pink-900'
+                      : 'border-gray-200 bg-white hover:border-pink-300 text-gray-700'
+                  }`}
+                >
+                  {time}
+                </button>
+              ))}
+            </div>
+            {errors.start_time && (
+              <p className='text-sm text-red-600 mt-2'>{errors.start_time}</p>
+            )}
+          </div>
+        </div>
 
-            <div className='space-y-1'>
-              <label
-                htmlFor='customer_notes'
-                className='block text-sm font-medium text-gray-700'
-              >
-                顧客からの要望・備考
-              </label>
-              <textarea
-                id='customer_notes'
-                value={formData.customer_notes || ''}
-                onChange={e => updateFormData('customer_notes', e.target.value)}
-                placeholder='特記事項があれば入力してください'
-                rows={3}
-                className='w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500'
-              />
+        {/* 料金サマリー */}
+        {selectedMenu && (
+          <div className='bg-gray-100 rounded-lg p-4 border-2 border-gray-300'>
+            <h4 className='font-bold text-gray-900 mb-3 flex items-center gap-2'>
+              <CurrencyYenIcon className='w-5 h-5' />
+              予約内容確認
+            </h4>
+            <div className='space-y-2'>
+              <div className='flex justify-between text-lg'>
+                <span>{selectedMenu.name}</span>
+                <span>¥{selectedMenu.base_price.toLocaleString()}</span>
+              </div>
+              {selectedOptions.map(optionId => {
+                const option = menuOptions.find(opt => opt.id === optionId);
+                return option ? (
+                  <div
+                    key={optionId}
+                    className='flex justify-between text-gray-600'
+                  >
+                    <span>+ {option.name}</span>
+                    <span>¥{option.price.toLocaleString()}</span>
+                  </div>
+                ) : null;
+              })}
+              <div className='border-t-2 border-gray-300 pt-2 flex justify-between text-xl font-bold text-primary-600'>
+                <span>合計</span>
+                <span>¥{calculatedPrice.toLocaleString()}</span>
+              </div>
+              <div className='flex justify-between text-gray-600'>
+                <span>所要時間</span>
+                <span>{calculatedDuration}分</span>
+              </div>
+              {calculatedEndTime && (
+                <div className='flex justify-between text-gray-600'>
+                  <span>終了予定</span>
+                  <span>{calculatedEndTime}</span>
+                </div>
+              )}
             </div>
           </div>
+        )}
 
-          {/* アクションボタン */}
-          <div className='flex justify-end space-x-3 pt-6 border-t border-gray-200'>
-            <Button
-              type='button'
-              variant='outline'
-              size='md'
-              onClick={handleClose}
-              disabled={isSubmitting}
-            >
-              キャンセル
-            </Button>
-            <Button
-              type='submit'
-              variant='primary'
-              size='md'
-              loading={isSubmitting}
-              leftIcon={<CalendarIcon className='w-4 h-4' />}
-            >
-              {isSubmitting ? '作成中...' : '予約を作成'}
-            </Button>
-          </div>
-        </form>
-      )}
+        {/* 備考 */}
+        <div>
+          <label className='block text-sm font-medium text-gray-700 mb-2'>
+            お客様からのご要望
+          </label>
+          <textarea
+            value={formData.customer_notes || ''}
+            onChange={e =>
+              setFormData(prev => ({ ...prev, customer_notes: e.target.value }))
+            }
+            placeholder='アレルギーや特別な要望があれば入力してください'
+            rows={3}
+            className='w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500'
+          />
+        </div>
+
+        {/* アクションボタン */}
+        <div className='flex gap-4 pt-4'>
+          <Button
+            variant='outline'
+            size='lg'
+            onClick={handleClose}
+            disabled={isSubmitting}
+            className='flex-1'
+          >
+            キャンセル
+          </Button>
+          <Button
+            variant='primary'
+            size='lg'
+            loading={isSubmitting}
+            onClick={handleSubmit}
+            className='flex-1'
+            leftIcon={<CalendarIcon className='w-5 h-5' />}
+          >
+            {isSubmitting ? '作成中...' : '予約を作成'}
+          </Button>
+        </div>
+      </div>
     </Modal>
   );
 };
