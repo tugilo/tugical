@@ -685,4 +685,32 @@ curl -X POST http://localhost/api/v1/auth/logout \
 - ✅ **エラーハンドリング**: LoadingScreen・エラー表示
 - ✅ **ソフトデリート**: deleted_at カラム追加
 
+### ✅ Phase 4.4 完了: 顧客一覧API修正とテストデータ作成 【2025-07-04 11:08 完了】
+
+#### 🎯 実装内容
+- **API レスポンス修正**
+  - CustomerController でページネーション形式を修正
+  - PaginatedResponse 形式に統一
+- **データベース修正**
+  - stores テーブルに deleted_at カラム追加
+  - Customer モデルの fillable/casts 修正
+  - ロイヤリティランク enum 値を修正（new/regular/vip/premium）
+- **テストデータ作成**
+  - TestUserSeeder でテナント・店舗作成追加
+  - CustomerSeeder で10件の顧客データ作成
+  - 各ロイヤリティランクの顧客を配置
+
+#### 📊 実装統計
+- **修正ファイル数**: 6ファイル
+- **新規マイグレーション**: 1ファイル (stores deleted_at)
+- **修正行数**: 約300行
+- **テストデータ**: 顧客10件（プラチナ2、ゴールド2、シルバー2、ブロンズ2、非アクティブ2）
+
+#### 🎯 技術特徴
+- ✅ **暗号化対応**: phone/email/address フィールドの自動暗号化・復号化
+- ✅ **マルチテナント**: store_id による完全分離
+- ✅ **ソフトデリート**: customers/stores テーブル対応
+- ✅ **ページネーション**: 統一レスポンス形式
+- ✅ **型安全**: TypeScript 側で適切に型処理
+
 ---

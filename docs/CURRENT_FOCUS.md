@@ -1,17 +1,20 @@
 # tugical Current Focus - セッション継続管理
-**Updated**: 2025-07-04 10:58
+**Updated**: 2025-07-04 11:08
 
-## ✅ 完了タスク: 顧客管理ページ実装
-- CustomerCard コンポーネント作成
-- CustomersPage API 連携（検索・フィルタ・ページネーション）
-- deleted_at カラム追加（SoftDeletes 対応）
-- LoadingScreen/エラーハンドリング統合
+## ✅ 完了タスク: 顧客一覧API修正
+- CustomerController ページネーション形式修正
+- stores テーブル deleted_at カラム追加
+- Customer モデル fillable/casts 修正
+- TestUserSeeder でテナント・店舗作成
+- CustomerSeeder で10件のテストデータ作成
+- 暗号化機能の再有効化
 
 ## 🔄 現在作業中：顧客管理 CRUD 詳細機能
 - 顧客詳細モーダル実装
 - 編集・新規作成フォーム
 - ランク管理機能
 - 削除（ソフトデリート）機能
+- CustomerController の show/store/update/destroy メソッド追加
 
 ## 🚧 次回予定
 1. CustomerController CRUD メソッド追加（show/store/update/destroy）

@@ -53,9 +53,20 @@ const CustomersPage: React.FC = () => {
     };
 
     try {
-      const data = await customerApi.getList(filters);
-      setCustomers(data.data);
-      setPagination(data);
+      const response = await customerApi.getList(filters);
+      // API レスポンスの構造に合わせて修正
+      if (response.data && Array.isArray(response.data)) {
+        // data が配列の場合（ページネーションなし）
+        setCustomers(response.data);
+        setPagination(null);
+      } else if (response.data && response.meta) {
+        // data.data と data.meta がある場合（ページネーションあり）
+        setCustomers(response.data);
+        setPagination(response);
+      } else {
+        // 予期しない形式
+        throw new Error('Unexpected API response format');
+      }
     } catch (err: any) {
       console.error(err);
       setError(err.message || '顧客一覧の取得に失敗しました');

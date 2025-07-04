@@ -60,7 +60,23 @@ class CustomerController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => CustomerResource::collection($customers),
+            'data' => [
+                'data' => CustomerResource::collection($customers),
+                'meta' => [
+                    'current_page' => $customers->currentPage(),
+                    'from' => $customers->firstItem(),
+                    'last_page' => $customers->lastPage(),
+                    'per_page' => $customers->perPage(),
+                    'to' => $customers->lastItem(),
+                    'total' => $customers->total(),
+                ],
+                'links' => [
+                    'first' => $customers->url(1),
+                    'last' => $customers->url($customers->lastPage()),
+                    'prev' => $customers->previousPageUrl(),
+                    'next' => $customers->nextPageUrl(),
+                ],
+            ],
             'message' => '顧客一覧を取得しました',
             'meta' => [
                 'timestamp' => now()->toISOString(),
