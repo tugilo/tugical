@@ -91,13 +91,13 @@ class ApiClient {
         this.token = savedToken;
       } else {
         // 開発環境用のデフォルトトークン
-        this.token = '13|mJaRrztOiOwPhsZl3K0xNfF67l4U2GZg3pf6zytF0b76b778';
+        this.token = '12|jtAgOafLHXFLPjuuXHnHIAA3e6iI5BfuPsAidGsA5fd63835';
         localStorage.setItem('tugical_admin_token', this.token);
       }
     } catch (error) {
       console.warn('Failed to load token from localStorage:', error);
       // フォールバック
-      this.token = '13|mJaRrztOiOwPhsZl3K0xNfF67l4U2GZg3pf6zytF0b76b778';
+      this.token = '12|jtAgOafLHXFLPjuuXHnHIAA3e6iI5BfuPsAidGsA5fd63835';
     }
   }
 
@@ -706,32 +706,20 @@ class ApiClient {
         throw new Error('郵便番号は7桁の数字で入力してください');
       }
 
-      const response = await fetch(
-        `https://zipcloud.ibsnet.co.jp/api/search?zipcode=${cleanedCode}`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      // バックエンドの郵便番号検索エンドポイントを使用
+      const response = await this.client.get<
+        ApiResponse<{
+          prefecture: string;
+          city: string;
+          town: string;
+        } | null>
+      >(`/postal-search?zipcode=${cleanedCode}`);
 
-      if (!response.ok) {
-        throw new Error('郵便番号検索APIでエラーが発生しました');
+      if (response.data.success && response.data.data) {
+        return response.data.data;
       }
 
-      const data = await response.json();
-
-      if (data.status !== 200 || !data.results || data.results.length === 0) {
-        return null; // 見つからない場合
-      }
-
-      const result = data.results[0];
-      return {
-        prefecture: result.address1, // 都道府県
-        city: result.address2, // 市区町村
-        town: result.address3, // 町域
-      };
+      return null; // 見つからない場合
     } catch (error) {
       console.error('郵便番号検索エラー:', error);
       throw error;
@@ -871,59 +859,6 @@ export const dashboardApi = {
 
 export const notificationApi = {
   getList: (filters?: FilterOptions) => apiClient.getNotifications(filters),
-};
-
-// 郵便番号検索API（zipcloud.ibsnet.co.jp）
-export const postalCodeApi = {
-  /**
-   * 郵便番号から住所を検索
-   * @param postalCode 郵便番号（ハイフンあり・なし両対応）
-   * @returns 住所情報
-   */
-  async searchByPostalCode(postalCode: string): Promise<{
-    prefecture: string;
-    city: string;
-    town: string;
-  } | null> {
-    try {
-      // ハイフンを除去して7桁の数字のみにする
-      const cleanedCode = postalCode.replace(/-/g, '');
-
-      if (!/^\d{7}$/.test(cleanedCode)) {
-        throw new Error('郵便番号は7桁の数字で入力してください');
-      }
-
-      const response = await fetch(
-        `https://zipcloud.ibsnet.co.jp/api/search?zipcode=${cleanedCode}`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('郵便番号検索APIでエラーが発生しました');
-      }
-
-      const data = await response.json();
-
-      if (data.status !== 200 || !data.results || data.results.length === 0) {
-        return null; // 見つからない場合
-      }
-
-      const result = data.results[0];
-      return {
-        prefecture: result.address1, // 都道府県
-        city: result.address2, // 市区町村
-        town: result.address3, // 町域
-      };
-    } catch (error) {
-      console.error('郵便番号検索エラー:', error);
-      throw error;
-    }
-  },
 };
 
 export default apiClient;

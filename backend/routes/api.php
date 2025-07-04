@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\MenuController;
 use App\Http\Controllers\Api\ResourceController;
+use Illuminate\Support\Facades\Http;
 
 /*
 |--------------------------------------------------------------------------
@@ -45,12 +46,12 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::prefix('v1/auth')->name('auth.')->group(function () {
     // 管理者ログイン（認証不要）
     Route::post('login', [AuthController::class, 'login'])->name('login');
-    
+
     // 認証必須ルート
     Route::middleware('auth:sanctum')->group(function () {
         // ログアウト
         Route::post('logout', [AuthController::class, 'logout'])->name('logout');
-        
+
         // ユーザー情報取得
         Route::get('user', [AuthController::class, 'user'])->name('user');
     });
@@ -60,45 +61,25 @@ Route::prefix('v1/auth')->name('auth.')->group(function () {
 // 管理者API（認証必須・マルチテナント対応）
 // ===========================
 Route::prefix('v1')->middleware(['auth:sanctum'])->name('api.v1.')->group(function () {
-    
+
     // 予約管理API（tugical_api_specification_v1.0.md Section 2）
-    Route::apiResource('bookings', BookingController::class);
-    Route::patch('bookings/{booking}/status', [BookingController::class, 'updateStatus'])->name('bookings.update-status');
+    Route::get('bookings', [BookingController::class, 'index']);
+    Route::post('bookings', [BookingController::class, 'store']);
+    Route::get('bookings/{booking}', [BookingController::class, 'show']);
+    Route::put('bookings/{booking}', [BookingController::class, 'update']);
+    Route::delete('bookings/{booking}', [BookingController::class, 'destroy']);
+    Route::patch('bookings/{booking}/status', [BookingController::class, 'updateStatus']);
 
     // 空き時間・可用性API（tugical_api_specification_v1.0.md Section 3）
-    Route::get('availability', [AvailabilityController::class, 'index'])->name('availability.index');
-    Route::get('availability/calendar', [AvailabilityController::class, 'calendar'])->name('availability.calendar');
-    Route::post('availability/resource-check', [AvailabilityController::class, 'resourceCheck'])->name('availability.resource-check');
-
-    // Hold Token（仮押さえ）管理API
-    Route::prefix('hold-slots')->name('hold-slots.')->group(function () {
-        Route::post('/', [HoldTokenController::class, 'store'])->name('store');
-        Route::get('/', [HoldTokenController::class, 'index'])->name('index');
-        Route::get('{token}', [HoldTokenController::class, 'show'])->name('show');
-        Route::delete('{token}', [HoldTokenController::class, 'destroy'])->name('destroy');
-        Route::patch('{token}/extend', [HoldTokenController::class, 'extend'])->name('extend');
-    });
+    Route::get('availability', [AvailabilityController::class, 'index']);
+    Route::post('hold-slots', [HoldTokenController::class, 'create']);
+    Route::delete('hold-slots/{token}', [HoldTokenController::class, 'release']);
 
     // 通知管理API（tugical_api_specification_v1.0.md Section 7）
-    Route::prefix('notifications')->name('notifications.')->group(function () {
-        Route::get('/', [NotificationController::class, 'index'])->name('index');
-        Route::get('stats', [NotificationController::class, 'stats'])->name('stats');
-        Route::post('send', [NotificationController::class, 'send'])->name('send');
-        Route::post('bulk', [NotificationController::class, 'bulk'])->name('bulk');
-        Route::get('{notification}', [NotificationController::class, 'show'])->name('show');
-        Route::post('{notification}/retry', [NotificationController::class, 'retry'])->name('retry');
-    });
-
-    // 通知テンプレート管理API
-    Route::prefix('notification-templates')->name('notification-templates.')->group(function () {
-        Route::get('/', [NotificationTemplateController::class, 'index'])->name('index');
-        Route::get('defaults', [NotificationTemplateController::class, 'defaults'])->name('defaults');
-        Route::post('/', [NotificationTemplateController::class, 'store'])->name('store');
-        Route::get('{notificationTemplate}', [NotificationTemplateController::class, 'show'])->name('show');
-        Route::put('{notificationTemplate}', [NotificationTemplateController::class, 'update'])->name('update');
-        Route::delete('{notificationTemplate}', [NotificationTemplateController::class, 'destroy'])->name('destroy');
-        Route::post('{notificationTemplate}/preview', [NotificationTemplateController::class, 'preview'])->name('preview');
-    });
+    Route::get('notifications', [NotificationController::class, 'index']);
+    Route::post('notifications', [NotificationController::class, 'store']);
+    Route::get('notification-templates', [NotificationTemplateController::class, 'index']);
+    Route::post('notification-templates', [NotificationTemplateController::class, 'store']);
 
     // 顧客管理API
     Route::apiResource('customers', CustomerController::class);
@@ -157,6 +138,60 @@ Route::get('health', function () {
         ],
     ]);
 })->name('health');
+
+// 郵便番号検索（認証不要）
+Route::get('v1/postal-search', function (Request $request) {
+    $zipcode = $request->query('zipcode');
+
+    if (!$zipcode || !preg_match('/^\d{7}$/', $zipcode)) {
+        return response()->json([
+            'success' => false,
+            'error' => [
+                'code' => 'INVALID_ZIPCODE',
+                'message' => '郵便番号は7桁の数字で入力してください'
+            ]
+        ], 400);
+    }
+
+    try {
+        $response = Http::get("https://zipcloud.ibsnet.co.jp/api/search", [
+            'zipcode' => $zipcode
+        ]);
+
+        if (!$response->successful()) {
+            throw new \Exception('郵便番号検索APIでエラーが発生しました');
+        }
+
+        $data = $response->json();
+
+        if ($data['status'] !== 200 || empty($data['results'])) {
+            return response()->json([
+                'success' => true,
+                'data' => null,
+                'message' => '該当する住所が見つかりませんでした'
+            ]);
+        }
+
+        $result = $data['results'][0];
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'prefecture' => $result['address1'],
+                'city' => $result['address2'],
+                'town' => $result['address3']
+            ]
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => [
+                'code' => 'POSTAL_SEARCH_ERROR',
+                'message' => '郵便番号検索に失敗しました'
+            ]
+        ], 500);
+    }
+});
 
 // ===========================
 // 未対応ルート（404対応）
