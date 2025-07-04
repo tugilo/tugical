@@ -1,11 +1,11 @@
 # tugical Current Focus - セッション継続管理
-**Updated**: 2025-07-03 10:42
+**Updated**: 2025-07-04 10:45
 
-## ✅ 前回完了内容：予約管理ページ詳細実装 & 開発環境調整
-- BookingCard コンポーネント作成
-- ステータスタブ・検索フォーム・API 連携
-- docs/PROGRESS.md 及び .cursorrules 更新
-- develop ブランチへ push 完了
+## ✅ 完了タスク: CustomerController 顧客一覧API 実装
+- backend/app/Http/Controllers/Api/CustomerController.php 作成
+- CustomerResource 作成
+- routes/api.php に顧客ルート追加
+- フロント顧客一覧表示 404 解消
 
 ## 🔄 現在作業中：顧客管理ページ CRUD & 詳細モーダル
 - CustomerCard コンポーネント

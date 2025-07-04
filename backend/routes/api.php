@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\HoldTokenController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\NotificationTemplateController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CustomerController;
 
 /*
 |--------------------------------------------------------------------------
@@ -96,6 +97,9 @@ Route::prefix('v1')->middleware(['auth:sanctum'])->name('api.v1.')->group(functi
         Route::delete('{notificationTemplate}', [NotificationTemplateController::class, 'destroy'])->name('destroy');
         Route::post('{notificationTemplate}/preview', [NotificationTemplateController::class, 'preview'])->name('preview');
     });
+
+    // 顧客管理API
+    Route::apiResource('customers', CustomerController::class);
 });
 
 // ===========================

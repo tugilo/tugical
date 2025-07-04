@@ -655,3 +655,28 @@ curl -X POST http://localhost/api/v1/auth/logout \
 - 変更ファイル: docker-compose.yml, docker/nginx/sites/development.conf, frontend/vite.config.ts, frontend/src/App.tsx
 - コミット: 3913d9043c3006e0aaf47b741ea1755959e5dca5
 - 残タスク: 顧客管理ページ CRUD & 詳細モーダル実装 (進行中)
+
+### ✅ Phase 3.4 完了: CustomerController実装 【2025-07-04 10:45 完了】
+
+#### 🎯 実装内容
+- **CustomerController.php** (一覧取得)
+  - index() – 検索・ステータスフィルタ・ページネーション対応
+  - TenantScope による store_id 分離
+- **CustomerResource.php** – フロント用データ整形
+- **routes/api.php** – `Route::apiResource('customers', CustomerController::class)` 追加
+- ルートキャッシュ再生成 (`php artisan route:cache`)
+
+#### 📊 実装統計
+- **追加行数**: 約150行追加
+- **新規ファイル**: 2ファイル (Controller, Resource)
+- **既存ファイル変更**: routes/api.php
+- **APIエンドポイント**: GET /api/v1/customers 完了
+
+#### 🎯 技術特徴
+- ✅ **API仕様準拠**: tugical_api_specification_v1.0.md Section 4 (Customer)
+- ✅ **マルチテナント**: store_id 自動分離
+- ✅ **バリデーション**: キーワード検索・ステータスフィルタ
+- ✅ **レスポンス統一**: CustomerResource で整形
+- ✅ **ログ出力**: 取得件数・店舗ID を記録
+
+---
