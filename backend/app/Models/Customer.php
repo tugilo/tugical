@@ -211,7 +211,7 @@ class Customer extends Model
     protected static function booted()
     {
         static::addGlobalScope(new TenantScope);
-        
+
         // 作成時の処理
         static::creating(function ($customer) {
             if (!$customer->store_id && auth()->check()) {
@@ -224,24 +224,12 @@ class Customer extends Model
             $customer->total_spent = $customer->total_spent ?? 0;
             $customer->no_show_count = $customer->no_show_count ?? 0;
             $customer->is_active = $customer->is_active ?? true;
-
-            // 個人情報暗号化
-            $customer->encryptPersonalData();
         });
 
         // 更新時の処理
         static::updating(function ($customer) {
-            // 個人情報暗号化
-            $customer->encryptPersonalData();
-
             // ロイヤリティランク自動更新
             $customer->updateLoyaltyRank();
-        });
-
-        // 取得時の処理
-        static::retrieved(function ($customer) {
-            // 個人情報復号化
-            $customer->decryptPersonalData();
         });
     }
 
@@ -262,43 +250,38 @@ class Customer extends Model
     }
 
     /**
-     * 個人情報暗号化
+     * 電話番号の暗号化ミューテータ
      */
-    protected function encryptPersonalData(): void
+    public function setPhoneAttribute($value)
     {
-        foreach ($this->encrypted as $field) {
-            if ($this->isDirty($field) && !empty($this->attributes[$field])) {
-                // 既に暗号化されているかチェック
-                if (strpos($this->attributes[$field], 'eyJpdiI6') !== 0) {
-                    $this->attributes[$field] = encrypt($this->attributes[$field]);
-                }
-            }
+        if (!empty($value)) {
+            $this->attributes['phone'] = encrypt($value);
+        } else {
+            $this->attributes['phone'] = null;
         }
     }
 
     /**
-     * 個人情報復号化
+     * メールアドレスの暗号化ミューテータ
      */
-    protected function decryptPersonalData(): void
+    public function setEmailAttribute($value)
     {
-        foreach ($this->encrypted as $field) {
-            if (!empty($this->attributes[$field])) {
-                try {
-                    $this->attributes[$field] = decrypt($this->attributes[$field]);
-                } catch (\Exception $e) {
-                    // 復号化失敗時は元の値をそのまま使用（既に復号化されている可能性）
-                    // 暗号化されたデータかどうかをチェック
-                    if (strpos($this->attributes[$field], 'eyJpdiI6') === 0) {
-                        // Base64エンコードされた暗号化データの場合は空文字に
-                        $this->attributes[$field] = '';
-                        \Log::warning("Failed to decrypt customer field: {$field}", [
-                            'customer_id' => $this->id,
-                            'error' => $e->getMessage(),
-                        ]);
-                    }
-                    // それ以外は既に復号化されているとみなしてそのまま使用
-                }
-            }
+        if (!empty($value)) {
+            $this->attributes['email'] = encrypt($value);
+        } else {
+            $this->attributes['email'] = null;
+        }
+    }
+
+    /**
+     * 住所の暗号化ミューテータ
+     */
+    public function setAddressAttribute($value)
+    {
+        if (!empty($value)) {
+            $this->attributes['address'] = encrypt($value);
+        } else {
+            $this->attributes['address'] = null;
         }
     }
 
@@ -308,10 +291,10 @@ class Customer extends Model
     public function updateLoyaltyRank(): void
     {
         $currentRank = $this->calculateLoyaltyRank();
-        
+
         if ($currentRank !== $this->loyalty_rank) {
             $this->loyalty_rank = $currentRank;
-            
+
             // ランクアップ通知（後でイベント化）
             \Log::info("Customer loyalty rank updated", [
                 'customer_id' => $this->id,
@@ -332,8 +315,10 @@ class Customer extends Model
         $currentRank = self::LOYALTY_NEW;
 
         foreach ($settings as $rank => $config) {
-            if ($this->total_bookings >= $config['min_bookings'] && 
-                $this->total_spent >= $config['min_amount']) {
+            if (
+                $this->total_bookings >= $config['min_bookings'] &&
+                $this->total_spent >= $config['min_amount']
+            ) {
                 $currentRank = $rank;
             }
         }
@@ -362,7 +347,7 @@ class Customer extends Model
         $settings = self::getLoyaltyRankSettings();
         $ranks = array_keys($settings);
         $currentIndex = array_search($this->loyalty_rank, $ranks);
-        
+
         if ($currentIndex === false || $currentIndex >= count($ranks) - 1) {
             return null; // 最高ランクの場合
         }
@@ -556,7 +541,7 @@ class Customer extends Model
         if (empty($value)) {
             return $value;
         }
-        
+
         try {
             // 暗号化されたデータかチェック
             if (strpos($value, 'eyJpdiI6') === 0) {
@@ -580,7 +565,7 @@ class Customer extends Model
         if (empty($value)) {
             return $value;
         }
-        
+
         try {
             // 暗号化されたデータかチェック
             if (strpos($value, 'eyJpdiI6') === 0) {
@@ -604,7 +589,7 @@ class Customer extends Model
         if (empty($value)) {
             return $value;
         }
-        
+
         try {
             // 暗号化されたデータかチェック
             if (strpos($value, 'eyJpdiI6') === 0) {
@@ -691,10 +676,10 @@ class Customer extends Model
      */
     public function scopeSearch($query, string $keyword)
     {
-        return $query->where(function($q) use ($keyword) {
+        return $query->where(function ($q) use ($keyword) {
             $q->where('name', 'like', "%{$keyword}%")
-              ->orWhere('name_kana', 'like', "%{$keyword}%")
-              ->orWhere('notes', 'like', "%{$keyword}%");
+                ->orWhere('name_kana', 'like', "%{$keyword}%")
+                ->orWhere('notes', 'like', "%{$keyword}%");
         });
     }
 
@@ -713,7 +698,7 @@ class Customer extends Model
     {
         $maxBirthday = now()->subYears($minAge)->format('Y-m-d');
         $minBirthday = now()->subYears($maxAge + 1)->format('Y-m-d');
-        
+
         return $query->whereBetween('birthday', [$minBirthday, $maxBirthday]);
     }
-} 
+}
