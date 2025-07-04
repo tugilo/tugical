@@ -217,45 +217,55 @@ export interface CreateBookingRequest {
 
 export interface Customer {
   id: number;
-  line_user_id: string | null;
   name: string;
-  phone: string;
+  phone?: string;
   email?: string;
-  gender?: 'male' | 'female' | 'other';
-  birth_date?: string;
+  postal_code?: string;
+  prefecture?: string;
+  city?: string;
+  address_line1?: string;
+  address_line2?: string;
   address?: string;
-  notes?: string;
+  line_user_id?: string;
+  line_display_name?: string;
+  line_picture_url?: string;
   loyalty_rank: 'new' | 'regular' | 'vip' | 'premium';
-  total_bookings: number;
-  total_spent: number;
-  last_booking_at?: string;
-  last_booking_date?: string;
-  is_active: boolean;
+  notes?: string;
   created_at: string;
   updated_at: string;
 }
 
 export interface CreateCustomerRequest {
   name: string;
-  phone: string;
-  email?: string | null;
-  address?: string | null;
-  birth_date?: string | null;
-  gender?: 'male' | 'female' | 'other' | null;
-  notes?: string | null;
-  is_active?: boolean;
+  phone?: string;
+  email?: string;
+  postal_code?: string;
+  prefecture?: string;
+  city?: string;
+  address_line1?: string;
+  address_line2?: string;
+  address?: string;
+  line_user_id?: string;
+  line_display_name?: string;
+  line_picture_url?: string;
+  loyalty_rank: 'new' | 'regular' | 'vip' | 'premium';
+  notes?: string;
 }
 
 export interface UpdateCustomerRequest {
   name?: string;
   phone?: string;
-  email?: string | null;
-  address?: string | null;
-  birth_date?: string | null;
-  gender?: 'male' | 'female' | 'other' | null;
-  notes?: string | null;
-  is_active?: boolean;
+  email?: string;
+  postal_code?: string;
+  prefecture?: string;
+  city?: string;
+  address_line1?: string;
+  address_line2?: string;
+  address?: string;
+  line_display_name?: string;
+  line_picture_url?: string;
   loyalty_rank?: 'new' | 'regular' | 'vip' | 'premium';
+  notes?: string;
 }
 
 // ========================================

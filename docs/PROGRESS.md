@@ -3300,111 +3300,60 @@ GET /api/v1/customers
 
 ### 次のステップ
 
-````
-### ✅ Phase 5.17: 住所フィールド構造化 & モデル改善完了 【2025-07-04 21:55:18】
+#### ✅ 郵便番号自動補完機能の共通化完了
 
-#### 🎯 実装内容
+**実装内容**:
 
-**住所フィールド構造化の実装**
-- **問題提起**: 単一の`address`フィールドでは検索性・分析性に制限
-- **解決策**: 日本の住所体系に対応した構造化フィールド追加
+1. **郵便番号自動ハイフン挿入機能**
 
-#### データベース構造改善
-```sql
--- 追加された住所フィールド
-postal_code VARCHAR(10) NULL     -- 郵便番号（例: 123-4567）
-prefecture VARCHAR(10) NULL      -- 都道府県（例: 東京都）
-city VARCHAR(50) NULL            -- 市区町村（例: 新宿区）
-address_line1 VARCHAR(100) NULL  -- 番地・ビル名（例: 新宿1-2-3）
-address_line2 VARCHAR(100) NULL  -- 部屋番号等（例: ○○ビル4F）
-address TEXT NULL                -- 完全住所（暗号化、後方互換性）
-````
+   - 数字のみ入力で自動的に「123-4567」形式にフォーマット
+   - 既存のハイフンありなし両対応
+   - 文字混在や 9 桁入力も適切に処理
 
-#### 実装メリット
+2. **再利用可能なコンポーネント作成**
 
-- ✅ **地域別検索**: 都道府県・市区町村での顧客絞り込み可能
-- ✅ **統計分析**: 地域別顧客分析・マーケティング活用
-- ✅ **配送エリア管理**: 地域別サービス提供制御
-- ✅ **API 連携**: Google Places 等の住所検索 API 対応準備
-- ✅ **後方互換性**: 既存の`address`フィールド維持
+   - `usePostalCodeSearch` カスタムフック
+   - `AddressForm` 共通コンポーネント
+   - 郵便番号検索 API（zipcloud.ibsnet.co.jp）統合
 
-### 全モデルの guarded 統一
+3. **既存モーダルの更新**
+   - CustomerCreateModal: 自動ハイフン挿入 + 住所自動補完
+   - CustomerDetailModal: 同様の機能追加
 
-**ユーザー提案**: 開発の柔軟性向上のため`fillable`から`guarded = ['id']`に統一
+**テスト結果**:
 
-#### 変更対象モデル（13 個）
+- ✅ 郵便番号「1234567」→「123-4567」自動変換
+- ✅ 郵便番号「150-0001」→「東京都渋谷区神宮前」自動補完
+- ✅ 文字混在「123abc4567」→「123-4567」適切処理
+- ✅ 9 桁入力「123456789」→「123-4567」7 桁切り詰め
 
-- ✅ `Customer.php` - 住所フィールド追加 + guarded 変更
-- ✅ `Booking.php` - fillable 削除、guarded 統一
-- ✅ `BookingOption.php` - fillable 削除、guarded 統一
-- ✅ `User.php` - fillable 削除、guarded 統一
-- ✅ `Menu.php` - 既に guarded 適用済み
-- ✅ `MenuOption.php` - 既に guarded 適用済み
-- ✅ `Resource.php` - 既に guarded 適用済み
-- ✅ `Store.php` - 既に guarded 適用済み
-- ✅ `Tenant.php` - 既に guarded 適用済み
-- ✅ `Notification.php` - 既に guarded 適用済み
-- ✅ `NotificationTemplate.php` - 既に guarded 適用済み
-- ✅ `StaffAccount.php` - 既に guarded 適用済み
-- ✅ `BusinessCalendar.php` - 既に guarded 適用済み
+**変更ファイル**:
 
-#### 開発効率向上の効果
+- `frontend/src/hooks/usePostalCodeSearch.ts` (新規作成)
+- `frontend/src/components/ui/AddressForm.tsx` (新規作成)
+- `frontend/src/components/customers/CustomerCreateModal.tsx` (更新)
+- `frontend/src/components/customers/CustomerDetailModal.tsx` (更新)
+- `frontend/src/services/api.ts` (郵便番号検索 API 追加)
+- `frontend/src/types/index.ts` (Customer 型構造化住所対応)
 
-```php
-// 修正前: 新フィールド追加時にfillableの更新が必要
-protected $fillable = ['name', 'email', ...]; // 毎回更新必要
+**次のステップ**:
 
-// 修正後: 新フィールド追加時の修正不要
-protected $guarded = ['id']; // IDのみ保護、他は自動許可
-```
+- 他の住所入力画面での AddressForm コンポーネント活用
+- 店舗設定画面での住所入力改善
+- フロントエンドビルドエラーの修正
 
-### 変更ファイル
-
-- `backend/database/migrations/2025_07_04_214500_improve_customer_address_structure.php`（既存）
-- `backend/app/Http/Requests/CreateCustomerRequest.php`（住所バリデーション追加）
-- `backend/app/Models/Customer.php`（住所メソッド追加）
-- 全モデルファイル（guarded 統一）
-
-### 動作確認
-
-#### 構造化住所テスト
+**コミット予定**:
 
 ```bash
-# 住所フィールド付き顧客登録成功
-POST /api/v1/customers
-{
-  "name": "山田太郎",
-  "postal_code": "100-0001",
-  "prefecture": "東京都",
-  "city": "千代田区",
-  "address_line1": "丸の内1-1-1",
-  "address_line2": "○○ビル5F"
-}
-→ 201 Created（全フィールド正常保存）
+git add .
+git commit -m "feat(address): 郵便番号自動補完機能の共通化
+
+- 自動ハイフン挿入機能実装（1234567 → 123-4567）
+- usePostalCodeSearch カスタムフック作成
+- AddressForm 再利用可能コンポーネント作成
+- zipcloud API による住所自動補完
+- CustomerCreateModal/DetailModal に適用
+
+Progress: 郵便番号UX大幅改善、他画面でも利用可能
+Next: 店舗設定等の他画面への展開"
 ```
-
-#### データベース保存確認
-
-```sql
-SELECT postal_code, prefecture, city, address_line1, address_line2
-FROM customers WHERE id = 5;
-→ 100-0001 | 東京都 | 千代田区 | 丸の内1-1-1 | ○○ビル5F
-```
-
-### 技術的成果
-
-- ✅ **開発効率**: 新フィールド追加時のモデル修正不要
-- ✅ **データ構造**: 日本の住所体系に完全対応
-- ✅ **セキュリティ**: 重要フィールド（address）は暗号化維持
-- ✅ **拡張性**: 将来的な住所検索 API 連携準備完了
-- ✅ **後方互換**: 既存データ・機能への影響なし
-
-### 次のステップ
-
-- Phase 6: LIFF アプリケーション実装
-- 住所フィールドのフロントエンド表示対応
-- 地域別顧客分析機能の実装
-
----
-
-</rewritten_file>

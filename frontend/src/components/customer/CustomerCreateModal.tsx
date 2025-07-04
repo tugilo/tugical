@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { 
-  UserIcon, 
-  PhoneIcon, 
-  EnvelopeIcon, 
+import {
+  UserIcon,
+  PhoneIcon,
+  EnvelopeIcon,
   MapPinIcon,
   CalendarIcon,
-  DocumentTextIcon
+  DocumentTextIcon,
 } from '@heroicons/react/24/outline';
 import Modal from '../modal/Modal';
 import Button from '../ui/Button';
@@ -40,6 +40,11 @@ const CustomerCreateModal: React.FC<CustomerCreateModalProps> = ({
     phone: '',
     email: '',
     address: '',
+    postal_code: '',
+    prefecture: '',
+    city: '',
+    address_line1: '',
+    address_line2: '',
     birth_date: '',
     gender: undefined,
     notes: '',
@@ -47,7 +52,10 @@ const CustomerCreateModal: React.FC<CustomerCreateModalProps> = ({
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const handleInputChange = (field: keyof CreateCustomerRequest, value: any) => {
+  const handleInputChange = (
+    field: keyof CreateCustomerRequest,
+    value: any
+  ) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     // エラーをクリア
     if (errors[field]) {
@@ -101,6 +109,11 @@ const CustomerCreateModal: React.FC<CustomerCreateModalProps> = ({
         phone: '',
         email: '',
         address: '',
+        postal_code: '',
+        prefecture: '',
+        city: '',
+        address_line1: '',
+        address_line2: '',
         birth_date: '',
         gender: undefined,
         notes: '',
@@ -115,7 +128,8 @@ const CustomerCreateModal: React.FC<CustomerCreateModalProps> = ({
         addToast({
           type: 'error',
           title: '登録に失敗しました',
-          message: error.response?.data?.error?.message || 'エラーが発生しました',
+          message:
+            error.response?.data?.error?.message || 'エラーが発生しました',
         });
       }
     } finally {
@@ -132,6 +146,11 @@ const CustomerCreateModal: React.FC<CustomerCreateModalProps> = ({
         phone: '',
         email: '',
         address: '',
+        postal_code: '',
+        prefecture: '',
+        city: '',
+        address_line1: '',
+        address_line2: '',
         birth_date: '',
         gender: undefined,
         notes: '',
@@ -145,21 +164,21 @@ const CustomerCreateModal: React.FC<CustomerCreateModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title="新規顧客登録"
-      size="lg"
+      title='新規顧客登録'
+      size='lg'
       footer={
-        <div className="flex justify-end gap-2">
+        <div className='flex justify-end gap-2'>
           <Button
-            variant="outline"
-            size="sm"
+            variant='outline'
+            size='sm'
             onClick={handleClose}
             disabled={isLoading}
           >
             キャンセル
           </Button>
           <Button
-            variant="primary"
-            size="sm"
+            variant='primary'
+            size='sm'
             onClick={handleSubmit}
             loading={isLoading}
           >
@@ -168,87 +187,89 @@ const CustomerCreateModal: React.FC<CustomerCreateModalProps> = ({
         </div>
       }
     >
-      <div className="space-y-6">
+      <div className='space-y-6'>
         {/* 基本情報 */}
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">基本情報</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <h3 className='text-lg font-semibold text-gray-900 mb-4'>基本情報</h3>
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
             {/* 名前（必須） */}
             <div>
-              <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
-                <UserIcon className="w-4 h-4 mr-1" />
+              <label className='flex items-center text-sm font-medium text-gray-700 mb-1'>
+                <UserIcon className='w-4 h-4 mr-1' />
                 名前
-                <span className="text-red-500 ml-1">*</span>
+                <span className='text-red-500 ml-1'>*</span>
               </label>
               <input
-                type="text"
+                type='text'
                 value={formData.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
+                onChange={e => handleInputChange('name', e.target.value)}
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                   errors.name ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder="山田 太郎"
+                placeholder='山田 太郎'
               />
               {errors.name && (
-                <p className="mt-1 text-sm text-red-600">{errors.name}</p>
+                <p className='mt-1 text-sm text-red-600'>{errors.name}</p>
               )}
             </div>
 
             {/* 電話番号（必須） */}
             <div>
-              <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
-                <PhoneIcon className="w-4 h-4 mr-1" />
+              <label className='flex items-center text-sm font-medium text-gray-700 mb-1'>
+                <PhoneIcon className='w-4 h-4 mr-1' />
                 電話番号
-                <span className="text-red-500 ml-1">*</span>
+                <span className='text-red-500 ml-1'>*</span>
               </label>
               <input
-                type="tel"
+                type='tel'
                 value={formData.phone}
-                onChange={(e) => handleInputChange('phone', e.target.value)}
+                onChange={e => handleInputChange('phone', e.target.value)}
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                   errors.phone ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder="090-1234-5678"
+                placeholder='090-1234-5678'
               />
               {errors.phone && (
-                <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
+                <p className='mt-1 text-sm text-red-600'>{errors.phone}</p>
               )}
             </div>
 
             {/* メールアドレス */}
             <div>
-              <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
-                <EnvelopeIcon className="w-4 h-4 mr-1" />
+              <label className='flex items-center text-sm font-medium text-gray-700 mb-1'>
+                <EnvelopeIcon className='w-4 h-4 mr-1' />
                 メールアドレス
               </label>
               <input
-                type="email"
+                type='email'
                 value={formData.email || ''}
-                onChange={(e) => handleInputChange('email', e.target.value)}
+                onChange={e => handleInputChange('email', e.target.value)}
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                   errors.email ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder="yamada@example.com"
+                placeholder='yamada@example.com'
               />
               {errors.email && (
-                <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                <p className='mt-1 text-sm text-red-600'>{errors.email}</p>
               )}
             </div>
 
             {/* 性別 */}
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-1 block">
+              <label className='text-sm font-medium text-gray-700 mb-1 block'>
                 性別
               </label>
               <select
                 value={formData.gender || ''}
-                onChange={(e) => handleInputChange('gender', e.target.value || undefined)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                onChange={e =>
+                  handleInputChange('gender', e.target.value || undefined)
+                }
+                className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500'
               >
-                <option value="">選択してください</option>
-                <option value="male">男性</option>
-                <option value="female">女性</option>
-                <option value="other">その他</option>
+                <option value=''>選択してください</option>
+                <option value='male'>男性</option>
+                <option value='female'>女性</option>
+                <option value='other'>その他</option>
               </select>
             </div>
           </div>
@@ -256,62 +277,150 @@ const CustomerCreateModal: React.FC<CustomerCreateModalProps> = ({
 
         {/* 詳細情報 */}
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">詳細情報</h3>
-          <div className="space-y-4">
-            {/* 住所 */}
+          <h3 className='text-lg font-semibold text-gray-900 mb-4'>詳細情報</h3>
+          <div className='space-y-4'>
+            {/* 住所（構造化） */}
             <div>
-              <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
-                <MapPinIcon className="w-4 h-4 mr-1" />
+              <label className='flex items-center text-sm font-medium text-gray-700 mb-3'>
+                <MapPinIcon className='w-4 h-4 mr-1' />
                 住所
               </label>
-              <textarea
-                value={formData.address || ''}
-                onChange={(e) => handleInputChange('address', e.target.value)}
-                rows={2}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="東京都渋谷区..."
-              />
+              <div className='space-y-3'>
+                {/* 郵便番号・都道府県・市区町村 */}
+                <div className='grid grid-cols-1 md:grid-cols-3 gap-3'>
+                  <div>
+                    <label className='text-xs text-gray-600 mb-1 block'>
+                      郵便番号
+                    </label>
+                    <input
+                      type='text'
+                      value={formData.postal_code || ''}
+                      onChange={e =>
+                        handleInputChange('postal_code', e.target.value)
+                      }
+                      className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500'
+                      placeholder='123-4567'
+                    />
+                  </div>
+                  <div>
+                    <label className='text-xs text-gray-600 mb-1 block'>
+                      都道府県
+                    </label>
+                    <input
+                      type='text'
+                      value={formData.prefecture || ''}
+                      onChange={e =>
+                        handleInputChange('prefecture', e.target.value)
+                      }
+                      className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500'
+                      placeholder='東京都'
+                    />
+                  </div>
+                  <div>
+                    <label className='text-xs text-gray-600 mb-1 block'>
+                      市区町村
+                    </label>
+                    <input
+                      type='text'
+                      value={formData.city || ''}
+                      onChange={e => handleInputChange('city', e.target.value)}
+                      className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500'
+                      placeholder='新宿区'
+                    />
+                  </div>
+                </div>
+
+                {/* 番地・建物名 */}
+                <div className='grid grid-cols-1 md:grid-cols-2 gap-3'>
+                  <div>
+                    <label className='text-xs text-gray-600 mb-1 block'>
+                      番地・建物名
+                    </label>
+                    <input
+                      type='text'
+                      value={formData.address_line1 || ''}
+                      onChange={e =>
+                        handleInputChange('address_line1', e.target.value)
+                      }
+                      className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500'
+                      placeholder='新宿1-2-3 ○○ビル'
+                    />
+                  </div>
+                  <div>
+                    <label className='text-xs text-gray-600 mb-1 block'>
+                      部屋番号・その他
+                    </label>
+                    <input
+                      type='text'
+                      value={formData.address_line2 || ''}
+                      onChange={e =>
+                        handleInputChange('address_line2', e.target.value)
+                      }
+                      className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500'
+                      placeholder='4F'
+                    />
+                  </div>
+                </div>
+
+                {/* 完全住所（参考表示・任意） */}
+                <div>
+                  <label className='text-xs text-gray-600 mb-1 block'>
+                    完全住所（任意）
+                  </label>
+                  <textarea
+                    value={formData.address || ''}
+                    onChange={e => handleInputChange('address', e.target.value)}
+                    rows={2}
+                    className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500'
+                    placeholder='上記の情報から自動生成されますが、必要に応じて手動で入力・修正できます'
+                  />
+                </div>
+              </div>
             </div>
 
             {/* 生年月日 */}
             <div>
-              <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
-                <CalendarIcon className="w-4 h-4 mr-1" />
+              <label className='flex items-center text-sm font-medium text-gray-700 mb-1'>
+                <CalendarIcon className='w-4 h-4 mr-1' />
                 生年月日
               </label>
               <input
-                type="date"
+                type='date'
                 value={formData.birth_date || ''}
-                onChange={(e) => handleInputChange('birth_date', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                onChange={e => handleInputChange('birth_date', e.target.value)}
+                className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500'
               />
             </div>
 
             {/* 備考 */}
             <div>
-              <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
-                <DocumentTextIcon className="w-4 h-4 mr-1" />
+              <label className='flex items-center text-sm font-medium text-gray-700 mb-1'>
+                <DocumentTextIcon className='w-4 h-4 mr-1' />
                 備考
               </label>
               <textarea
                 value={formData.notes || ''}
-                onChange={(e) => handleInputChange('notes', e.target.value)}
+                onChange={e => handleInputChange('notes', e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="アレルギー情報、特記事項など"
+                className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500'
+                placeholder='アレルギー情報、特記事項など'
               />
             </div>
 
             {/* ステータス */}
             <div>
-              <label className="flex items-center">
+              <label className='flex items-center'>
                 <input
-                  type="checkbox"
+                  type='checkbox'
                   checked={formData.is_active !== false}
-                  onChange={(e) => handleInputChange('is_active', e.target.checked)}
-                  className="mr-2"
+                  onChange={e =>
+                    handleInputChange('is_active', e.target.checked)
+                  }
+                  className='mr-2'
                 />
-                <span className="text-sm text-gray-700">有効な顧客として登録する</span>
+                <span className='text-sm text-gray-700'>
+                  有効な顧客として登録する
+                </span>
               </label>
             </div>
           </div>
@@ -321,4 +430,4 @@ const CustomerCreateModal: React.FC<CustomerCreateModalProps> = ({
   );
 };
 
-export default CustomerCreateModal; 
+export default CustomerCreateModal;
