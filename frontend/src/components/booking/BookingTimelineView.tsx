@@ -166,12 +166,31 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = props => {
   // デバッグ用ログ
   console.log('Timeline Debug Info:', {
     displayDate: date,
+    displayDateISO: date.toISOString(),
     bookingsCount: bookings.length,
     resourcesCount: resources.length,
     eventsCount: calendarEvents.length,
-    resources: calendarResources,
-    events: calendarEvents,
-    bookingsData: bookings,
+    calendarDateRange: {
+      start: '2025-07-01',
+      end: '2025-08-31',
+    },
+    bookingDates: bookings.map(b => ({
+      id: b.id,
+      originalDate: b.booking_date,
+      extractedDate: new Date(b.booking_date).toISOString().split('T')[0],
+      startTime: b.start_time,
+      endTime: b.end_time,
+    })),
+    eventsWithDates: calendarEvents.map(e => ({
+      id: e.id,
+      title: e.title,
+      start: e.start,
+      end: e.end,
+      startISO:
+        e.start instanceof Date ? e.start.toISOString() : String(e.start),
+      endISO: e.end instanceof Date ? e.end.toISOString() : String(e.end),
+      resourceId: e.resourceId,
+    })),
   });
 
   /**
@@ -323,7 +342,9 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = props => {
         ref={calendarRef}
         plugins={[resourceTimelinePlugin, interactionPlugin]}
         initialView='resourceTimelineWeek'
-        initialDate={date}
+        initialDate={
+          bookings.length > 0 ? new Date(bookings[0].booking_date) : date
+        }
         headerToolbar={{
           left: 'prev,next today',
           center: 'title',
