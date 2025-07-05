@@ -325,6 +325,28 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = props => {
     }
   };
 
+  // 最も予約が多い日付を選択
+  const getOptimalInitialDate = (): string | Date => {
+    if (bookings.length === 0) return date;
+
+    // 日付別の予約数をカウント
+    const dateCounts: { [key: string]: number } = {};
+    bookings.forEach(booking => {
+      const dateStr = booking.booking_date.split('T')[0];
+      dateCounts[dateStr] = (dateCounts[dateStr] || 0) + 1;
+    });
+
+    // 最も予約が多い日付を選択
+    const sortedDates = Object.entries(dateCounts).sort(
+      ([, a], [, b]) => b - a
+    );
+
+    console.log('Date counts:', dateCounts);
+    console.log('Selected date:', sortedDates[0][0]);
+
+    return sortedDates[0][0]; // "2025-07-07" 形式
+  };
+
   if (isLoading) {
     return (
       <div className='flex items-center justify-center h-96'>
@@ -342,9 +364,7 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = props => {
         ref={calendarRef}
         plugins={[resourceTimelinePlugin, interactionPlugin]}
         initialView='resourceTimelineWeek'
-        initialDate={
-          bookings.length > 0 ? new Date(bookings[0].booking_date) : date
-        }
+        initialDate={getOptimalInitialDate()}
         headerToolbar={{
           left: 'prev,next today',
           center: 'title',
