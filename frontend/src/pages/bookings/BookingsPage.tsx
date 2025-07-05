@@ -55,10 +55,10 @@ const BookingsPage: React.FC = () => {
     try {
       const filters: FilterOptions = {
         page: currentPage,
-        per_page: viewMode === 'timeline' ? 100 : 20, // タイムライン表示時はより多くのデータを取得
+        per_page: 100, // 統一: 両方とも100件取得
         search: searchTerm || undefined,
         status: statusFilter !== 'all' ? statusFilter : undefined,
-        date: viewMode === 'timeline' ? undefined : dateFilter || undefined, // タイムライン表示時は日付フィルターを無効化
+        date: dateFilter || undefined, // 統一: 両方とも日付フィルターを有効
         sort: '-booking_date,start_time',
       };
 
@@ -79,19 +79,12 @@ const BookingsPage: React.FC = () => {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [currentPage, searchTerm, statusFilter, dateFilter, viewMode, addToast]);
+  }, [currentPage, searchTerm, statusFilter, dateFilter, addToast]); // viewModeを依存関係から削除
 
   // 初回読み込み
   useEffect(() => {
     fetchBookings();
   }, [fetchBookings]);
-
-  // viewMode変更時にデータを再取得
-  useEffect(() => {
-    if (!isLoading) {
-      fetchBookings();
-    }
-  }, [viewMode, fetchBookings, isLoading]);
 
   /**
    * 検索処理
