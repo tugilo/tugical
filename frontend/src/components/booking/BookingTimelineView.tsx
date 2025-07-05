@@ -105,10 +105,22 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = props => {
 
   // FullCalendar用のイベントデータ変換
   const calendarEvents: EventInput[] = bookings.map((booking): EventInput => {
-    const startDateTime = new Date(
-      `${booking.booking_date}T${booking.start_time}`
-    );
-    const endDateTime = new Date(`${booking.booking_date}T${booking.end_time}`);
+    // booking_dateから日付部分を取得（ISO形式: "2025-07-04T15:00:00.000000Z"）
+    const bookingDate = new Date(booking.booking_date);
+    const dateStr = bookingDate.toISOString().split('T')[0]; // "2025-07-04"
+
+    // start_timeとend_timeを正規化（秒がない場合は追加）
+    const normalizeTime = (time: string): string => {
+      if (time.length === 5) return `${time}:00`; // "11:00" → "11:00:00"
+      return time; // "10:00:00" はそのまま
+    };
+
+    const startTime = normalizeTime(booking.start_time);
+    const endTime = normalizeTime(booking.end_time);
+
+    // 日付と時間を結合してDateオブジェクト作成
+    const startDateTime = new Date(`${dateStr}T${startTime}`);
+    const endDateTime = new Date(`${dateStr}T${endTime}`);
 
     const event = {
       id: booking.id.toString(),
@@ -135,10 +147,17 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = props => {
     console.log('Booking event created:', {
       id: event.id,
       title: event.title,
-      start: event.start,
-      end: event.end,
+      originalBookingDate: booking.booking_date,
+      originalStartTime: booking.start_time,
+      originalEndTime: booking.end_time,
+      processedDateStr: dateStr,
+      processedStartTime: startTime,
+      processedEndTime: endTime,
+      finalStart: event.start,
+      finalEnd: event.end,
+      startValid: !isNaN(event.start.getTime()),
+      endValid: !isNaN(event.end.getTime()),
       resourceId: event.resourceId,
-      originalBooking: booking,
     });
 
     return event;
