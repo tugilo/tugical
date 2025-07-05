@@ -380,7 +380,18 @@ const BookingsPage: React.FC = () => {
         </Card>
       ) : viewMode === 'timeline' ? (
         <BookingTimelineView
-          date={dateFilter ? new Date(dateFilter) : new Date()}
+          date={(() => {
+            // 日付フィルターが設定されている場合はそれを使用
+            if (dateFilter) {
+              return new Date(dateFilter);
+            }
+            // 予約データがある場合は最初の予約の日付を使用
+            if (bookings.length > 0) {
+              return new Date(bookings[0].booking_date);
+            }
+            // デフォルトは今日
+            return new Date();
+          })()}
           bookings={bookings}
           onBookingClick={handleBookingClick}
           onBookingCreate={info => {

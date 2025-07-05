@@ -15,6 +15,7 @@
     "@fullcalendar/daygrid": "^6.1.18",
     "@fullcalendar/interaction": "^6.1.18",
     "@fullcalendar/react": "^6.1.18",
+    "@fullcalendar/resource": "^6.1.18",
     "@fullcalendar/resource-timeline": "^6.1.18",
     "@fullcalendar/timeline": "^6.1.18",
     "@headlessui/react": "^1.7.18",

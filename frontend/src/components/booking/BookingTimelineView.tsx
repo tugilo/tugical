@@ -110,7 +110,7 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = props => {
     );
     const endDateTime = new Date(`${booking.booking_date}T${booking.end_time}`);
 
-    return {
+    const event = {
       id: booking.id.toString(),
       title: `${booking.customer.name} - ${booking.menu.name}`,
       start: startDateTime,
@@ -130,6 +130,29 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = props => {
         notes: booking.customer_notes,
       },
     };
+
+    // デバッグ用ログ
+    console.log('Booking event created:', {
+      id: event.id,
+      title: event.title,
+      start: event.start,
+      end: event.end,
+      resourceId: event.resourceId,
+      originalBooking: booking,
+    });
+
+    return event;
+  });
+
+  // デバッグ用ログ
+  console.log('Timeline Debug Info:', {
+    displayDate: date,
+    bookingsCount: bookings.length,
+    resourcesCount: resources.length,
+    eventsCount: calendarEvents.length,
+    resources: calendarResources,
+    events: calendarEvents,
+    bookingsData: bookings,
   });
 
   /**

@@ -8,4 +8,30 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 3000,
   },
+  optimizeDeps: {
+    include: [
+      '@fullcalendar/core',
+      '@fullcalendar/react',
+      '@fullcalendar/resource',
+      '@fullcalendar/resource-timeline',
+      '@fullcalendar/interaction',
+      '@fullcalendar/daygrid',
+    ],
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          fullcalendar: [
+            '@fullcalendar/core',
+            '@fullcalendar/react',
+            '@fullcalendar/resource',
+            '@fullcalendar/resource-timeline',
+            '@fullcalendar/interaction',
+            '@fullcalendar/daygrid',
+          ],
+        },
+      },
+    },
+  },
 });
