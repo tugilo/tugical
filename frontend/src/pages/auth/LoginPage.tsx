@@ -385,14 +385,14 @@ const LoginPage: React.FC = () => {
           <div className='text-xs text-blue-700 space-y-1'>
             <div className='flex items-center justify-between'>
               <span>
-                <strong>オーナー:</strong> owner@tugical.test / password
+                <strong>オーナー:</strong> owner@tugical.test / password123
               </span>
               <button
                 type='button'
                 onClick={() => {
                   setFormData({
                     email: 'owner@tugical.test',
-                    password: 'password',
+                    password: 'password123',
                     store_id: '1',
                   });
                   setErrors({});

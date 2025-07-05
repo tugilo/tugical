@@ -94,14 +94,14 @@ class ApiClient {
       if (savedToken) {
         this.token = savedToken;
       } else {
-        // 開発環境用のデフォルトトークン
-        this.token = '12|jtAgOafLHXFLPjuuXHnHIAA3e6iI5BfuPsAidGsA5fd63835';
+        // 開発環境用のデフォルトトークン（Phase 19で取得した有効なトークン）
+        this.token = '40|PaitUC2tDNF0xXJYeFzFVA8s05T8AW2a8U36k1eG83f4b440';
         localStorage.setItem('tugical_admin_token', this.token);
       }
     } catch (error) {
       console.warn('Failed to load token from localStorage:', error);
       // フォールバック
-      this.token = '12|jtAgOafLHXFLPjuuXHnHIAA3e6iI5BfuPsAidGsA5fd63835';
+      this.token = '40|PaitUC2tDNF0xXJYeFzFVA8s05T8AW2a8U36k1eG83f4b440';
     }
   }
 
