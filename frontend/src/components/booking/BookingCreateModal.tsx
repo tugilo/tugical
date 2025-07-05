@@ -37,6 +37,8 @@ interface BookingCreateModalProps {
   onClose: () => void;
   /** 予約作成後のコールバック */
   onCreate?: (booking: Booking) => void;
+  /** 予約作成成功時のコールバック（BookingsPageとの互換性のため） */
+  onSuccess?: (booking: Booking) => void;
   /** 初期選択顧客ID */
   initialCustomerId?: number;
   /** 初期選択メニューID */
@@ -57,6 +59,7 @@ const BookingCreateModal: React.FC<BookingCreateModalProps> = ({
   isOpen,
   onClose,
   onCreate,
+  onSuccess,
   initialCustomerId,
   initialMenuId,
 }) => {
@@ -400,6 +403,7 @@ const BookingCreateModal: React.FC<BookingCreateModalProps> = ({
       });
 
       onCreate?.(booking);
+      onSuccess?.(booking);
       handleClose();
     } catch (error: any) {
       console.error('予約作成エラー:', error);

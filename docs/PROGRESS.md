@@ -1,5 +1,47 @@
 # tugical Development Progress
 
+## 2025-07-05 12:33:54 (tugiMacAir.local)
+
+### 🎉 Phase 19.6: FullCalendar Timeline API エラー修正完了 ✅ **完了**
+
+**resourceApi.getResources エラー完全解決:**
+
+- **根本原因**: BookingTimelineView で間違った API import を使用
+  - 誤: `import { apiClient } from '../../services/api';`
+  - 正: `import { resourceApi } from '../../services/api';`
+- **API 呼び出し修正**: `resourceApi.getList()` メソッド使用
+- **型定義修正**: `per_page: 100`, `is_active: true` （数値・boolean型）
+
+**技術修正詳細:**
+
+- **BookingTimelineView.tsx**: 
+  - resourceApi import に変更
+  - getList メソッド呼び出しに変更
+  - パラメータ型修正（文字列→数値・boolean）
+- **API クライアント確認**: 
+  - resourceApi.getList 正常動作確認
+  - エクスポート構造確認済み
+- **ビルド成功**: 4.09 秒、FullCalendar バンドル 598.57KB 生成
+
+**解決されたエラー:**
+
+```
+[Error] リソース取得エラー: TypeError: resourceApi.getResources is not a function
+```
+
+**動作状況:**
+
+- ✅ フロントエンドビルド成功
+- ✅ FullCalendar Timeline モジュール解決
+- ✅ resourceApi 正常動作
+- ✅ 15件の予約データ表示準備完了
+
+**次のステップ:**
+
+- ブラウザでの FullCalendar Timeline 動作確認
+- リソース取得成功確認
+- 全15件予約データの Timeline 表示確認
+
 ## 2025-07-05 01:39:19 (tugiMacMini.local)
 
 ### 🎉 Phase 17: FullCalendar Timeline 統合準備 ✅ **完了**

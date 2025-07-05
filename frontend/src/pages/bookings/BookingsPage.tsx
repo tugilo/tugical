@@ -398,49 +398,6 @@ const BookingsPage: React.FC = () => {
           })()}
           bookings={bookings}
           onBookingClick={handleBookingClick}
-          onBookingCreate={info => {
-            // タイムラインからの予約作成
-            console.log('Timeline booking create:', info);
-            setIsCreateModalOpen(true);
-          }}
-          onBookingMove={async (booking, newStart, newEnd, newResourceId) => {
-            try {
-              // 日時・時間・リソースIDを更新
-              const updateData = {
-                booking_date: newStart.toISOString().split('T')[0],
-                start_time: newStart.toTimeString().substring(0, 5),
-                end_time: newEnd.toTimeString().substring(0, 5),
-                resource_id:
-                  newResourceId && newResourceId !== 'unassigned'
-                    ? parseInt(newResourceId)
-                    : undefined,
-              };
-
-              await bookingApi.update(booking.id, updateData);
-
-              // 予約一覧を再取得
-              await fetchBookings();
-
-              addToast({
-                type: 'success',
-                title: '予約移動完了',
-                message: `${booking.customer.name}様の予約を移動しました`,
-              });
-            } catch (error: any) {
-              console.error('予約移動エラー:', error);
-
-              addToast({
-                type: 'error',
-                title: '予約移動エラー',
-                message:
-                  error.response?.data?.error?.message ||
-                  '予約の移動に失敗しました',
-              });
-
-              // エラーを再スローして、FullCalendarが元の位置に戻すようにする
-              throw error;
-            }
-          }}
         />
       ) : (
         <div className='space-y-6'>
@@ -532,7 +489,7 @@ const BookingsPage: React.FC = () => {
       )}
 
       {/* ページネーション */}
-      {totalPages > 1 && (
+      {totalPages > 1 && viewMode === 'list' && (
         <Card>
           <Card.Body>
             <div className='flex items-center justify-between'>
@@ -543,32 +500,19 @@ const BookingsPage: React.FC = () => {
               <div className='flex gap-2'>
                 <Button
                   variant='outline'
-                  size='sm'
-                  onClick={() => setCurrentPage(currentPage - 1)}
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                   disabled={currentPage === 1}
                 >
                   前へ
                 </Button>
-                <div className='flex items-center gap-1'>
-                  {[...Array(Math.min(5, totalPages))].map((_, i) => {
-                    const page = currentPage - 2 + i;
-                    if (page < 1 || page > totalPages) return null;
-                    return (
-                      <Button
-                        key={page}
-                        variant={page === currentPage ? 'primary' : 'ghost'}
-                        size='sm'
-                        onClick={() => setCurrentPage(page)}
-                      >
-                        {page}
-                      </Button>
-                    );
-                  })}
-                </div>
+                <span className='px-3 py-2 text-sm text-gray-600'>
+                  {currentPage} / {totalPages}
+                </span>
                 <Button
                   variant='outline'
-                  size='sm'
-                  onClick={() => setCurrentPage(currentPage + 1)}
+                  onClick={() =>
+                    setCurrentPage(prev => Math.min(totalPages, prev + 1))
+                  }
                   disabled={currentPage === totalPages}
                 >
                   次へ
@@ -579,12 +523,14 @@ const BookingsPage: React.FC = () => {
         </Card>
       )}
 
-      {/* 予約作成モーダル */}
-      <BookingCreateModal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onCreate={handleBookingCreated}
-      />
+      {/* 新規予約作成モーダル */}
+      {isCreateModalOpen && (
+        <BookingCreateModal
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
+          onSuccess={handleBookingCreated}
+        />
+      )}
     </div>
   );
 };
