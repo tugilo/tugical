@@ -55,10 +55,10 @@ const BookingsPage: React.FC = () => {
     try {
       const filters: FilterOptions = {
         page: currentPage,
-        per_page: 20,
+        per_page: viewMode === 'timeline' ? 100 : 20, // タイムライン表示時はより多くのデータを取得
         search: searchTerm || undefined,
         status: statusFilter !== 'all' ? statusFilter : undefined,
-        date: dateFilter || undefined,
+        date: viewMode === 'timeline' ? undefined : dateFilter || undefined, // タイムライン表示時は日付フィルターを無効化
         sort: '-booking_date,start_time',
       };
 
@@ -79,12 +79,19 @@ const BookingsPage: React.FC = () => {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [currentPage, searchTerm, statusFilter, dateFilter, addToast]);
+  }, [currentPage, searchTerm, statusFilter, dateFilter, viewMode, addToast]);
 
   // 初回読み込み
   useEffect(() => {
     fetchBookings();
   }, [fetchBookings]);
+
+  // viewMode変更時にデータを再取得
+  useEffect(() => {
+    if (!isLoading) {
+      fetchBookings();
+    }
+  }, [viewMode, fetchBookings, isLoading]);
 
   /**
    * 検索処理
@@ -381,12 +388,9 @@ const BookingsPage: React.FC = () => {
       ) : viewMode === 'timeline' ? (
         <BookingTimelineView
           date={(() => {
-            // 日付フィルターが設定されている場合はそれを使用
-            if (dateFilter) {
-              return new Date(dateFilter);
-            }
-            // 予約データがある場合は最初の予約の日付を使用
+            // タイムライン表示では日付フィルターを無視して全データを表示
             if (bookings.length > 0) {
+              // 最初の予約の日付を基準に設定（週表示で複数日が見える）
               return new Date(bookings[0].booking_date);
             }
             // デフォルトは今日

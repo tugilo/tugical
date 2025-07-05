@@ -322,12 +322,13 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = props => {
       <FullCalendar
         ref={calendarRef}
         plugins={[resourceTimelinePlugin, interactionPlugin]}
-        initialView='resourceTimelineDay'
+        initialView='resourceTimelineWeek'
         initialDate={date}
         headerToolbar={{
           left: 'prev,next today',
           center: 'title',
-          right: 'resourceTimelineDay,resourceTimelineWeek',
+          right:
+            'resourceTimelineDay,resourceTimelineWeek,resourceTimelineMonth',
         }}
         resources={calendarResources}
         events={calendarEvents}
@@ -336,6 +337,8 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = props => {
         slotMaxTime='21:00:00'
         slotDuration='00:30:00'
         slotLabelInterval='01:00:00'
+        // 週表示設定
+        dayHeaderFormat={{ weekday: 'short', month: 'numeric', day: 'numeric' }}
         // インタラクション設定
         selectable={true}
         editable={true}
@@ -347,8 +350,13 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = props => {
         timeZone='Asia/Tokyo'
         // スタイル設定
         height='auto'
-        contentHeight={400}
+        contentHeight={500}
         resourceAreaWidth='200px'
+        // 全ての予約を表示するため、日付範囲を拡張
+        validRange={{
+          start: '2025-07-01',
+          end: '2025-08-31',
+        }}
         // イベントハンドラー
         eventClick={handleEventClick}
         select={handleDateSelect}
