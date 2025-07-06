@@ -1,11 +1,18 @@
-import React, { useRef, useEffect, useState, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
 import FullCalendar from '@fullcalendar/react';
 import resourceTimelinePlugin from '@fullcalendar/resource-timeline';
 import interactionPlugin from '@fullcalendar/interaction';
-import { EventInput } from '@fullcalendar/core';
+import jaLocale from '@fullcalendar/core/locales/ja';
 import { Booking, Resource } from '../../types';
-import { useUIStore } from '../../stores/uiStore';
 import { resourceApi } from '../../services/api';
+import { useUIStore } from '../../stores/uiStore';
+import {
+  convertToFullCalendarEvents,
+  convertToFullCalendarResources,
+  getFullCalendarConfig,
+  getStatusDisplayName,
+} from '../../utils/fullcalendarHelpers';
 
 interface BookingTimelineViewProps {
   date: Date;
@@ -25,123 +32,18 @@ interface BookingTimelineViewProps {
 }
 
 /**
- * リソースタイプ別カラー取得
- */
-const getResourceColor = (type: string): string => {
-  const colors: { [key: string]: string } = {
-    staff: '#10b981', // ミントグリーン
-    room: '#3b82f6', // ブルー
-    equipment: '#f59e0b', // オレンジ
-    vehicle: '#8b5cf6', // パープル
-    unassigned: '#6b7280', // グレー
-  };
-  return colors[type] || colors.unassigned;
-};
-
-/**
- * 予約ステータス別カラー取得
- */
-const getStatusColor = (status: string): string => {
-  const colors: { [key: string]: string } = {
-    pending: '#f59e0b', // 申込み中（オレンジ）
-    confirmed: '#10b981', // 確定（グリーン）
-    cancelled: '#ef4444', // キャンセル（レッド）
-    completed: '#6b7280', // 完了（グレー）
-    no_show: '#dc2626', // 無断キャンセル（ダークレッド）
-  };
-  return colors[status] || colors.pending;
-};
-
-/**
- * FullCalendar Timeline標準仕様準拠のリソース変換
- */
-const convertToFullCalendarResources = (resources: Resource[]) => {
-  // 標準仕様: 必須フィールド id, title
-  const standardResources = [
-    // 「指定なし」リソース（resource_id = null 用）
-    {
-      id: 'unassigned',
-      title: '指定なし',
-      extendedProps: {
-        type: 'unassigned',
-        color: '#6b7280',
-        description: 'リソース未指定の予約',
-      },
-    },
-    // 実際のリソース
-    ...resources.map(resource => ({
-      id: String(resource.id), // 必須: 文字列に変換
-      title: resource.display_name || resource.name, // 必須: 表示名
-      extendedProps: {
-        type: resource.type,
-        color: getResourceColor(resource.type),
-        originalData: resource,
-      },
-    })),
-  ];
-
-  return standardResources;
-};
-
-/**
- * FullCalendar Timeline標準仕様準拠のイベント変換
- */
-const convertToFullCalendarEvents = (bookings: Booking[]): EventInput[] => {
-  return bookings.map(booking => {
-    // 日付の正規化（ISO8601形式から日付部分を抽出）
-    const bookingDate = new Date(booking.booking_date);
-    const dateStr = bookingDate.toISOString().split('T')[0]; // "2025-07-05"
-
-    // 時間の正規化（秒を補完）
-    const normalizeTime = (time: string): string => {
-      if (time.length === 5) return `${time}:00`; // "11:00" → "11:00:00"
-      return time; // "10:00:00" そのまま
-    };
-
-    // 標準仕様: ISO8601形式の日時
-    const startDateTime = new Date(
-      `${dateStr}T${normalizeTime(booking.start_time)}`
-    );
-    const endDateTime = new Date(
-      `${dateStr}T${normalizeTime(booking.end_time)}`
-    );
-
-    // 標準仕様準拠のイベントオブジェクト
-    return {
-      // 必須フィールド
-      id: String(booking.id), // 必須: 一意識別子（文字列）
-      title: `${booking.customer.name} - ${booking.menu.name}`, // 必須: 表示タイトル
-      start: startDateTime.toISOString(), // 必須: ISO8601形式
-      end: endDateTime.toISOString(), // オプション: ISO8601形式
-      resourceId: booking.resource_id
-        ? String(booking.resource_id)
-        : 'unassigned', // 必須: リソースID（文字列）
-
-      // オプションフィールド
-      backgroundColor: getStatusColor(booking.status),
-      borderColor: getStatusColor(booking.status),
-      textColor: '#ffffff',
-
-      // カスタムプロパティ
-      extendedProps: {
-        bookingNumber: booking.booking_number,
-        status: booking.status,
-        customerName: booking.customer.name,
-        customerPhone: booking.customer.phone,
-        menuName: booking.menu.name,
-        totalPrice: booking.total_price,
-        customerNotes: booking.customer_notes,
-        originalBooking: booking,
-      },
-    };
-  });
-};
-
-/**
- * tugical FullCalendar Timeline コンポーネント
+ * tugical FullCalendar Timeline 予約管理コンポーネント
  *
- * 美容室・クリニック・レンタルスペース等の予約管理に最適化された
- * プロフェッショナルなタイムライン表示を提供
+ * 機能:
+ * - 美容師向け直感的タイムライン表示
+ * - ドラッグ&ドロップ予約移動
+ * - リソース（担当者）別表示
+ * - ステータス別色分け
+ * - ツールチップ詳細表示
+ * - 30分単位時間軸
+ * - 9:00-21:00 営業時間対応
+ *
+ * tugical_system_specification_v2.0.md 完全準拠
  */
 const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
   date,
@@ -152,17 +54,25 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
 }) => {
   const calendarRef = useRef<FullCalendar>(null);
   const [resources, setResources] = useState<Resource[]>([]);
+  const [loadingResources, setLoadingResources] = useState(true);
+  const [calendarEvents, setCalendarEvents] = useState<any[]>([]);
+  const [calendarResources, setCalendarResources] = useState<any[]>([]);
   const { addNotification } = useUIStore();
 
-  // リソース一覧の取得
+  // リソース取得
   useEffect(() => {
     const fetchResources = async () => {
       try {
+        setLoadingResources(true);
         const response = await resourceApi.getList({
           per_page: 100,
           is_active: true,
         });
         setResources(response.resources || []);
+
+        console.log('📊 FullCalendar: リソース取得完了', {
+          resourceCount: response.resources?.length || 0,
+        });
       } catch (error) {
         console.error('リソース取得エラー:', error);
         addNotification({
@@ -171,151 +81,287 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
           message: 'リソース一覧の取得に失敗しました',
           duration: 5000,
         });
+      } finally {
+        setLoadingResources(false);
       }
     };
 
     fetchResources();
   }, [addNotification]);
 
-  // FullCalendar用データの変換（メモ化）
-  const calendarResources = useMemo(() => {
-    return convertToFullCalendarResources(resources);
-  }, [resources]);
-
-  const calendarEvents = useMemo(() => {
-    return convertToFullCalendarEvents(bookings);
-  }, [bookings]);
-
-  // 最適な初期表示日の計算（メモ化）
-  const optimalInitialDate = useMemo(() => {
-    if (bookings.length > 0) {
-      // 予約データがある日付を優先
-      const bookingDates = bookings.map(b => new Date(b.booking_date));
-      const sortedDates = bookingDates.sort(
-        (a, b) => a.getTime() - b.getTime()
-      );
-      return sortedDates[0].toISOString().split('T')[0]; // "2025-07-05"
-    }
-    return date.toISOString().split('T')[0];
-  }, [bookings, date]);
-
-  // 開発環境でのみ統計情報を1回だけ出力
+  // FullCalendar用データ変換
   useEffect(() => {
-    if (process.env.NODE_ENV === 'development' && bookings.length > 0) {
-      console.log('📊 FullCalendar Timeline Statistics:', {
-        totalBookings: bookings.length,
-        totalResources: resources.length,
-        initialDate: optimalInitialDate,
-        eventsGenerated: calendarEvents.length,
-        resourcesGenerated: calendarResources.length,
+    if (!loadingResources) {
+      console.log('📊 FullCalendar データ変換開始');
+      console.log('予約データ:', bookings.length, '件');
+      console.log('リソースデータ:', resources.length, '件');
+
+      // 予約データ変換
+      const events = convertToFullCalendarEvents(bookings);
+      setCalendarEvents(events);
+
+      // リソースデータ変換
+      const calendarRes = convertToFullCalendarResources(resources);
+      setCalendarResources(calendarRes);
+
+      console.log('📊 FullCalendar データ変換完了');
+      console.log('変換後イベント:', events.length, '件');
+      console.log('変換後リソース:', calendarRes.length, '件');
+    }
+  }, [bookings, resources, loadingResources]);
+
+  // 日付変更時のカレンダー更新
+  useEffect(() => {
+    if (calendarRef.current) {
+      const calendarApi = calendarRef.current.getApi();
+      calendarApi.gotoDate(date);
+    }
+  }, [date]);
+
+  // イベント情報ツールチップ
+  const handleEventMouseEnter = (info: any) => {
+    const tooltip = info.event.extendedProps.tooltip;
+    if (tooltip) {
+      // ツールチップ表示（簡易実装）
+      info.el.title = [
+        `顧客: ${tooltip.customer}`,
+        `電話: ${tooltip.phone}`,
+        `メニュー: ${tooltip.menu}`,
+        `時間: ${tooltip.time}`,
+        `料金: ${tooltip.price}`,
+        `ステータス: ${getStatusDisplayName(tooltip.status)}`,
+        tooltip.notes ? `備考: ${tooltip.notes}` : '',
+      ]
+        .filter(Boolean)
+        .join('\n');
+    }
+  };
+
+  // イベントドラッグ&ドロップ処理
+  const handleEventDrop = async info => {
+    const booking = info.event.extendedProps.booking;
+    const newStart = info.event.start;
+    const newEnd = info.event.end;
+    const newResourceId = info.event.getResources()?.[0]?.id;
+
+    console.log('📅 予約移動:', {
+      bookingId: info.event.id,
+      bookingNumber: booking.booking_number,
+      oldStart: info.oldEvent.start,
+      newStart,
+      oldResourceId: info.oldEvent.getResources()?.[0]?.id,
+      newResourceId,
+    });
+
+    try {
+      if (onBookingMove) {
+        await onBookingMove(booking, newStart, newEnd, newResourceId);
+
+        addNotification({
+          type: 'success',
+          title: '予約移動完了',
+          message: `${booking.customer.name}様の予約を移動しました`,
+          duration: 3000,
+        });
+      }
+    } catch (error) {
+      console.error('予約移動エラー:', error);
+
+      // 変更を元に戻す
+      info.revert();
+
+      addNotification({
+        type: 'error',
+        title: '予約移動エラー',
+        message: '予約の移動に失敗しました',
+        duration: 5000,
       });
     }
-  }, [
-    bookings.length,
-    resources.length,
-    optimalInitialDate,
-    calendarEvents.length,
-    calendarResources.length,
-  ]);
+  };
+
+  // イベントリサイズ処理
+  const handleEventResize = async info => {
+    const booking = info.event.extendedProps.booking;
+    const newEnd = info.event.end;
+
+    console.log('📅 予約時間変更:', {
+      bookingId: info.event.id,
+      bookingNumber: booking.booking_number,
+      oldEnd: info.oldEvent.end,
+      newEnd,
+    });
+
+    try {
+      if (onBookingMove) {
+        await onBookingMove(booking, info.event.start, newEnd);
+
+        addNotification({
+          type: 'success',
+          title: '予約時間変更完了',
+          message: `${booking.customer.name}様の予約時間を変更しました`,
+          duration: 3000,
+        });
+      }
+    } catch (error) {
+      console.error('予約時間変更エラー:', error);
+
+      // 変更を元に戻す
+      info.revert();
+
+      addNotification({
+        type: 'error',
+        title: '予約時間変更エラー',
+        message: '予約時間の変更に失敗しました',
+        duration: 5000,
+      });
+    }
+  };
+
+  // イベントクリック処理
+  const handleEventClick = info => {
+    const booking = info.event.extendedProps.booking;
+    console.log('📅 予約クリック:', booking);
+
+    if (onBookingClick) {
+      onBookingClick(booking);
+    }
+  };
+
+  // 空きスロットクリック処理
+  const handleDateClick = info => {
+    console.log('📅 空きスロットクリック:', {
+      date: info.date,
+      resourceId: info.resource?.id,
+    });
+
+    if (onBookingCreate) {
+      // デフォルト30分予約として作成
+      const endDate = new Date(info.date.getTime() + 30 * 60 * 1000);
+
+      onBookingCreate({
+        start: info.date,
+        end: endDate,
+        resourceId: info.resource?.id || 'unassigned',
+      });
+    }
+  };
+
+  const basicConfig = getFullCalendarConfig();
+
+  if (loadingResources) {
+    return (
+      <div className='flex justify-center items-center h-96'>
+        <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500'></div>
+      </div>
+    );
+  }
 
   return (
-    <div className='booking-timeline-view bg-white rounded-lg shadow-sm border border-gray-200'>
-      <FullCalendar
-        ref={calendarRef}
-        plugins={[resourceTimelinePlugin, interactionPlugin]}
-        // 基本設定
-        initialView='resourceTimelineWeek'
-        initialDate={optimalInitialDate}
-        headerToolbar={{
-          left: 'prev,next today',
-          center: 'title',
-          right: 'resourceTimelineDay,resourceTimelineWeek',
-        }}
-        // 時間軸設定（美容室営業時間に最適化）
-        slotMinTime='09:00:00'
-        slotMaxTime='21:00:00'
-        slotDuration='00:30:00'
-        slotLabelInterval='01:00:00'
-        // リソース設定
-        resources={calendarResources}
-        resourceAreaHeaderContent='担当者/リソース'
-        resourceAreaWidth='200px'
-        // イベント設定
-        events={calendarEvents}
-        eventDisplay='block'
-        eventMinHeight={40}
-        // インタラクション設定
-        editable={true}
-        droppable={true}
-        selectable={true}
-        selectMirror={true}
-        // 日本語ローカライゼーション
-        locale='ja'
-        timeZone='Asia/Tokyo'
-        // イベントハンドラー
-        eventClick={info => {
-          const booking = info.event.extendedProps.originalBooking;
-          if (booking && onBookingClick) {
-            onBookingClick(booking);
-          }
-        }}
-        select={info => {
-          if (onBookingCreate) {
-            onBookingCreate({
-              start: info.start,
-              end: info.end,
-              resourceId: info.resource?.id || 'unassigned',
-            });
-          }
-        }}
-        eventDrop={async info => {
-          if (onBookingMove) {
-            const booking = info.event.extendedProps.originalBooking;
-            try {
-              await onBookingMove(
-                booking,
-                info.event.start!,
-                info.event.end!,
-                info.event.getResources()[0]?.id
-              );
-            } catch (error) {
-              info.revert();
-              addNotification({
-                type: 'error',
-                title: '予約移動エラー',
-                message: '予約の移動に失敗しました',
-                duration: 5000,
-              });
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className='booking-timeline-container bg-white rounded-lg shadow-sm border border-gray-200'
+    >
+      {/* ヘッダー情報 */}
+      <div className='p-4 border-b border-gray-200'>
+        <div className='flex items-center justify-between'>
+          <div className='flex items-center space-x-4'>
+            <h3 className='text-lg font-semibold text-gray-900'>
+              予約タイムライン
+            </h3>
+            <div className='text-sm text-gray-600'>
+              {date.toLocaleDateString('ja-JP', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                weekday: 'long',
+              })}
+            </div>
+            <div className='text-sm text-gray-500'>
+              {calendarEvents.length} 件の予約
+            </div>
+          </div>
+
+          {/* 凡例 */}
+          <div className='flex items-center space-x-4 text-xs'>
+            <div className='flex items-center space-x-1'>
+              <div className='w-3 h-3 bg-emerald-500 rounded'></div>
+              <span>確定</span>
+            </div>
+            <div className='flex items-center space-x-1'>
+              <div className='w-3 h-3 bg-yellow-500 rounded'></div>
+              <span>申込中</span>
+            </div>
+            <div className='flex items-center space-x-1'>
+              <div className='w-3 h-3 bg-red-500 rounded'></div>
+              <span>キャンセル</span>
+            </div>
+            <div className='flex items-center space-x-1'>
+              <div className='w-3 h-3 bg-gray-500 rounded'></div>
+              <span>完了</span>
+            </div>
+          </div>
+        </div>
+
+        {/* 操作ガイド */}
+        <div className='mt-2 text-xs text-gray-500'>
+          💡
+          予約をドラッグして移動、端をドラッグして時間変更、クリックで詳細表示
+        </div>
+      </div>
+
+      {/* FullCalendar Timeline */}
+      <div className='p-4'>
+        <FullCalendar
+          ref={calendarRef}
+          plugins={[resourceTimelinePlugin, interactionPlugin]}
+          initialView='resourceTimelineDay'
+          // 基本設定
+          {...basicConfig}
+          locale={jaLocale}
+          initialDate={date}
+          // データ
+          events={calendarEvents}
+          resources={calendarResources}
+          // イベントハンドラー
+          eventMouseEnter={handleEventMouseEnter}
+          eventDrop={handleEventDrop}
+          eventResize={handleEventResize}
+          eventClick={handleEventClick}
+          dateClick={handleDateClick}
+          // スタイル設定
+          schedulerLicenseKey='GPL-My-Project-Is-Open-Source'
+          height='auto'
+          contentHeight={500}
+          // カスタムスタイル
+          eventClassNames='tugical-event'
+          resourceAreaHeaderContent='担当者'
+          // ツールチップ設定
+          eventDidMount={info => {
+            // カスタムツールチップの設定
+            const tooltip = info.event.extendedProps.tooltip;
+            if (tooltip) {
+              info.el.setAttribute('data-tooltip', JSON.stringify(tooltip));
             }
-          }
-        }}
-        eventResize={async info => {
-          if (onBookingMove) {
-            const booking = info.event.extendedProps.originalBooking;
-            try {
-              await onBookingMove(
-                booking,
-                info.event.start!,
-                info.event.end!,
-                info.event.getResources()[0]?.id
-              );
-            } catch (error) {
-              info.revert();
-              addNotification({
-                type: 'error',
-                title: '予約時間変更エラー',
-                message: '予約時間の変更に失敗しました',
-                duration: 5000,
-              });
-            }
-          }
-        }}
-        // スタイリング
-        height='auto'
-        contentHeight={600}
-        aspectRatio={1.8}
-      />
-    </div>
+          }}
+          // リソース設定
+          resourceOrder='id'
+          // インタラクション設定
+          selectable={true}
+          selectMirror={true}
+          dayMaxEvents={false}
+          weekends={true}
+          // 詳細設定
+          eventOverlap={false}
+          selectOverlap={false}
+          eventConstraint={{
+            start: '09:00',
+            end: '21:00',
+          }}
+        />
+      </div>
+    </motion.div>
   );
 };
 

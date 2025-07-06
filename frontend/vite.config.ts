@@ -16,7 +16,9 @@ export default defineConfig({
       '@fullcalendar/resource-timeline',
       '@fullcalendar/interaction',
       '@fullcalendar/daygrid',
+      '@fullcalendar/timeline',
     ],
+    force: true,
   },
   build: {
     rollupOptions: {
@@ -29,6 +31,7 @@ export default defineConfig({
             '@fullcalendar/resource-timeline',
             '@fullcalendar/interaction',
             '@fullcalendar/daygrid',
+            '@fullcalendar/timeline',
           ],
         },
       },

@@ -664,27 +664,57 @@ class BookingService
     /**
      * 終了時間計算
      * 
-     * メニュー時間から予約終了時間を算出
+     * tugical仕様書準拠の正しい時間計算：
+     * 総所要時間 = base_duration + prep_duration + cleanup_duration + buffer_duration + オプション時間
      * 
      * @param array $bookingData 予約データ
      * @return string 終了時間（H:i）
+     * @throws \Exception メニューが見つからない場合
      */
     protected function calculateEndTime(array $bookingData): string
     {
         $startTime = $bookingData['start_time'];
         $menuId = $bookingData['menu_id'];
+        $optionIds = $bookingData['option_ids'] ?? [];
+
+        Log::info('終了時間計算開始', [
+            'start_time' => $startTime,
+            'menu_id' => $menuId,
+            'option_ids' => $optionIds
+        ]);
 
         // メニュー取得
         $menu = Menu::find($menuId);
         if (!$menu) {
-            throw new \Exception('メニューが見つかりません');
+            throw new \Exception('メニューが見つかりません: ID ' . $menuId);
         }
 
-        // 開始時間に所要時間を加算
-        $startDateTime = Carbon::createFromFormat('H:i', $startTime);
-        $endDateTime = $startDateTime->addMinutes($menu->duration);
+        // 正しい総所要時間計算（仕様書準拠）
+        $totalDuration = $menu->calculateTotalDuration($optionIds);
 
-        return $endDateTime->format('H:i');
+        Log::info('時間計算詳細', [
+            'menu_name' => $menu->name,
+            'base_duration' => $menu->base_duration,
+            'prep_duration' => $menu->prep_duration,
+            'cleanup_duration' => $menu->cleanup_duration,
+            'buffer_duration' => $menu->buffer_duration ?? 0,
+            'option_duration' => $totalDuration - ($menu->base_duration + $menu->prep_duration + $menu->cleanup_duration),
+            'total_duration' => $totalDuration
+        ]);
+
+        // 開始時間に総所要時間を加算
+        $startDateTime = Carbon::createFromFormat('H:i', $startTime);
+        $endDateTime = $startDateTime->addMinutes($totalDuration);
+
+        $endTime = $endDateTime->format('H:i');
+
+        Log::info('終了時間計算完了', [
+            'start_time' => $startTime,
+            'total_duration' => $totalDuration,
+            'end_time' => $endTime
+        ]);
+
+        return $endTime;
     }
 
     /**
