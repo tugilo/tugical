@@ -204,7 +204,7 @@ export const MultiMenuSelector: React.FC<MultiMenuSelectorProps> = ({
                       {/* メニュー情報 */}
                       <div className='flex-1'>
                         <h4 className='font-medium text-gray-900'>
-                          {menuDisplay.name}
+                          {menuDisplay.display_name || menuDisplay.name}
                         </h4>
                         <div className='flex items-center space-x-4 text-sm text-gray-600'>
                           <div className='flex items-center'>
@@ -265,75 +265,6 @@ export const MultiMenuSelector: React.FC<MultiMenuSelectorProps> = ({
         </div>
       )}
 
-      {/* 料金計算結果 */}
-      {calculationResult && (
-        <Card className='calculation-result bg-emerald-50 border-emerald-200'>
-          <div className='flex items-center justify-between'>
-            <div className='flex-1'>
-              <h4 className='font-semibold text-emerald-900 mb-2'>
-                料金計算結果
-              </h4>
-              <div className='grid grid-cols-2 gap-4 text-sm'>
-                <div>
-                  <span className='text-emerald-700'>基本料金:</span>
-                  <span className='font-medium text-emerald-900 ml-2'>
-                    ¥{calculationResult.base_total_price.toLocaleString()}
-                  </span>
-                </div>
-                <div>
-                  <span className='text-emerald-700'>所要時間:</span>
-                  <span className='font-medium text-emerald-900 ml-2'>
-                    {calculationResult.total_duration}分
-                  </span>
-                </div>
-                {calculationResult.set_discount_amount > 0 && (
-                  <div>
-                    <span className='text-emerald-700'>セット割引:</span>
-                    <span className='font-medium text-emerald-900 ml-2'>
-                      -¥{calculationResult.set_discount_amount.toLocaleString()}
-                    </span>
-                  </div>
-                )}
-                <div>
-                  <span className='text-emerald-700'>合計料金:</span>
-                  <span className='font-bold text-emerald-900 ml-2 text-lg'>
-                    ¥{calculationResult.total_price.toLocaleString()}
-                  </span>
-                </div>
-              </div>
-
-              {/* 自動追加サービス */}
-              {calculationResult.auto_added_services?.length > 0 && (
-                <div className='mt-3 pt-3 border-t border-emerald-200'>
-                  <p className='text-sm text-emerald-700'>
-                    自動追加サービス:{' '}
-                    {calculationResult.auto_added_services.join(', ')}
-                  </p>
-                </div>
-              )}
-
-              {/* 警告 */}
-              {calculationResult.warnings?.length > 0 && (
-                <div className='mt-3 pt-3 border-t border-emerald-200'>
-                  {calculationResult.warnings.map((warning, index) => (
-                    <p key={index} className='text-sm text-orange-700 mb-1'>
-                      ⚠️ {warning}
-                    </p>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* 計算中表示 */}
-            {isCalculating && (
-              <div className='flex-shrink-0 ml-4'>
-                <div className='animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-600'></div>
-              </div>
-            )}
-          </div>
-        </Card>
-      )}
-
       {/* 利用可能なメニュー一覧 */}
       <div className='available-menus'>
         <h3 className='text-lg font-semibold text-gray-900 mb-3'>
@@ -348,7 +279,7 @@ export const MultiMenuSelector: React.FC<MultiMenuSelectorProps> = ({
               >
                 <div className='flex-1'>
                   <h4 className='font-medium text-gray-900 mb-1'>
-                    {menu.name}
+                    {menu.display_name || menu.name}
                   </h4>
                   <div className='flex items-center space-x-4 text-sm text-gray-600'>
                     <div className='flex items-center'>

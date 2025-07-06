@@ -106,7 +106,7 @@ const SimpleTimelineView: React.FC<SimpleTimelineViewProps> = ({
   const getMenuName = (booking: Booking): string => {
     // 単一メニュー予約の場合
     if (booking.booking_type === 'single' && booking.menu) {
-      return booking.menu.name;
+      return booking.menu.display_name || booking.menu.name;
     }
 
     // 複数メニュー組み合わせ予約の場合
@@ -115,13 +115,15 @@ const SimpleTimelineView: React.FC<SimpleTimelineViewProps> = ({
       booking.details &&
       booking.details.length > 0
     ) {
-      const menuNames = booking.details.map(detail => detail.menu.name);
+      const menuNames = booking.details.map(
+        detail => detail.menu.display_name || detail.menu.name
+      );
       return menuNames.join(' + ');
     }
 
     // フォールバック（古いデータ対応）
     if (booking.menu) {
-      return booking.menu.name;
+      return booking.menu.display_name || booking.menu.name;
     }
 
     // デフォルト値

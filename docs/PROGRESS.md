@@ -6855,3 +6855,21 @@ Next: 店舗設定等の他画面への展開"
 ### 次のステップ
 
 - Phase 25 系列完全完了のため、次期開発フェーズへ
+
+
+## 2025-07-07 08:01:03 - Phase 25.24: 複数メニュー表示名修正とデバッグ表示削除
+
+### 問題・修正・成果
+
+- **問題**: 予約モーダルでメニュー名が英語（name）表示、デバッグ用「料金計算結果」表示
+- **修正**: 
+  - メニュー表示を `display_name || name` に変更（MultiMenuSelector、BookingCard、SimpleTimelineView）
+  - デバッグ用自動計算フィールドを削除
+  - BookingMenu型に`display_name?: string`プロパティを追加
+- **成果**: メニュー日本語化実現、デバッグ表示削除、型安全性確保、ビルド成功（3.72秒、100.09KB）
+- **変更ファイル**: 
+  - frontend/src/components/booking/MultiMenuSelector.tsx
+  - frontend/src/components/booking/BookingCard.tsx
+  - frontend/src/components/booking/SimpleTimelineView.tsx
+  - frontend/src/types/index.ts
+  - docs/PROGRESS.md

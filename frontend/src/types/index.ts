@@ -194,6 +194,7 @@ export interface BookingCustomer {
 export interface BookingMenu {
   id: number;
   name: string;
+  display_name?: string;
   duration: number;
   base_duration: number;
   price: number;
