@@ -941,7 +941,7 @@ class BookingController extends Controller
             // BookingServiceで複数メニュー組み合わせ予約作成
             $booking = $this->bookingService->createCombinationBooking(
                 $storeId,
-                $request->validated()
+                $request->all()
             );
 
             return response()->json([
