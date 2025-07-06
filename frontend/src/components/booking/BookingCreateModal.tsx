@@ -43,6 +43,15 @@ interface BookingCreateModalProps {
   initialCustomerId?: number;
   /** 初期選択メニューID */
   initialMenuId?: number;
+  /** Phase 25.2: Timeline統合予約作成対応 */
+  /** 初期日付（Timeline統合時） */
+  initialDate?: string;
+  /** 初期開始時間（Timeline統合時） */
+  initialStartTime?: string;
+  /** 初期リソースID（Timeline統合時） */
+  initialResourceId?: string;
+  /** Timeline統合モード */
+  timelineMode?: boolean;
 }
 
 /**
@@ -62,6 +71,11 @@ const BookingCreateModal: React.FC<BookingCreateModalProps> = ({
   onSuccess,
   initialCustomerId,
   initialMenuId,
+  // Phase 25.2: Timeline統合予約作成対応
+  initialDate,
+  initialStartTime,
+  initialResourceId,
+  timelineMode = false,
 }) => {
   const { addNotification } = useUIStore();
 
@@ -427,14 +441,21 @@ const BookingCreateModal: React.FC<BookingCreateModalProps> = ({
 
   /**
    * フォームリセット
+   * Phase 25.2: Timeline統合時の初期値設定対応
    */
   const resetForm = () => {
+    // Timeline統合時のリソースID変換（'unassigned' → undefined）
+    const initialResourceIdNum =
+      initialResourceId && initialResourceId !== 'unassigned'
+        ? parseInt(initialResourceId, 10)
+        : undefined;
+
     setFormData({
-      customer_id: 0,
-      menu_id: 0,
-      resource_id: undefined,
-      booking_date: '',
-      start_time: '',
+      customer_id: initialCustomerId || 0,
+      menu_id: initialMenuId || 0,
+      resource_id: initialResourceIdNum,
+      booking_date: initialDate || '',
+      start_time: initialStartTime || '',
       customer_notes: '',
       option_ids: [],
     });
@@ -449,6 +470,17 @@ const BookingCreateModal: React.FC<BookingCreateModalProps> = ({
     setCalculatedPrice(0);
     setCalculatedDuration(0);
     setCalculatedEndTime('');
+
+    // Timeline統合モード時のログ出力
+    if (timelineMode) {
+      console.log('🎯 Timeline統合予約作成モーダル初期化:', {
+        initialDate,
+        initialStartTime,
+        initialResourceId,
+        initialResourceIdNum,
+        timelineMode,
+      });
+    }
   };
 
   /**

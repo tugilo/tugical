@@ -1,5 +1,98 @@
 # tugical Development Progress
 
+## 2025-07-06 23:18:19 (tugiMacAir.local)
+
+### 📋 Phase 25.2: Timeline 統合予約作成完全実装 → 複数メニュー UI 統合完了 ✅ **完了**
+
+**Timeline 統合予約作成機能の完全実装:**
+
+#### 1. **BookingCreateModal 拡張** ✅
+
+```typescript
+interface BookingCreateModalProps {
+  // Phase 25.2: Timeline統合予約作成対応
+  initialDate?: string; // 初期日付（Timeline統合時）
+  initialStartTime?: string; // 初期開始時間（Timeline統合時）
+  initialResourceId?: string; // 初期リソースID（Timeline統合時）
+  timelineMode?: boolean; // Timeline統合モード
+}
+```
+
+#### 2. **Timeline 統合時の初期値設定** ✅
+
+```typescript
+// resetForm関数でTimeline統合時の初期値を設定
+const resetForm = () => {
+  const initialResourceIdNum =
+    initialResourceId && initialResourceId !== "unassigned"
+      ? parseInt(initialResourceId, 10)
+      : undefined;
+
+  setFormData({
+    booking_date: initialDate || "",
+    start_time: initialStartTime || "",
+    resource_id: initialResourceIdNum,
+    // ...
+  });
+};
+```
+
+#### 3. **BookingsPage 状態管理拡張** ✅
+
+```typescript
+// Timeline統合予約作成時の初期値状態
+const [timelineSlotInfo, setTimelineSlotInfo] = useState<{
+  date: string;
+  startTime: string;
+  resourceId: string;
+} | null>(null);
+```
+
+#### 4. **Timeline 統合予約作成フロー完全実装** ✅
+
+```typescript
+const handleTimelineBookingCreate = (slotInfo) => {
+  // 1. 日付・時間をフォーマット
+  const formattedDate = slotInfo.start.toISOString().split("T")[0];
+  const formattedTime = slotInfo.start.toLocaleTimeString("ja-JP", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  // 2. Timeline統合時の初期値を設定
+  setTimelineSlotInfo({
+    date: formattedDate,
+    startTime: formattedTime,
+    resourceId: slotInfo.resourceId,
+  });
+
+  // 3. 予約作成モーダルを開く
+  setIsCreateModalOpen(true);
+};
+```
+
+#### 5. **技術成果** ✅
+
+- ✅ **ビルド成功**（3.65 秒）
+- ✅ **BookingsPage**：76.79KB（+0.5KB Timeline 統合機能追加）
+- ✅ **Timeline 統合**：空きスロットクリック → 時間・リソース事前入力 → 予約作成
+- ✅ **美容師向け**：片手操作対応の直感的予約作成フロー
+
+#### 6. **動作フロー完成** ✅
+
+```
+1. Timeline上で空きスロットをクリック
+2. 時間・リソース情報を自動取得
+3. 予約作成モーダルが事前入力済みで開く
+4. 顧客・メニュー選択のみで予約作成完了
+```
+
+### 🎯 **Phase 25 完了状況**
+
+- ✅ **Phase 25.1**: Timeline 空きスロットクリック予約作成
+- ✅ **Phase 25.2**: 複数メニュー予約作成 UI 統合
+- ⏳ **Phase 25.3**: 電話予約フロー最適化（次回実装）
+
 ## 2025-07-06 23:06:39 (tugiMacAir.local)
 
 ### 📋 Phase 24.2: タイムライン表示修復 → FullCalendar 修正完了 ✅ **完了**

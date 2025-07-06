@@ -44,6 +44,13 @@ const BookingsPage: React.FC = () => {
   // モーダル状態
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
+  // Phase 25.2: Timeline統合予約作成時の初期値状態
+  const [timelineSlotInfo, setTimelineSlotInfo] = useState<{
+    date: string;
+    startTime: string;
+    resourceId: string;
+  } | null>(null);
+
   useEffect(() => {
     setPageTitle('予約管理');
   }, [setPageTitle]);
@@ -130,6 +137,40 @@ const BookingsPage: React.FC = () => {
    * 新規予約作成ボタンクリック
    */
   const handleCreateBooking = () => {
+    setIsCreateModalOpen(true);
+  };
+
+  /**
+   * Timeline空きスロットクリック時の予約作成処理
+   * Phase 25.2: Timeline統合予約作成機能完全実装
+   */
+  const handleTimelineBookingCreate = (slotInfo: {
+    start: Date;
+    end: Date;
+    resourceId: string;
+  }) => {
+    const formattedDate = slotInfo.start.toISOString().split('T')[0];
+    const formattedTime = slotInfo.start.toLocaleTimeString('ja-JP', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+    console.log('🎯 Timeline空きスロット予約作成:', {
+      start: slotInfo.start.toISOString(),
+      end: slotInfo.end.toISOString(),
+      resourceId: slotInfo.resourceId,
+      formattedDate,
+      formattedTime,
+    });
+
+    // Timeline統合時の初期値を設定
+    setTimelineSlotInfo({
+      date: formattedDate,
+      startTime: formattedTime,
+      resourceId: slotInfo.resourceId,
+    });
+
+    // Timeline統合予約作成モーダルを開く
     setIsCreateModalOpen(true);
   };
 
@@ -444,6 +485,7 @@ const BookingsPage: React.FC = () => {
           })()}
           bookings={bookings}
           onBookingClick={handleBookingClick}
+          onBookingCreate={handleTimelineBookingCreate}
         />
       ) : (
         <div className='space-y-6'>
@@ -573,8 +615,16 @@ const BookingsPage: React.FC = () => {
       {isCreateModalOpen && (
         <BookingCreateModal
           isOpen={isCreateModalOpen}
-          onClose={() => setIsCreateModalOpen(false)}
+          onClose={() => {
+            setIsCreateModalOpen(false);
+            setTimelineSlotInfo(null); // Phase 25.2: Timeline統合時の情報をクリア
+          }}
           onSuccess={handleBookingCreated}
+          // Phase 25.2: Timeline統合時の初期値を渡す
+          initialDate={timelineSlotInfo?.date}
+          initialStartTime={timelineSlotInfo?.startTime}
+          initialResourceId={timelineSlotInfo?.resourceId}
+          timelineMode={!!timelineSlotInfo}
         />
       )}
     </div>
