@@ -4,8 +4,8 @@ import { Booking, Resource } from '../types';
 interface EventInput {
   id: string;
   title: string;
-  start: Date;
-  end: Date;
+  start: Date | string; // ISO文字列も受け付け
+  end: Date | string; // ISO文字列も受け付け
   resourceId?: string;
   backgroundColor?: string;
   borderColor?: string;
@@ -105,11 +105,15 @@ export const convertToFullCalendarEvents = (
   });
 
   const events = bookings.map(booking => {
-    // 日時データの組み立て
-    const startDateTime = new Date(
-      `${booking.booking_date}T${booking.start_time}`
-    );
-    const endDateTime = new Date(`${booking.booking_date}T${booking.end_time}`);
+    // 日付文字列を正規化（UTC日付の場合は日付部分のみ取得）
+    let bookingDate = booking.booking_date;
+    if (typeof bookingDate === 'string' && bookingDate.includes('T')) {
+      bookingDate = bookingDate.split('T')[0]; // "2025-07-04T15:00:00.000000Z" → "2025-07-04"
+    }
+
+    // JST日時として組み立て（FullCalendar標準形式）
+    const startDateTime = `${bookingDate}T${booking.start_time}`;
+    const endDateTime = `${bookingDate}T${booking.end_time}`;
 
     // リソースID決定（null の場合は 'unassigned'）
     const resourceId = booking.resource_id?.toString() || 'unassigned';
@@ -120,12 +124,12 @@ export const convertToFullCalendarEvents = (
     // イベントタイトル生成
     const title = `${booking.customer.name} - ${booking.menu.name}`;
 
-    // FullCalendar EventInput オブジェクト生成
+    // FullCalendar EventInput オブジェクト生成（標準形式）
     const event: EventInput = {
       id: booking.id.toString(),
       title,
-      start: startDateTime,
-      end: endDateTime,
+      start: startDateTime, // ISO文字列形式
+      end: endDateTime, // ISO文字列形式
       resourceId,
       backgroundColor: colors.backgroundColor,
       borderColor: colors.borderColor,
@@ -173,14 +177,14 @@ export const convertToFullCalendarEvents = (
     }, {} as Record<string, number>),
   });
 
-  // 生成されたイベントの詳細確認
+  // 生成されたイベントの詳細確認（FullCalendar標準形式）
   console.log(
     '📊 生成イベント詳細（最初の3件）:',
     events.slice(0, 3).map(event => ({
       id: event.id,
       title: event.title,
-      start: event.start,
-      end: event.end,
+      start: event.start, // ISO文字列
+      end: event.end, // ISO文字列
       resourceId: event.resourceId,
       resourceIdType: typeof event.resourceId,
       backgroundColor: event.backgroundColor,

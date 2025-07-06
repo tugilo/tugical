@@ -327,7 +327,8 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
           ref={calendarRef}
           plugins={[resourceTimelinePlugin, interactionPlugin]}
           initialView='resourceTimelineWeek'
-          initialDate={date}
+          initialDate={new Date()}
+          firstDay={1}
           headerToolbar={{
             left: 'prev,next today',
             center: 'title',
@@ -350,6 +351,13 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
               start: dateInfo.start,
               end: dateInfo.end,
               view: dateInfo.view.type,
+            });
+            console.log('📅 JST日付確認:', {
+              todayJST: new Date().toLocaleDateString('ja-JP'),
+              currentRangeJST: {
+                start: dateInfo.start.toLocaleDateString('ja-JP'),
+                end: dateInfo.end.toLocaleDateString('ja-JP'),
+              },
             });
 
             if (onDateChange) {
