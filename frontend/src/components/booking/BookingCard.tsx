@@ -87,6 +87,31 @@ const getMenuName = (booking: Booking): string => {
 };
 
 /**
+ * 料金の取得
+ * Phase 25.26: 複数メニュー組み合わせ予約の料金計算対応
+ */
+const getTotalPrice = (booking: Booking): number => {
+  // 複数メニュー組み合わせ予約の場合
+  if (
+    booking.booking_type === 'combination' &&
+    booking.details &&
+    booking.details.length > 0
+  ) {
+    // 各メニュー詳細の料金を合計
+    const detailsTotal = booking.details.reduce((sum, detail) => {
+      return sum + (detail.price || 0);
+    }, 0);
+
+    // セット割引を適用
+    const setDiscountAmount = booking.set_discount_amount || 0;
+    return Math.max(0, detailsTotal - setDiscountAmount);
+  }
+
+  // 単一メニュー予約の場合
+  return booking.total_price || 0;
+};
+
+/**
  * 予約ステータスのスタイル設定
  */
 const statusStyles = {
@@ -246,7 +271,7 @@ const BookingCard: React.FC<BookingCardProps> = ({
           <div className='flex items-center gap-1'>
             <CurrencyYenIcon className='w-4 h-4 text-gray-400' />
             <span className='font-medium text-gray-900'>
-              ¥{booking.total_price.toLocaleString()}
+              ¥{getTotalPrice(booking).toLocaleString()}
             </span>
           </div>
           {booking.payment_status && (

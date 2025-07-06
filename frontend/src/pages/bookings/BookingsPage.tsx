@@ -40,7 +40,7 @@ const BookingsPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  const [viewMode, setViewMode] = useState<'list' | 'timeline'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'timeline'>('timeline');
 
   // Phase 25.3: メニューデータ状態管理
   const [menus, setMenus] = useState<Menu[]>([]);
