@@ -989,7 +989,7 @@ class BookingService
                 'status' => 'confirmed',
                 'customer_notes' => $bookingData['customer_notes'] ?? null,
                 'staff_notes' => $bookingData['staff_notes'] ?? null,
-                'booking_source' => $bookingData['booking_source'] ?? 'admin',
+                'booking_source' => $bookingData['booking_source'] ?? 'staff',
                 'phone_booking_context' => $bookingData['phone_booking_context'] ?? null
             ]);
 
