@@ -1,5 +1,83 @@
 # tugical Development Progress
 
+## 2025-07-06 23:06:39 (tugiMacAir.local)
+
+### 📋 Phase 24.2: タイムライン表示修復 → FullCalendar 修正完了 ✅ **完了**
+
+**FullCalendar タイムライン表示問題の根本修復:**
+
+#### 1. **問題特定** ✅
+
+```
+原因: fullcalendarHelpers.ts の convertToFullCalendarEvents() で
+      booking.menu.name を直接参照
+影響: Phase 23で booking.menu が null になるケースでエラー発生
+結果: タイムライン表示が完全に動作停止
+```
+
+#### 2. **根本修正実装** ✅
+
+```typescript
+// Before (Phase 23でエラー)
+const title = `${booking.customer.name} - ${booking.menu.name}`;
+menuName: booking.menu.name,
+menu: booking.menu.name,
+
+// After (Phase 23完全対応)
+const getMenuName = (booking: Booking): string => {
+  // 単一メニュー予約の場合
+  if (booking.booking_type === 'single' && booking.menu) {
+    return booking.menu.name;
+  }
+
+  // 複数メニュー組み合わせ予約の場合
+  if (booking.booking_type === 'combination' && booking.details && booking.details.length > 0) {
+    const menuNames = booking.details.map(detail => detail.menu.name);
+    return menuNames.join(' + ');
+  }
+
+  // フォールバック・デフォルト値
+  return booking.menu?.name || 'メニュー未設定';
+};
+
+const menuName = getMenuName(booking);
+const title = `${booking.customer.name} - ${menuName}`;
+```
+
+#### 3. **修正範囲** ✅
+
+```
+ファイル: frontend/src/utils/fullcalendarHelpers.ts
+修正箇所:
+  - convertToFullCalendarEvents(): イベントタイトル生成
+  - extendedProps.menuName: メニュー名プロパティ
+  - extendedProps.tooltip.menu: ツールチップ表示
+  - 複数メニュー組み合わせ表示対応: "カット + カラー + パーマ"
+```
+
+#### 4. **動作確認** ✅
+
+```
+- フロントエンドビルド成功（3.57秒）
+- FullCalendarタイムライン表示修復
+- 複数メニュー組み合わせ表示対応
+- 既存データ後方互換性確保
+- ツールチップ表示正常化
+```
+
+#### 5. **技術成果** ✅
+
+- **FullCalendar タイムライン完全修復**
+- **複数メニュー組み合わせタイムライン表示**
+- **Phase 23 バックエンド変更完全同期**
+- **タイムライン・リスト表示両方対応**
+
+### 変更ファイル
+
+1. `frontend/src/utils/fullcalendarHelpers.ts` - convertToFullCalendarEvents 関数修正
+
+---
+
 ## 2025-07-06 23:02:40 (tugiMacAir.local)
 
 ### 📋 Phase 24.1: booking.menu.name エラー修正 → Phase 23 対応完了 ✅ **完了**

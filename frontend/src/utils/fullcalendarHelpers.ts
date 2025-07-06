@@ -143,8 +143,35 @@ export const convertToFullCalendarEvents = (
     // ステータス色取得
     const colors = statusColors[booking.status] || statusColors.confirmed;
 
+    // メニュー名の取得（Phase 23対応: 複数メニュー組み合わせ対応）
+    const getMenuName = (booking: Booking): string => {
+      // 単一メニュー予約の場合
+      if (booking.booking_type === 'single' && booking.menu) {
+        return booking.menu.name;
+      }
+
+      // 複数メニュー組み合わせ予約の場合
+      if (
+        booking.booking_type === 'combination' &&
+        booking.details &&
+        booking.details.length > 0
+      ) {
+        const menuNames = booking.details.map(detail => detail.menu.name);
+        return menuNames.join(' + ');
+      }
+
+      // フォールバック（古いデータ対応）
+      if (booking.menu) {
+        return booking.menu.name;
+      }
+
+      // デフォルト値
+      return 'メニュー未設定';
+    };
+
     // イベントタイトル生成
-    const title = `${booking.customer.name} - ${booking.menu.name}`;
+    const menuName = getMenuName(booking);
+    const title = `${booking.customer.name} - ${menuName}`;
 
     // FullCalendar EventInput オブジェクト生成（標準形式）
     const event: EventInput = {
@@ -162,7 +189,7 @@ export const convertToFullCalendarEvents = (
         booking,
         customerName: booking.customer.name,
         customerPhone: booking.customer.phone || '',
-        menuName: booking.menu.name,
+        menuName: menuName, // Phase 23対応: getMenuName()を使用
         price: booking.total_price,
         status: booking.status,
         notes: booking.customer_notes || '',
@@ -173,7 +200,7 @@ export const convertToFullCalendarEvents = (
         tooltip: {
           customer: booking.customer.name,
           phone: booking.customer.phone || '',
-          menu: booking.menu.name,
+          menu: menuName, // Phase 23対応: getMenuName()を使用
           time: `${booking.start_time} - ${booking.end_time}`,
           price: `¥${booking.total_price.toLocaleString()}`,
           status: booking.status,
