@@ -187,37 +187,47 @@ const BookingsPage: React.FC = () => {
 
   /**
    * Timeline空きスロットクリック時の予約作成処理
-   * Phase 25.5: JST統一対応 - FullCalendarとモーダルの時間統一
+   * Phase 25.6: タイムゾーン補正修正 - FullCalendarは既にJST時間を渡している
    */
   const handleTimelineBookingCreate = (slotInfo: {
     start: Date;
     end: Date;
     resourceId: string;
   }) => {
-    // JST基準で日付・時間を取得（UTC変換を避ける）
-    const jstDate = new Date(slotInfo.start.getTime());
+    // 詳細デバッグ情報を出力
+    console.log('🔍 Timeline空きスロット詳細デバッグ:', {
+      originalStart: slotInfo.start,
+      originalStartISO: slotInfo.start.toISOString(),
+      originalStartString: slotInfo.start.toString(),
+      originalStartLocaleString: slotInfo.start.toLocaleString('ja-JP'),
+      originalEnd: slotInfo.end,
+      originalEndISO: slotInfo.end.toISOString(),
+      resourceId: slotInfo.resourceId,
+      timezoneOffset: slotInfo.start.getTimezoneOffset(),
+      currentTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    });
+
+    // FullCalendarから渡される時間はすでにローカルタイムゾーン（JST）として解釈されている
+    // そのため、追加のタイムゾーン変換は不要
+    const originalDate = slotInfo.start;
 
     // JST基準で日付を取得（YYYY-MM-DD形式）
-    const year = jstDate.getFullYear();
-    const month = (jstDate.getMonth() + 1).toString().padStart(2, '0');
-    const day = jstDate.getDate().toString().padStart(2, '0');
+    const year = originalDate.getFullYear();
+    const month = (originalDate.getMonth() + 1).toString().padStart(2, '0');
+    const day = originalDate.getDate().toString().padStart(2, '0');
     const formattedDate = `${year}-${month}-${day}`;
 
     // JST基準で時間を取得（HH:MM形式）
-    const formattedTime = jstDate.toLocaleTimeString('ja-JP', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    });
+    const hours = originalDate.getHours().toString().padStart(2, '0');
+    const minutes = originalDate.getMinutes().toString().padStart(2, '0');
+    const formattedTime = `${hours}:${minutes}`;
 
-    console.log('🎯 Timeline空きスロット予約作成（JST統一）:', {
-      originalStart: slotInfo.start.toISOString(),
-      originalEnd: slotInfo.end.toISOString(),
-      jstDate: jstDate.toISOString(),
+    console.log('🎯 Timeline空きスロット予約作成（Phase 25.6）:', {
+      clickedDate: originalDate.toLocaleString('ja-JP'),
       formattedDate,
       formattedTime,
       resourceId: slotInfo.resourceId,
-      timezoneOffset: jstDate.getTimezoneOffset(),
+      expectedTime: '9:00 → 09:00の形式で正しく変換されているか確認',
     });
 
     // Timeline統合時の初期値を設定

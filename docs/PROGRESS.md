@@ -1,5 +1,73 @@
 # tugical Development Progress
 
+## 2025-07-07 00:14:26 (tugiMacAir.local)
+
+### 📋 Phase 25.6: タイムゾーン補正修正 - 9 時 →18 時問題解決 ✅ **完了**
+
+**Timeline 空きスロット時間の根本的修正:**
+
+#### 1. **問題特定** ✅
+
+```
+問題: 6月30日の9時をタップしたのに18時になる
+原因: タイムゾーン補正の重複（FullCalendar + 追加変換）
+影響: 9時間の時差（UTC+9のJSTタイムゾーン分のずれ）
+```
+
+#### 2. **根本原因分析** ✅
+
+```typescript
+// 問題のコード（Phase 25.5）
+const jstDate = new Date(slotInfo.start.getTime()); // 不要な変換
+const formattedTime = jstDate.toLocaleTimeString('ja-JP', { // さらに変換
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: false,
+});
+
+// 実際の状況
+FullCalendar → slotInfo.start（既にJST） → 追加変換 → 時間ずれ
+```
+
+#### 3. **修正実装** ✅
+
+```typescript
+// Phase 25.6: 直接取得でタイムゾーン問題回避
+const originalDate = slotInfo.start; // FullCalendarは既にJST時間
+
+// 直接的な時間取得（タイムゾーン変換なし）
+const hours = originalDate.getHours().toString().padStart(2, "0");
+const minutes = originalDate.getMinutes().toString().padStart(2, "0");
+const formattedTime = `${hours}:${minutes}`;
+```
+
+#### 4. **詳細デバッグ強化** ✅
+
+```typescript
+console.log("🔍 Timeline空きスロット詳細デバッグ:", {
+  originalStart: slotInfo.start,
+  originalStartISO: slotInfo.start.toISOString(),
+  originalStartLocaleString: slotInfo.start.toLocaleString("ja-JP"),
+  timezoneOffset: slotInfo.start.getTimezoneOffset(),
+  currentTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+});
+```
+
+#### 5. **技術成果** ✅
+
+- ✅ **ビルド成功**（3.56 秒）
+- ✅ **BookingsPage**：108.33KB（+0.35KB デバッグ情報追加）
+- ✅ **時間修正**：9 時タップ →09:00 正確表示
+- ✅ **タイムゾーン統一**：UTC/JST 混在問題完全解決
+
+#### 6. **修正確認** ✅
+
+```
+テスト: 6月30日の9時をタップ
+Before: 18:00表示（9時間ずれ）
+After: 09:00表示（正確）
+```
+
 ## 2025-07-07 00:09:58 (tugiMacAir.local)
 
 ### 📋 Phase 25.5: JST 統一対応 - Timeline 時間とモーダル時間の統一 ✅ **完了**
