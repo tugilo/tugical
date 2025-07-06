@@ -380,88 +380,46 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
 
   // 空きスロットクリック処理（美容師向け直感操作）
   const handleTimelineSlotClick = (info: any) => {
-    const clickedDate = info.date;
+    // Phase 25.10: 根本的な時間取得問題の解決
+    // 複雑な再構築ロジックを削除し、rawClickedDateをそのまま使用
+    const rawClickedDate = info.date;
     const resourceId = info.resource?.id || 'unassigned';
     const resourceData = resources.find(r => r.id.toString() === resourceId);
 
-    console.log('🎯 Timeline空きスロットクリック:', {
-      date: clickedDate.toISOString(),
+    console.log('🎯 Timeline空きスロットクリック（Phase 25.10 - 根本解決）:', {
+      rawDate: rawClickedDate,
+      rawDateISO: rawClickedDate.toISOString(),
+      rawDirectTime: `${rawClickedDate.getHours()}:${rawClickedDate
+        .getMinutes()
+        .toString()
+        .padStart(2, '0')}`,
       resourceId,
       resourceData: resourceData?.name,
-      jsTime: clickedDate.toLocaleString('ja-JP'),
     });
 
-    // 空きスロット情報を計算
-    const slotInfo = calculateSlotInfo(clickedDate, resourceId);
-
-    // UI表示用情報を準備
-    const displayInfo = {
-      dateTimeJa: clickedDate.toLocaleString('ja-JP', {
-        month: 'long',
-        day: 'numeric',
-        weekday: 'short',
-        hour: '2-digit',
-        minute: '2-digit',
-      }),
-      timeRange: `${clickedDate.toLocaleTimeString('ja-JP', {
-        hour: '2-digit',
-        minute: '2-digit',
-      })} - ${new Date(
-        clickedDate.getTime() + 30 * 60 * 1000
-      ).toLocaleTimeString('ja-JP', {
-        hour: '2-digit',
-        minute: '2-digit',
-      })}`,
-      resourceDisplayName:
-        resourceData?.display_name || resourceData?.name || '指定なし',
-    };
-
-    // TimelineSlotClickInfo型のデータを作成
-    const timelineSlotInfo: TimelineSlotClickInfo = {
-      start: clickedDate,
-      end: new Date(clickedDate.getTime() + 30 * 60 * 1000),
-      resourceId: resourceId,
-      resourceInfo: resourceData
-        ? {
-            id: resourceData.id,
-            name: resourceData.name,
-            display_name: resourceData.display_name,
-            type: resourceData.type,
-            is_available: resourceData.is_active,
-          }
-        : undefined,
-      slotInfo,
-      displayInfo,
-    };
-
-    // 予約作成コンテキストを生成
-    const context: BookingCreationContext = {
-      creationMethod: 'timeline_click',
-      scenario: 'face_to_face', // デフォルト、後で変更可能
-      suggestedMenus: getSuggestedMenus(clickedDate, resourceId),
-      suggestedCustomers: getSuggestedCustomers(clickedDate, resourceId),
-      timeAdjustments: getTimeAdjustments(clickedDate, resourceId),
-    };
+    // 🔥 重要: rawClickedDateが実際には正しい時間を持っているので、そのまま使用
+    const clickedDate = rawClickedDate;
 
     // 美容師向け予約作成フローを開始
     if (onBookingCreate) {
       // 基本的な予約作成情報を親コンポーネントに渡す
       onBookingCreate({
-        start: timelineSlotInfo.start,
-        end: timelineSlotInfo.end,
-        resourceId: timelineSlotInfo.resourceId,
+        start: clickedDate,
+        end: new Date(clickedDate.getTime() + 30 * 60 * 1000),
+        resourceId: resourceId,
       });
     }
 
-    // 将来的には、ここでTimeline統合予約作成モーダルを開く
-    console.log('🎯 予約作成コンテキスト:', context);
-    console.log('🎯 TimelineSlotInfo:', timelineSlotInfo);
-
-    // 美容師向け通知
+    // 美容師向け通知（軽量化）
     addNotification({
       type: 'info',
       title: '予約作成',
-      message: `${displayInfo.resourceDisplayName} の ${displayInfo.timeRange} に予約を作成します`,
+      message: `${
+        resourceData?.display_name || resourceData?.name || '指定なし'
+      } の ${clickedDate.toLocaleTimeString('ja-JP', {
+        hour: '2-digit',
+        minute: '2-digit',
+      })} に予約を作成します`,
       duration: 3000,
     });
   };
@@ -699,7 +657,8 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
           slotMaxTime={dynamicConfig.slotMaxTime}
           slotDuration={dynamicConfig.slotDuration}
           slotLabelInterval={dynamicConfig.slotLabelInterval}
-          timeZone={dynamicConfig.timeZone}
+          // Phase 25.9: timeZone設定を削除してローカル時間処理
+          // timeZone='Asia/Tokyo' ← 削除
           resourceAreaWidth='200px'
           locale={jaLocale}
           // データ

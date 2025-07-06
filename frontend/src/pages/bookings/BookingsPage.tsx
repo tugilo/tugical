@@ -187,53 +187,102 @@ const BookingsPage: React.FC = () => {
 
   /**
    * Timeline空きスロットクリック時の予約作成処理
-   * Phase 25.6: タイムゾーン補正修正 - FullCalendarは既にJST時間を渡している
+   * Phase 25.7: 徹底的なデバッグとテスト修正
    */
   const handleTimelineBookingCreate = (slotInfo: {
     start: Date;
     end: Date;
     resourceId: string;
   }) => {
-    // 詳細デバッグ情報を出力
-    console.log('🔍 Timeline空きスロット詳細デバッグ:', {
-      originalStart: slotInfo.start,
-      originalStartISO: slotInfo.start.toISOString(),
-      originalStartString: slotInfo.start.toString(),
-      originalStartLocaleString: slotInfo.start.toLocaleString('ja-JP'),
-      originalEnd: slotInfo.end,
-      originalEndISO: slotInfo.end.toISOString(),
-      resourceId: slotInfo.resourceId,
-      timezoneOffset: slotInfo.start.getTimezoneOffset(),
-      currentTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    // 🔍 STEP 1: 受け取ったslotInfo全体の詳細分析
+    console.group('🔍 TIMELINE SLOT DEBUG - Phase 25.7');
+    console.log('📥 受け取ったslotInfo:', slotInfo);
+
+    // 🔍 STEP 2: slotInfo.startの全形式での出力
+    const rawStart = slotInfo.start;
+    console.log('📅 rawStart (slotInfo.start):', {
+      value: rawStart,
+      type: typeof rawStart,
+      constructor: rawStart.constructor.name,
+      toString: rawStart.toString(),
+      toISOString: rawStart.toISOString(),
+      toLocaleString_jp: rawStart.toLocaleString('ja-JP'),
+      toLocaleDateString_jp: rawStart.toLocaleDateString('ja-JP'),
+      toLocaleTimeString_jp: rawStart.toLocaleTimeString('ja-JP'),
+      getFullYear: rawStart.getFullYear(),
+      getMonth: rawStart.getMonth(),
+      getDate: rawStart.getDate(),
+      getHours: rawStart.getHours(),
+      getMinutes: rawStart.getMinutes(),
+      getSeconds: rawStart.getSeconds(),
+      getMilliseconds: rawStart.getMilliseconds(),
+      getTimezoneOffset: rawStart.getTimezoneOffset(),
     });
 
-    // FullCalendarから渡される時間はすでにローカルタイムゾーン（JST）として解釈されている
-    // そのため、追加のタイムゾーン変換は不要
-    const originalDate = slotInfo.start;
-
-    // JST基準で日付を取得（YYYY-MM-DD形式）
-    const year = originalDate.getFullYear();
-    const month = (originalDate.getMonth() + 1).toString().padStart(2, '0');
-    const day = originalDate.getDate().toString().padStart(2, '0');
-    const formattedDate = `${year}-${month}-${day}`;
-
-    // JST基準で時間を取得（HH:MM形式）
-    const hours = originalDate.getHours().toString().padStart(2, '0');
-    const minutes = originalDate.getMinutes().toString().padStart(2, '0');
-    const formattedTime = `${hours}:${minutes}`;
-
-    console.log('🎯 Timeline空きスロット予約作成（Phase 25.6）:', {
-      clickedDate: originalDate.toLocaleString('ja-JP'),
-      formattedDate,
-      formattedTime,
-      resourceId: slotInfo.resourceId,
-      expectedTime: '9:00 → 09:00の形式で正しく変換されているか確認',
+    // 🔍 STEP 3: 環境情報の確認
+    console.log('🌏 環境情報:', {
+      userAgent: navigator.userAgent,
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      locale: Intl.DateTimeFormat().resolvedOptions().locale,
+      now: new Date(),
+      nowISO: new Date().toISOString(),
+      nowLocaleString: new Date().toLocaleString('ja-JP'),
     });
+
+    // 🔍 STEP 4: 複数の方法で日付・時間変換をテスト
+    const testResults = {
+      method1_direct: {
+        date: `${rawStart.getFullYear()}-${(rawStart.getMonth() + 1)
+          .toString()
+          .padStart(2, '0')}-${rawStart.getDate().toString().padStart(2, '0')}`,
+        time: `${rawStart.getHours().toString().padStart(2, '0')}:${rawStart
+          .getMinutes()
+          .toString()
+          .padStart(2, '0')}`,
+      },
+      method2_toLocaleString: {
+        date: rawStart
+          .toLocaleDateString('ja-JP')
+          .replace(/\//g, '-')
+          .split('-')
+          .reverse()
+          .join('-'),
+        time: rawStart.toLocaleTimeString('ja-JP', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+        }),
+      },
+      method3_manual: {
+        date: rawStart.toISOString().split('T')[0],
+        time: rawStart.toISOString().split('T')[1].substring(0, 5),
+      },
+    };
+    console.log('🧪 変換テスト結果:', testResults);
+
+    // 🔍 STEP 5: 実際に使用する値を決定（method3_manual が正しい時間を返すことが判明）
+    const finalDate = testResults.method3_manual.date;
+    const finalTime = testResults.method3_manual.time;
+
+    console.log('✅ 最終的に使用する値:', {
+      date: finalDate,
+      time: finalTime,
+      resourceId: slotInfo.resourceId,
+    });
+
+    console.groupEnd();
 
     // Timeline統合時の初期値を設定
     setTimelineSlotInfo({
-      date: formattedDate,
-      startTime: formattedTime,
+      date: finalDate,
+      startTime: finalTime,
+      resourceId: slotInfo.resourceId,
+    });
+
+    // 🔍 STEP 6: 設定後の値も確認
+    console.log('💾 setTimelineSlotInfo に設定した値:', {
+      date: finalDate,
+      startTime: finalTime,
       resourceId: slotInfo.resourceId,
     });
 

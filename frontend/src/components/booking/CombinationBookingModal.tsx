@@ -89,13 +89,18 @@ const CombinationBookingModal: React.FC<CombinationBookingModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
 
-  // データ取得
+  // データ取得（初回のみ）
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
+
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !isDataLoaded) {
       loadInitialData();
+      setIsDataLoaded(true);
+    }
+    if (isOpen) {
       resetForm();
     }
-  }, [isOpen]);
+  }, [isOpen, isDataLoaded]);
 
   // 顧客検索フィルタリング
   useEffect(() => {
