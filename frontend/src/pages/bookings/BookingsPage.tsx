@@ -8,14 +8,15 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useUIStore, useToast } from '../../stores/uiStore';
-import { bookingApi } from '../../services/api';
-import { Booking, FilterOptions } from '../../types';
+import { bookingApi, menuApi } from '../../services/api';
+import { Booking, FilterOptions, Menu } from '../../types';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import LoadingScreen from '../../components/ui/LoadingScreen';
 import BookingCard from '../../components/booking/BookingCard';
 import BookingCreateModal from '../../components/booking/BookingCreateModal';
 import BookingTimelineView from '../../components/booking/BookingTimelineView';
+import CombinationBookingModal from '../../components/booking/CombinationBookingModal';
 import {
   PlusIcon,
   MagnifyingGlassIcon,
@@ -41,8 +42,14 @@ const BookingsPage: React.FC = () => {
   const [totalCount, setTotalCount] = useState(0);
   const [viewMode, setViewMode] = useState<'list' | 'timeline'>('list');
 
+  // Phase 25.3: メニューデータ状態管理
+  const [menus, setMenus] = useState<Menu[]>([]);
+
   // モーダル状態
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  // Phase 25.3: 新しい複数メニュー予約作成モーダル状態
+  const [isCreateModalNewOpen, setIsCreateModalNewOpen] = useState(false);
 
   // Phase 25.2: Timeline統合予約作成時の初期値状態
   const [timelineSlotInfo, setTimelineSlotInfo] = useState<{
@@ -54,6 +61,22 @@ const BookingsPage: React.FC = () => {
   useEffect(() => {
     setPageTitle('予約管理');
   }, [setPageTitle]);
+
+  /**
+   * メニュー一覧を取得
+   * Phase 25.3: 複数メニュー組み合わせ予約作成用
+   */
+  const fetchMenus = useCallback(async () => {
+    try {
+      const response = await menuApi.getList({
+        per_page: 100,
+        is_active: true,
+      });
+      setMenus(response.menus || []);
+    } catch (error: any) {
+      console.error('Failed to fetch menus:', error);
+    }
+  }, []);
 
   /**
    * 予約一覧を取得
@@ -91,7 +114,8 @@ const BookingsPage: React.FC = () => {
   // 初回読み込み
   useEffect(() => {
     fetchBookings();
-  }, [fetchBookings]);
+    fetchMenus(); // Phase 25.3: メニューデータも取得
+  }, [fetchBookings, fetchMenus]);
 
   /**
    * 検索処理
@@ -134,11 +158,11 @@ const BookingsPage: React.FC = () => {
   };
 
   /**
-   * 新規予約作成ボタンクリック
+   * 新規予約作成ボタンクリック（旧フロー）
    * Phase 25.2: 通常の新規予約作成（Timeline統合モードではない）
    */
   const handleCreateBooking = () => {
-    console.log('📝 通常の新規予約作成を開始');
+    console.log('📝 通常の新規予約作成を開始（旧フロー）');
 
     // Timeline統合時の情報をクリア（通常の新規予約作成では使用しない）
     setTimelineSlotInfo(null);
@@ -148,8 +172,22 @@ const BookingsPage: React.FC = () => {
   };
 
   /**
+   * 新しい複数メニュー予約作成ボタンクリック
+   * Phase 25.3: 複数メニュー組み合わせ対応の新しいフロー
+   */
+  const handleCreateBookingNew = () => {
+    console.log('✨ 新しい複数メニュー予約作成を開始');
+
+    // Timeline統合時の情報をクリア
+    setTimelineSlotInfo(null);
+
+    // 新しい複数メニュー予約作成モーダルを開く
+    setIsCreateModalNewOpen(true);
+  };
+
+  /**
    * Timeline空きスロットクリック時の予約作成処理
-   * Phase 25.2: Timeline統合予約作成機能完全実装
+   * Phase 25.4: Timeline統合時も新しい複数メニュー組み合わせフローを使用
    */
   const handleTimelineBookingCreate = (slotInfo: {
     start: Date;
@@ -162,7 +200,7 @@ const BookingsPage: React.FC = () => {
       minute: '2-digit',
     });
 
-    console.log('🎯 Timeline空きスロット予約作成:', {
+    console.log('🎯 Timeline空きスロット予約作成（新フロー）:', {
       start: slotInfo.start.toISOString(),
       end: slotInfo.end.toISOString(),
       resourceId: slotInfo.resourceId,
@@ -177,16 +215,30 @@ const BookingsPage: React.FC = () => {
       resourceId: slotInfo.resourceId,
     });
 
-    // Timeline統合予約作成モーダルを開く
-    setIsCreateModalOpen(true);
+    // Timeline統合予約作成モーダルを開く（新しいフロー）
+    setIsCreateModalNewOpen(true);
   };
 
   /**
-   * 予約作成完了
+   * 予約作成完了（旧フロー）
    */
   const handleBookingCreated = (newBooking: Booking) => {
     // 予約一覧を再取得
     fetchBookings();
+  };
+
+  /**
+   * 新しい複数メニュー予約作成完了
+   * Phase 25.3: 複数メニュー組み合わせ対応
+   */
+  const handleBookingCreatedNew = (newBooking: Booking) => {
+    console.log('✨ 新しい複数メニュー予約作成完了:', newBooking);
+
+    // 予約一覧を再取得
+    fetchBookings();
+
+    // 新しいモーダルを閉じる
+    setIsCreateModalNewOpen(false);
   };
 
   /**
@@ -397,11 +449,19 @@ const BookingsPage: React.FC = () => {
             </Button>
           </div>
           <Button
-            variant='primary'
+            variant='outline'
             leftIcon={<PlusIcon className='w-4 h-4' />}
             onClick={handleCreateBooking}
           >
-            新規予約
+            新規予約（旧）
+          </Button>
+          <Button
+            variant='primary'
+            leftIcon={<PlusIcon className='w-4 h-4' />}
+            onClick={handleCreateBookingNew}
+            className='bg-emerald-600 hover:bg-emerald-700 border-emerald-600'
+          >
+            ✨ 複数メニュー予約
           </Button>
         </div>
       </div>
@@ -618,7 +678,7 @@ const BookingsPage: React.FC = () => {
         </Card>
       )}
 
-      {/* 新規予約作成モーダル */}
+      {/* 新規予約作成モーダル（旧フロー） */}
       {isCreateModalOpen && (
         <BookingCreateModal
           isOpen={isCreateModalOpen}
@@ -632,6 +692,23 @@ const BookingsPage: React.FC = () => {
           initialStartTime={timelineSlotInfo?.startTime}
           initialResourceId={timelineSlotInfo?.resourceId}
           timelineMode={!!timelineSlotInfo}
+        />
+      )}
+
+      {/* 新しい複数メニュー予約作成モーダル */}
+      {isCreateModalNewOpen && (
+        <CombinationBookingModal
+          isOpen={isCreateModalNewOpen}
+          onClose={() => {
+            setIsCreateModalNewOpen(false);
+            setTimelineSlotInfo(null); // 情報をクリア
+          }}
+          onSuccess={handleBookingCreatedNew}
+          menus={menus}
+          // Timeline統合時の初期値を渡す
+          initialDate={timelineSlotInfo?.date}
+          initialStartTime={timelineSlotInfo?.startTime}
+          initialResourceId={timelineSlotInfo?.resourceId}
         />
       )}
     </div>

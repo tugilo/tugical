@@ -1041,6 +1041,14 @@ export const bookingApi = {
     apiClient.updateBookingStatus(id, status),
   delete: (id: number) => apiClient.deleteBooking(id),
 
+  // Phase 23: 複数メニュー組み合わせ対応
+  calculateCombination: (data: CalculateCombinationRequest) =>
+    apiClient.calculateCombination(data),
+  createCombinationBooking: (data: CreateCombinationBookingRequest) =>
+    apiClient.createCombinationBooking(data),
+  getPhoneBookingAvailability: (data: PhoneBookingAvailabilityRequest) =>
+    apiClient.getPhoneBookingAvailability(data),
+
   /**
    * 空き時間取得（仮実装）
    */

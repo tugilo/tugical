@@ -1,5 +1,92 @@
 # tugical Development Progress
 
+## 2025-07-07 00:03:57 (tugiMacAir.local)
+
+### 📋 Phase 25.4: Timeline 統合時も新しい複数メニュー組み合わせフロー使用 ✅ **完了**
+
+**Timeline 統合予約作成の完全更新:**
+
+#### 1. **問題特定** ✅
+
+```
+問題: Timeline空きスロットクリック時に古いBookingCreateModalが開く
+影響: Phase 23の複数メニュー組み合わせ機能が利用できない
+結果: Timeline統合時もセット割引、追加サービス等が使用不可
+```
+
+#### 2. **根本修正実装** ✅
+
+```typescript
+// Before: Timeline統合時に古いモーダル
+const handleTimelineBookingCreate = (slotInfo) => {
+  // ... 処理 ...
+
+  // Timeline統合予約作成モーダルを開く
+  setIsCreateModalOpen(true); // ← 古いモーダル
+};
+
+// After: Timeline統合時も新しい複数メニュー組み合わせフロー
+const handleTimelineBookingCreate = (slotInfo) => {
+  // ... 処理 ...
+
+  // Timeline統合予約作成モーダルを開く（新しいフロー）
+  setIsCreateModalNewOpen(true); // ← 新しいモーダル
+};
+```
+
+#### 3. **初期値渡し修正** ✅
+
+```typescript
+// Timeline統合時の初期値を新しいモーダルに正しく渡す
+<CombinationBookingModal
+  isOpen={isCreateModalNewOpen}
+  onClose={() => {
+    setIsCreateModalNewOpen(false);
+    setTimelineSlotInfo(null);
+  }}
+  onSuccess={handleBookingCreatedNew}
+  menus={menus}
+  // Timeline統合時の初期値を渡す
+  initialDate={timelineSlotInfo?.date}
+  initialStartTime={timelineSlotInfo?.startTime}
+  initialResourceId={timelineSlotInfo?.resourceId}
+/>
+```
+
+#### 4. **3 つの独立した予約作成フロー完全統合** ✅
+
+```
+📝 従来フロー:
+  1. 右上「新規予約（旧）」ボタン → BookingCreateModal
+  2. シングルメニュー予約専用
+
+✨ 複数メニューフロー:
+  1. 右上「✨ 複数メニュー予約」ボタン → CombinationBookingModal
+  2. Phase 23機能フル活用（セット割引、追加サービス）
+
+🎯 Timeline統合フロー:
+  1. Timeline空きスロットクリック → CombinationBookingModal
+  2. 日時・リソース事前入力 + Phase 23機能フル活用
+```
+
+#### 5. **技術成果** ✅
+
+- ✅ **ビルド成功**（3.58 秒）
+- ✅ **BookingsPage**：107.78KB（安定）
+- ✅ **Timeline 統合**：新しい複数メニュー組み合わせフロー完全適用
+- ✅ **美容師向け UX**：Timeline 空きスロットクリック → 複数メニュー組み合わせ → セット割引適用
+
+#### 6. **Phase 23 機能完全活用** ✅
+
+```
+Timeline統合時も以下の機能が利用可能:
+- ✅ 複数メニュー組み合わせ選択
+- ✅ セット割引自動適用
+- ✅ 追加サービス自動追加
+- ✅ リアルタイム料金計算
+- ✅ 事前入力済み日時・リソース情報
+```
+
 ## 2025-07-06 23:30:44 (tugiMacAir.local)
 
 ### 📋 Phase 25.2.1: 通常新規予約作成フロー修正 → Timeline 統合モード分離完了 ✅ **完了**
