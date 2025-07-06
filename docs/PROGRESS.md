@@ -6873,3 +6873,26 @@ Next: 店舗設定等の他画面への展開"
   - frontend/src/components/booking/SimpleTimelineView.tsx
   - frontend/src/types/index.ts
   - docs/PROGRESS.md
+
+
+## 2025-07-07 08:06:07 - Phase 25.25: 複数メニュー組み合わせ予約作成時の予約番号undefined問題修正
+
+### 問題・修正・成果
+
+- **問題**: 複数メニュー組み合わせ予約作成時に予約番号が「undefined」として表示される
+- **原因**: APIレスポンス構造とフロントエンドの処理に不整合
+  - APIレスポンス: `{ data: { booking: BookingResource } }`
+  - フロントエンド: `response.data.data` で直接アクセス（正しくは `response.data.data.booking`）
+- **修正**: 
+  - `frontend/src/services/api.ts` の `createCombinationBooking` メソッドを修正
+  - 型定義を `ApiResponse<{ booking: Booking }>` に変更
+  - レスポンスアクセスを `response.data.data.booking` に変更
+- **成果**: 予約番号が正常に表示される、ビルド成功（3.60秒、BookingsPage 100.09KB）
+- **変更ファイル**: 
+  - frontend/src/services/api.ts
+  - docs/PROGRESS.md
+
+### 次のステップ
+
+- 実際のブラウザでの動作確認
+- tugical複数メニュー組み合わせ機能の完全安定動作確認

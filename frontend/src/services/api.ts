@@ -454,13 +454,13 @@ class ApiClient {
   async createCombinationBooking(
     requestData: CreateCombinationBookingRequest
   ): Promise<Booking> {
-    const response = await this.client.post<ApiResponse<Booking>>(
+    const response = await this.client.post<ApiResponse<{ booking: Booking }>>(
       '/bookings/combination',
       requestData
     );
 
     if (response.data.success && response.data.data) {
-      return response.data.data;
+      return response.data.data.booking;
     }
 
     throw new Error(
