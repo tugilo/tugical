@@ -2,10 +2,15 @@
 
 ## テーブル定義書
 
-**Version**: 1.1  
-**Date**: 2025 年 7 月 6 日  
+**Version**: 1.2  
+**Date**: 2025 年 1 月 6 日  
 **Project**: tugical（ツギカル）  
 **Database**: MariaDB 10.6+
+
+**更新履歴**:
+
+- v1.2 (2025-01-06): **複数メニュー組み合わせ対応** - booking_details テーブル追加、電話予約ワークフロー最適化
+- v1.1 (2025-07-06): 時間スロット設定機能追加
 
 ---
 
@@ -19,9 +24,11 @@
 
 ### 汎用時間貸しリソース予約システム
 
-- **統一概念**: 予約 = リソース × 時間枠 × メニュー
+- **統一概念**: 予約 = リソース × 時間枠 × メニュー（複数）
 - **柔軟時間スロット**: 5 分〜480 分対応
 - **業種対応**: 医療・美容・施設・教育・アクティビティ等
+- **複数メニュー組み合わせ**: カット+カラー、診察+検査、会議室+設備等の自由な組み合わせ
+- **電話予約最適化**: 美容師が電話を耳に挟みながら片手で操作可能なワークフロー設計
 
 ### 命名規則
 
@@ -513,40 +520,165 @@
 
 ## 5. 予約管理
 
-### 5.1 bookings（予約）
+### 5.1 bookings（予約ヘッダー）**v1.2 構造変更**
 
-| カラム名            | 型              | NOT NULL | デフォルト                  | 説明                    |
-| ------------------- | --------------- | -------- | --------------------------- | ----------------------- |
-| id                  | BIGINT UNSIGNED | ✓        | AUTO_INCREMENT              | 予約 ID（PK）           |
-| store_id            | BIGINT UNSIGNED | ✓        | -                           | 店舗 ID（FK）           |
-| customer_id         | BIGINT UNSIGNED | ✓        | -                           | 顧客 ID（FK）           |
-| resource_id         | BIGINT UNSIGNED |          | NULL                        | リソース ID（FK）       |
-| menu_id             | BIGINT UNSIGNED | ✓        | -                           | メニュー ID（FK）       |
-| booking_number      | VARCHAR(50)     | ✓        | -                           | 予約番号                |
-| booking_date        | DATE            | ✓        | -                           | 予約日                  |
-| start_time          | TIME            | ✓        | -                           | 開始時間                |
-| end_time            | TIME            | ✓        | -                           | 終了時間                |
-| actual_start_time   | TIMESTAMP       |          | NULL                        | 実際開始時間            |
-| actual_end_time     | TIMESTAMP       |          | NULL                        | 実際終了時間            |
-| status              | ENUM            | ✓        | 'pending'                   | 予約状態                |
-| booking_source      | ENUM            | ✓        | 'liff'                      | 予約元                  |
-| total_price         | INT             | ✓        | 0                           | 合計料金                |
-| base_price          | INT             | ✓        | 0                           | 基本料金                |
-| option_price        | INT             | ✓        | 0                           | オプション料金          |
-| resource_price_diff | INT             | ✓        | 0                           | リソース料金差          |
-| customer_notes      | TEXT            |          | NULL                        | 顧客メモ                |
-| staff_notes         | TEXT            |          | NULL                        | スタッフメモ            |
-| internal_notes      | TEXT            |          | NULL                        | 内部メモ                |
-| cancellation_reason | TEXT            |          | NULL                        | キャンセル理由          |
-| cancelled_at        | TIMESTAMP       |          | NULL                        | キャンセル日時          |
-| confirmed_at        | TIMESTAMP       |          | NULL                        | 確定日時                |
-| completed_at        | TIMESTAMP       |          | NULL                        | 完了日時                |
-| hold_token          | VARCHAR(255)    |          | NULL                        | 仮押さえトークン        |
-| hold_expires_at     | TIMESTAMP       |          | NULL                        | 仮押さえ期限            |
-| metadata            | JSON            |          | NULL                        | メタデータ              |
-| deleted_at          | TIMESTAMP       |          | NULL                        | 削除日時（SoftDeletes） |
-| created_at          | TIMESTAMP       | ✓        | CURRENT_TIMESTAMP           | 作成日時                |
-| updated_at          | TIMESTAMP       | ✓        | CURRENT_TIMESTAMP ON UPDATE | 更新日時                |
+**変更内容**: 複数メニュー組み合わせ対応のため、`menu_id` を削除し、詳細は `booking_details` テーブルで管理
+
+| カラム名            | 型              | NOT NULL | デフォルト                  | 説明                                       |
+| ------------------- | --------------- | -------- | --------------------------- | ------------------------------------------ |
+| id                  | BIGINT UNSIGNED | ✓        | AUTO_INCREMENT              | 予約 ID（PK）                              |
+| store_id            | BIGINT UNSIGNED | ✓        | -                           | 店舗 ID（FK）                              |
+| customer_id         | BIGINT UNSIGNED | ✓        | -                           | 顧客 ID（FK）                              |
+| primary_resource_id | BIGINT UNSIGNED |          | NULL                        | 主担当リソース ID（FK）                    |
+| booking_number      | VARCHAR(50)     | ✓        | -                           | 予約番号                                   |
+| booking_date        | DATE            | ✓        | -                           | 予約日                                     |
+| start_time          | TIME            | ✓        | -                           | 開始時間                                   |
+| end_time            | TIME            | ✓        | -                           | 終了時間                                   |
+| estimated_duration  | INT             | ✓        | 0                           | 見積所要時間（分）                         |
+| actual_start_time   | TIMESTAMP       |          | NULL                        | 実際開始時間                               |
+| actual_end_time     | TIMESTAMP       |          | NULL                        | 実際終了時間                               |
+| status              | ENUM            | ✓        | 'pending'                   | 予約状態                                   |
+| booking_source      | ENUM            | ✓        | 'liff'                      | 予約元                                     |
+| booking_type        | ENUM            | ✓        | 'single'                    | **新規**: 予約タイプ（単体/組み合わせ）    |
+| total_price         | INT             | ✓        | 0                           | 合計料金                                   |
+| base_total_price    | INT             | ✓        | 0                           | **新規**: 基本料金合計（詳細の積み上げ）   |
+| option_total_price  | INT             | ✓        | 0                           | **新規**: オプション料金合計               |
+| set_discount_amount | INT             | ✓        | 0                           | **新規**: セット割引額                     |
+| resource_price_diff | INT             | ✓        | 0                           | リソース料金差                             |
+| auto_added_services | JSON            |          | NULL                        | **新規**: 自動追加サービス一覧             |
+| customer_notes      | TEXT            |          | NULL                        | 顧客メモ                                   |
+| staff_notes         | TEXT            |          | NULL                        | スタッフメモ                               |
+| internal_notes      | TEXT            |          | NULL                        | 内部メモ                                   |
+| combination_rules   | JSON            |          | NULL                        | **新規**: 組み合わせルール（割引・追加等） |
+| cancellation_reason | TEXT            |          | NULL                        | キャンセル理由                             |
+| cancelled_at        | TIMESTAMP       |          | NULL                        | キャンセル日時                             |
+| confirmed_at        | TIMESTAMP       |          | NULL                        | 確定日時                                   |
+| completed_at        | TIMESTAMP       |          | NULL                        | 完了日時                                   |
+| hold_token          | VARCHAR(255)    |          | NULL                        | 仮押さえトークン                           |
+| hold_expires_at     | TIMESTAMP       |          | NULL                        | 仮押さえ期限                               |
+| phone_booking_data  | JSON            |          | NULL                        | **新規**: 電話予約時の操作ログ             |
+| metadata            | JSON            |          | NULL                        | メタデータ                                 |
+| deleted_at          | TIMESTAMP       |          | NULL                        | 削除日時（SoftDeletes）                    |
+| created_at          | TIMESTAMP       | ✓        | CURRENT_TIMESTAMP           | 作成日時                                   |
+| updated_at          | TIMESTAMP       | ✓        | CURRENT_TIMESTAMP ON UPDATE | 更新日時                                   |
+
+**ENUM 値**:
+
+- `status`: 'pending', 'confirmed', 'cancelled', 'completed', 'no_show'
+- `booking_source`: 'liff', 'admin', 'phone', 'web', 'api'
+- `booking_type`: 'single', 'combination', 'package', 'course'
+
+### 5.2 booking_details（予約明細）**v1.2 新規テーブル**
+
+**用途**: 1 つの予約に対する複数メニューの組み合わせを管理
+
+| カラム名              | 型              | NOT NULL | デフォルト                  | 説明                                   |
+| --------------------- | --------------- | -------- | --------------------------- | -------------------------------------- |
+| id                    | BIGINT UNSIGNED | ✓        | AUTO_INCREMENT              | 予約明細 ID（PK）                      |
+| booking_id            | BIGINT UNSIGNED | ✓        | -                           | 予約 ID（FK）                          |
+| menu_id               | BIGINT UNSIGNED | ✓        | -                           | メニュー ID（FK）                      |
+| resource_id           | BIGINT UNSIGNED |          | NULL                        | 担当リソース ID（FK）                  |
+| sequence_order        | INT             | ✓        | 1                           | 実施順序（カット → カラー等）          |
+| service_name          | VARCHAR(255)    | ✓        | -                           | サービス名（予約時点）                 |
+| service_description   | TEXT            |          | NULL                        | サービス説明（予約時点）               |
+| base_price            | INT             | ✓        | 0                           | 基本料金（予約時点）                   |
+| base_duration         | INT             | ✓        | 0                           | 基本所要時間（分）                     |
+| prep_duration         | INT             | ✓        | 0                           | 準備時間（分）                         |
+| cleanup_duration      | INT             | ✓        | 0                           | 片付け時間（分）                       |
+| total_duration        | INT             | ✓        | 0                           | 合計所要時間（分）                     |
+| resource_price_diff   | INT             | ✓        | 0                           | リソース料金差                         |
+| detail_discount       | INT             | ✓        | 0                           | 明細単位の割引                         |
+| is_auto_added         | BOOLEAN         | ✓        | FALSE                       | 自動追加サービスフラグ                 |
+| auto_add_reason       | VARCHAR(255)    |          | NULL                        | 自動追加理由                           |
+| selected_options      | JSON            |          | NULL                        | 選択されたオプション一覧               |
+| service_attributes    | JSON            |          | NULL                        | サービス属性（予約時点）               |
+| start_time_offset     | INT             | ✓        | 0                           | 予約開始からのオフセット時間（分）     |
+| end_time_offset       | INT             | ✓        | 0                           | 予約開始からの終了オフセット時間（分） |
+| actual_start_time     | TIMESTAMP       |          | NULL                        | 実際開始時間                           |
+| actual_end_time       | TIMESTAMP       |          | NULL                        | 実際終了時間                           |
+| completion_status     | ENUM            | ✓        | 'pending'                   | 実施状況                               |
+| staff_notes           | TEXT            |          | NULL                        | スタッフメモ（明細別）                 |
+| customer_satisfaction | INT             |          | NULL                        | 顧客満足度（1-5）                      |
+| created_at            | TIMESTAMP       | ✓        | CURRENT_TIMESTAMP           | 作成日時                               |
+| updated_at            | TIMESTAMP       | ✓        | CURRENT_TIMESTAMP ON UPDATE | 更新日時                               |
+
+**ENUM 値**:
+
+- `completion_status`: 'pending', 'in_progress', 'completed', 'cancelled', 'skipped'
+
+**インデックス**:
+
+- PRIMARY KEY (`id`)
+- FOREIGN KEY `fk_booking_details_booking` (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE CASCADE
+- FOREIGN KEY `fk_booking_details_menu` (`menu_id`) REFERENCES `menus` (`id`) ON DELETE RESTRICT
+- FOREIGN KEY `fk_booking_details_resource` (`resource_id`) REFERENCES `resources` (`id`) ON DELETE SET NULL
+- INDEX `idx_booking_details_booking_sequence` (`booking_id`, `sequence_order`)
+- INDEX `idx_booking_details_menu` (`menu_id`)
+- INDEX `idx_booking_details_resource` (`resource_id`)
+
+#### **美容院での複数メニュー予約例**:
+
+```json
+// bookings テーブル
+{
+  "id": 123,
+  "booking_number": "TG20250106001",
+  "customer_id": 456,
+  "booking_type": "combination",
+  "total_price": 9500,
+  "base_total_price": 10000,
+  "set_discount_amount": 500,
+  "auto_added_services": ["シャンプー", "ブロー"],
+  "combination_rules": {
+    "applied_discounts": [
+      {"rule": "カット+カラーセット", "amount": 500}
+    ],
+    "auto_additions": [
+      {"service": "シャンプー", "reason": "カラー施術必須"},
+      {"service": "ブロー", "reason": "セット仕上げ"}
+    ]
+  }
+}
+
+// booking_details テーブル（複数レコード）
+[
+  {
+    "booking_id": 123,
+    "menu_id": 1,
+    "sequence_order": 1,
+    "service_name": "カット",
+    "base_price": 4000,
+    "total_duration": 60,
+    "start_time_offset": 0,
+    "end_time_offset": 60
+  },
+  {
+    "booking_id": 123,
+    "menu_id": 2,
+    "sequence_order": 2,
+    "service_name": "カラー",
+    "base_price": 6000,
+    "total_duration": 90,
+    "start_time_offset": 60,
+    "end_time_offset": 150,
+    "selected_options": [
+      {"option_id": 5, "name": "特殊カラー", "price": 2000}
+    ]
+  },
+  {
+    "booking_id": 123,
+    "menu_id": 10,
+    "sequence_order": 3,
+    "service_name": "シャンプー",
+    "base_price": 0,
+    "total_duration": 15,
+    "is_auto_added": true,
+    "auto_add_reason": "カラー施術必須",
+    "start_time_offset": 150,
+    "end_time_offset": 165
+  }
+]
+```
 
 **ENUM 値**:
 

@@ -2,10 +2,15 @@
 
 ## RESTful API 仕様書
 
-**Version**: 1.1  
-**Date**: 2025 年 7 月 6 日  
+**Version**: 1.2  
+**Date**: 2025 年 1 月 6 日  
 **Project**: tugical（ツギカル）  
 **Base URL**: `https://api.tugical.com`
+
+**更新履歴**:
+
+- v1.2 (2025-01-06): **複数メニュー組み合わせ対応** - 電話予約最適化 API、メニュー組み合わせ計算 API 追加
+- v1.1 (2025-07-06): 時間スロット設定 API 追加
 
 ---
 
@@ -175,7 +180,9 @@ GET /api/v1/bookings/123
 Authorization: Bearer {token}
 ```
 
-### 2.3 予約作成（管理者）
+### 2.3 予約作成（管理者・複数メニュー対応）**v1.2 拡張**
+
+#### 単体メニュー予約（従来）
 
 ```http
 POST /api/v1/bookings
@@ -184,6 +191,7 @@ Content-Type: application/json
 
 {
   "customer_id": 456,
+  "booking_type": "single",
   "menu_id": 789,
   "resource_id": 1,
   "booking_date": "2025-06-28",
@@ -192,6 +200,244 @@ Content-Type: application/json
   "staff_notes": "カウンセリング重視",
   "options": [1, 2],
   "booking_source": "phone"
+}
+```
+
+#### 複数メニュー組み合わせ予約（新機能）
+
+```http
+POST /api/v1/bookings
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "customer_id": 456,
+  "booking_type": "combination",
+  "primary_resource_id": 1,
+  "booking_date": "2025-06-28",
+  "start_time": "14:00",
+  "customer_notes": "カット後にカラーをお願いします",
+  "staff_notes": "初回カラーのため、パッチテスト済み確認",
+  "booking_source": "phone",
+  "menus": [
+    {
+      "menu_id": 1,
+      "resource_id": 1,
+      "sequence_order": 1,
+      "selected_options": [
+        {"option_id": 5, "option_name": "デザインカット", "price": 1000}
+      ]
+    },
+    {
+      "menu_id": 2,
+      "resource_id": 1,
+      "sequence_order": 2,
+      "selected_options": [
+        {"option_id": 12, "option_name": "特殊カラー", "price": 2000}
+      ]
+    }
+  ],
+  "apply_set_discounts": true,
+  "auto_add_services": true,
+  "phone_booking_context": {
+    "call_start_time": "2025-06-28T13:45:00+09:00",
+    "customer_requests": ["短時間で", "料金重視"],
+    "alternative_dates_checked": ["2025-06-29", "2025-06-30"]
+  }
+}
+```
+
+**レスポンス（複数メニュー）**:
+
+```json
+{
+  "success": true,
+  "data": {
+    "booking": {
+      "id": 123,
+      "booking_number": "TG20250106001",
+      "booking_type": "combination",
+      "booking_date": "2025-06-28",
+      "start_time": "14:00",
+      "end_time": "16:45",
+      "estimated_duration": 165,
+      "status": "confirmed",
+      "total_price": 9500,
+      "base_total_price": 10000,
+      "set_discount_amount": 500,
+      "auto_added_services": ["シャンプー", "ブロー"],
+      "customer": {
+        "id": 456,
+        "name": "山田太郎"
+      },
+      "details": [
+        {
+          "id": 1,
+          "menu_id": 1,
+          "service_name": "カット",
+          "sequence_order": 1,
+          "base_price": 4000,
+          "total_duration": 60,
+          "start_time_offset": 0,
+          "end_time_offset": 60,
+          "selected_options": [
+            { "option_name": "デザインカット", "price": 1000 }
+          ]
+        },
+        {
+          "id": 2,
+          "menu_id": 2,
+          "service_name": "カラー",
+          "sequence_order": 2,
+          "base_price": 6000,
+          "total_duration": 90,
+          "start_time_offset": 60,
+          "end_time_offset": 150,
+          "selected_options": [{ "option_name": "特殊カラー", "price": 2000 }]
+        },
+        {
+          "id": 3,
+          "menu_id": 10,
+          "service_name": "シャンプー",
+          "sequence_order": 3,
+          "base_price": 0,
+          "total_duration": 15,
+          "is_auto_added": true,
+          "auto_add_reason": "カラー施術必須",
+          "start_time_offset": 150,
+          "end_time_offset": 165
+        }
+      ],
+      "combination_rules": {
+        "applied_discounts": [{ "rule": "カット+カラーセット", "amount": 500 }],
+        "auto_additions": [
+          { "service": "シャンプー", "reason": "カラー施術必須" }
+        ]
+      }
+    }
+  },
+  "message": "予約が正常に作成されました"
+}
+```
+
+### 2.3.1 メニュー組み合わせ計算 API **v1.2 新機能**
+
+電話予約時にリアルタイムで料金・時間を計算
+
+```http
+POST /api/v1/bookings/calculate
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "menu_ids": [1, 2],
+  "resource_id": 1,
+  "booking_date": "2025-06-28",
+  "selected_options": {
+    "1": [5],
+    "2": [12]
+  }
+}
+```
+
+**レスポンス**:
+
+```json
+{
+  "success": true,
+  "data": {
+    "calculation": {
+      "total_price": 9500,
+      "base_total_price": 10000,
+      "set_discount_amount": 500,
+      "total_duration": 165,
+      "estimated_end_time": "16:45",
+      "price_breakdown": [
+        { "service": "カット", "base_price": 4000, "options_price": 1000 },
+        { "service": "カラー", "base_price": 6000, "options_price": 2000 },
+        { "service": "シャンプー", "base_price": 0, "auto_added": true }
+      ],
+      "time_breakdown": [
+        { "service": "カット", "duration": 60, "start_offset": 0 },
+        { "service": "カラー", "duration": 90, "start_offset": 60 },
+        { "service": "シャンプー", "duration": 15, "start_offset": 150 }
+      ],
+      "applied_discounts": [{ "rule": "カット+カラーセット", "amount": 500 }],
+      "auto_added_services": [
+        { "service": "シャンプー", "reason": "カラー施術必須" }
+      ]
+    }
+  }
+}
+```
+
+### 2.3.2 電話予約最適化 API **v1.2 新機能**
+
+美容師が電話中に瞬時に空き時間を確認
+
+```http
+GET /api/v1/bookings/phone-availability?resource_id=1&duration=165&date_from=2025-06-28&date_to=2025-07-05
+Authorization: Bearer {token}
+```
+
+**レスポンス**:
+
+```json
+{
+  "success": true,
+  "data": {
+    "availability": {
+      "2025-06-28": {
+        "date_label": "今日",
+        "available_slots": [
+          {
+            "start_time": "10:00",
+            "end_time": "12:45",
+            "duration_minutes": 165
+          },
+          {
+            "start_time": "15:30",
+            "end_time": "18:15",
+            "duration_minutes": 165
+          }
+        ],
+        "slots_count": 2
+      },
+      "2025-06-29": {
+        "date_label": "明日",
+        "available_slots": [
+          {
+            "start_time": "09:00",
+            "end_time": "11:45",
+            "duration_minutes": 165
+          },
+          {
+            "start_time": "14:00",
+            "end_time": "16:45",
+            "duration_minutes": 165
+          }
+        ],
+        "slots_count": 2
+      },
+      "2025-06-30": {
+        "date_label": "6月30日(月)",
+        "available_slots": [
+          {
+            "start_time": "13:00",
+            "end_time": "15:45",
+            "duration_minutes": 165
+          }
+        ],
+        "slots_count": 1
+      }
+    },
+    "summary": {
+      "total_available_days": 3,
+      "total_available_slots": 5,
+      "earliest_available": "2025-06-28 10:00",
+      "resource_name": "田中美容師"
+    }
+  }
 }
 ```
 
