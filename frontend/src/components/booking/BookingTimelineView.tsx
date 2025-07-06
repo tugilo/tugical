@@ -71,8 +71,8 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
   const [calendarEvents, setCalendarEvents] = useState<any[]>([]);
   const [calendarResources, setCalendarResources] = useState<any[]>([]);
 
-  // ✨ Phase 21.2: 空き時間表示機能
-  const [showAvailableSlots, setShowAvailableSlots] = useState(true);
+  // ✨ Phase 21.2: 空き時間表示機能（Phase 25.16: 無効化）
+  const [showAvailableSlots, setShowAvailableSlots] = useState(false);
   const [availableSlots, setAvailableSlots] = useState<AvailabilitySlot[]>([]);
   const [businessHours] = useState({ start: '09:00', end: '21:00' });
 
@@ -568,16 +568,11 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
             </div>
             <div className='text-sm text-gray-500'>
               {calendarEvents.length} 件の予約
-              {showAvailableSlots && availableSlots.length > 0 && (
-                <span className='ml-2 text-green-600'>
-                  + {availableSlots.length} 空き時間
-                </span>
-              )}
             </div>
           </div>
 
           <div className='flex items-center space-x-6'>
-            {/* 空き時間表示切り替え */}
+            {/* Phase 25.16: 空き時間表示機能を無効化（不完全な実装のため）
             <div className='flex items-center space-x-2'>
               <label className='text-sm font-medium text-gray-700'>
                 空き時間表示
@@ -599,6 +594,7 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
                 />
               </button>
             </div>
+            */}
 
             {/* 凡例 */}
             <div className='flex items-center space-x-4 text-xs'>
@@ -618,12 +614,14 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
                 <div className='w-3 h-3 bg-gray-500 rounded'></div>
                 <span>完了</span>
               </div>
+              {/* Phase 25.16: 空き時間凡例を無効化
               {showAvailableSlots && (
                 <div className='flex items-center space-x-1'>
                   <div className='w-3 h-3 bg-green-100 border border-green-500 rounded'></div>
                   <span>空き時間</span>
                 </div>
               )}
+              */}
             </div>
           </div>
         </div>
@@ -631,12 +629,8 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
         {/* 操作ガイド */}
         <div className='mt-2 text-xs text-gray-500'>
           💡
-          予約をドラッグして移動、端をドラッグして時間変更、クリックで詳細表示
-          {showAvailableSlots && (
-            <span className='ml-2 text-green-600'>
-              • 空き時間をクリックして新規予約作成
-            </span>
-          )}
+          予約をドラッグして移動、端をドラッグして時間変更、クリックで詳細表示 •
+          空きエリアをクリックして新規予約作成
         </div>
       </div>
 
