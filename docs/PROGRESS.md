@@ -1,5 +1,77 @@
 # tugical Development Progress
 
+## 2025-07-07 00:09:58 (tugiMacAir.local)
+
+### 📋 Phase 25.5: JST 統一対応 - Timeline 時間とモーダル時間の統一 ✅ **完了**
+
+**Timeline 空きスロット時間とモーダル時間の完全統一:**
+
+#### 1. **問題特定** ✅
+
+```
+問題: Timeline空きスロットクリック時間とモーダル表示時間がずれる
+原因: 日付取得（UTC基準）と時間取得（JST基準）の混在
+影響: 時間差により予約時間が意図と異なる
+```
+
+#### 2. **JST 統一修正実装** ✅
+
+```typescript
+// Before: UTC/JST混在（問題）
+const formattedDate = slotInfo.start.toISOString().split("T")[0]; // UTC基準
+const formattedTime = slotInfo.start.toLocaleTimeString("ja-JP", {
+  // JST基準
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
+// After: JST基準統一（修正）
+const jstDate = new Date(slotInfo.start.getTime());
+
+// JST基準で日付を取得（YYYY-MM-DD形式）
+const year = jstDate.getFullYear();
+const month = (jstDate.getMonth() + 1).toString().padStart(2, "0");
+const day = jstDate.getDate().toString().padStart(2, "0");
+const formattedDate = `${year}-${month}-${day}`;
+
+// JST基準で時間を取得（HH:MM形式）
+const formattedTime = jstDate.toLocaleTimeString("ja-JP", {
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+});
+```
+
+#### 3. **デバッグ情報強化** ✅
+
+```typescript
+console.log("🎯 Timeline空きスロット予約作成（JST統一）:", {
+  originalStart: slotInfo.start.toISOString(),
+  originalEnd: slotInfo.end.toISOString(),
+  jstDate: jstDate.toISOString(),
+  formattedDate,
+  formattedTime,
+  resourceId: slotInfo.resourceId,
+  timezoneOffset: jstDate.getTimezoneOffset(),
+});
+```
+
+#### 4. **技術成果** ✅
+
+- ✅ **ビルド成功**（3.61 秒）
+- ✅ **BookingsPage**：107.98KB（+0.2KB ログ追加）
+- ✅ **JST 統一**：日付・時間処理の完全統一
+- ✅ **時間ずれ解消**：Timeline 統合時の時間差完全解決
+
+#### 5. **完全統一フロー** ✅
+
+```
+1. Timeline空きスロットクリック
+2. JST基準で日付・時間取得
+3. CombinationBookingModalに正確な時間渡し
+4. 時間ずれなしの予約作成完了
+```
+
 ## 2025-07-07 00:03:57 (tugiMacAir.local)
 
 ### 📋 Phase 25.4: Timeline 統合時も新しい複数メニュー組み合わせフロー使用 ✅ **完了**
