@@ -404,9 +404,170 @@ Content-Type: application/json
 
 ---
 
-## 5. リソース管理 API
+## 4. 店舗管理 API
 
-### 5.1 リソース一覧取得
+### 4.1 時間スロット設定取得
+
+```http
+GET /api/v1/store/time-slot-settings
+Authorization: Bearer {token}
+```
+
+**レスポンス**:
+
+```json
+{
+  "success": true,
+  "data": {
+    "time_slot_settings": {
+      "slot_duration_minutes": 30,
+      "available_durations": [5, 10, 15, 30, 60, 120, 240, 480],
+      "business_hours": {
+        "monday": { "start": "09:00", "end": "18:00" },
+        "tuesday": { "start": "09:00", "end": "18:00" },
+        "wednesday": { "start": "09:00", "end": "18:00" },
+        "thursday": { "start": "09:00", "end": "18:00" },
+        "friday": { "start": "09:00", "end": "18:00" },
+        "saturday": { "start": "09:00", "end": "17:00" },
+        "sunday": { "closed": true }
+      },
+      "break_times": [{ "start": "12:00", "end": "13:00", "label": "昼休み" }],
+      "timezone": "Asia/Tokyo",
+      "slot_label_format": "HH:mm",
+      "auto_update_calendar": true
+    }
+  },
+  "message": "時間スロット設定を取得しました"
+}
+```
+
+### 4.2 時間スロット設定更新
+
+```http
+PUT /api/v1/store/time-slot-settings
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "slot_duration_minutes": 15,
+  "available_durations": [5, 10, 15, 30, 60],
+  "business_hours": {
+    "monday": { "start": "09:00", "end": "18:00" },
+    "tuesday": { "start": "09:00", "end": "18:00" },
+    "wednesday": { "start": "09:00", "end": "18:00" },
+    "thursday": { "start": "09:00", "end": "18:00" },
+    "friday": { "start": "09:00", "end": "18:00" },
+    "saturday": { "start": "09:00", "end": "17:00" },
+    "sunday": { "closed": true }
+  },
+  "break_times": [
+    { "start": "12:00", "end": "13:00", "label": "昼休み" }
+  ],
+  "timezone": "Asia/Tokyo",
+  "slot_label_format": "HH:mm",
+  "auto_update_calendar": true
+}
+```
+
+**レスポンス**:
+
+```json
+{
+  "success": true,
+  "data": {
+    "time_slot_settings": {
+      "slot_duration_minutes": 15,
+      "available_durations": [5, 10, 15, 30, 60],
+      "business_hours": {
+        "monday": { "start": "09:00", "end": "18:00" },
+        "tuesday": { "start": "09:00", "end": "18:00" },
+        "wednesday": { "start": "09:00", "end": "18:00" },
+        "thursday": { "start": "09:00", "end": "18:00" },
+        "friday": { "start": "09:00", "end": "18:00" },
+        "saturday": { "start": "09:00", "end": "17:00" },
+        "sunday": { "closed": true }
+      },
+      "break_times": [{ "start": "12:00", "end": "13:00", "label": "昼休み" }],
+      "timezone": "Asia/Tokyo",
+      "slot_label_format": "HH:mm",
+      "auto_update_calendar": true
+    }
+  },
+  "message": "時間スロット設定を更新しました"
+}
+```
+
+**バリデーションエラー例**:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "入力内容に誤りがあります",
+    "details": {
+      "slot_duration_minutes": "時間スロットは5分から480分の間で設定してください",
+      "business_hours.monday.start": "開始時間は終了時間より前に設定してください"
+    }
+  }
+}
+```
+
+**業種別推奨設定**:
+
+```json
+// 医療系（5-10分間隔）
+{
+  "slot_duration_minutes": 10,
+  "available_durations": [5, 10, 15, 30, 60],
+  "business_hours": {
+    "monday": {"start": "09:00", "end": "17:00"},
+    "tuesday": {"start": "09:00", "end": "17:00"},
+    "wednesday": {"start": "09:00", "end": "12:00"},
+    "thursday": {"start": "09:00", "end": "17:00"},
+    "friday": {"start": "09:00", "end": "17:00"},
+    "saturday": {"start": "09:00", "end": "12:00"},
+    "sunday": {"closed": true}
+  },
+  "break_times": [{"start": "12:00", "end": "13:00", "label": "昼休み"}]
+}
+
+// 美容系（30分間隔）
+{
+  "slot_duration_minutes": 30,
+  "available_durations": [30, 60, 90, 120, 180],
+  "business_hours": {
+    "monday": {"closed": true},
+    "tuesday": {"start": "10:00", "end": "19:00"},
+    "wednesday": {"start": "10:00", "end": "19:00"},
+    "thursday": {"start": "10:00", "end": "19:00"},
+    "friday": {"start": "10:00", "end": "19:00"},
+    "saturday": {"start": "09:00", "end": "18:00"},
+    "sunday": {"start": "09:00", "end": "18:00"}
+  }
+}
+
+// 施設・研修系（60分間隔）
+{
+  "slot_duration_minutes": 60,
+  "available_durations": [30, 60, 120, 240, 480],
+  "business_hours": {
+    "monday": {"start": "08:00", "end": "22:00"},
+    "tuesday": {"start": "08:00", "end": "22:00"},
+    "wednesday": {"start": "08:00", "end": "22:00"},
+    "thursday": {"start": "08:00", "end": "22:00"},
+    "friday": {"start": "08:00", "end": "22:00"},
+    "saturday": {"start": "08:00", "end": "22:00"},
+    "sunday": {"start": "08:00", "end": "22:00"}
+  }
+}
+```
+
+---
+
+## 6. リソース管理 API
+
+### 6.1 リソース一覧取得
 
 ```http
 GET /api/v1/resources?type=staff&is_active=true
@@ -447,7 +608,7 @@ Authorization: Bearer {token}
 }
 ```
 
-### 5.2 リソース作成
+### 6.2 リソース作成
 
 ```http
 POST /api/v1/resources
@@ -476,16 +637,16 @@ Content-Type: application/json
 
 ---
 
-## 6. メニュー管理 API
+## 7. メニュー管理 API
 
-### 6.1 メニュー一覧取得
+### 7.1 メニュー一覧取得
 
 ```http
 GET /api/v1/menus?category=hair&is_active=true
 Authorization: Bearer {token}
 ```
 
-### 6.2 メニュー作成
+### 7.2 メニュー作成
 
 ```http
 POST /api/v1/menus
@@ -514,16 +675,16 @@ Content-Type: application/json
 
 ---
 
-## 7. 通知管理 API
+## 8. 通知管理 API
 
-### 7.1 通知履歴取得
+### 8.1 通知履歴取得
 
 ```http
 GET /api/v1/notifications?customer_id=456&type=reminder&status=sent
 Authorization: Bearer {token}
 ```
 
-### 7.2 通知送信
+### 8.2 通知送信
 
 ```http
 POST /api/v1/notifications/send
@@ -538,7 +699,7 @@ Content-Type: application/json
 }
 ```
 
-### 7.3 通知テンプレート取得
+### 8.3 通知テンプレート取得
 
 ```http
 GET /api/v1/notification-templates?type=booking_confirmed
@@ -547,9 +708,9 @@ Authorization: Bearer {token}
 
 ---
 
-## 8. LIFF API（顧客向け）
+## 9. LIFF API（顧客向け）
 
-### 8.1 店舗情報取得
+### 9.1 店舗情報取得
 
 ```http
 GET /api/v1/liff/stores/{store_slug}
@@ -582,7 +743,7 @@ X-Line-User-Id: U1234567890abcdef
 }
 ```
 
-### 8.2 顧客情報取得・作成
+### 9.2 顧客情報取得・作成
 
 ```http
 GET /api/v1/liff/customers/profile
@@ -590,7 +751,7 @@ X-Line-User-Id: U1234567890abcdef
 X-Store-Id: 1
 ```
 
-### 8.3 メニュー一覧取得
+### 9.3 メニュー一覧取得
 
 ```http
 GET /api/v1/liff/menus
@@ -598,7 +759,7 @@ X-Line-User-Id: U1234567890abcdef
 X-Store-Id: 1
 ```
 
-### 8.4 空き時間取得
+### 9.4 空き時間取得
 
 ```http
 GET /api/v1/liff/availability?menu_id=789&date=2025-06-28&resource_id=1
@@ -606,7 +767,7 @@ X-Line-User-Id: U1234567890abcdef
 X-Store-Id: 1
 ```
 
-### 8.5 予約申込み
+### 9.5 予約申込み
 
 ```http
 POST /api/v1/liff/bookings
@@ -633,7 +794,7 @@ Content-Type: application/json
 }
 ```
 
-### 8.6 予約履歴取得
+### 9.6 予約履歴取得
 
 ```http
 GET /api/v1/liff/bookings/history
@@ -641,7 +802,7 @@ X-Line-User-Id: U1234567890abcdef
 X-Store-Id: 1
 ```
 
-### 8.7 予約変更依頼
+### 9.7 予約変更依頼
 
 ```http
 POST /api/v1/liff/bookings/123/change-request
@@ -659,9 +820,9 @@ Content-Type: application/json
 
 ---
 
-## 9. LINE Webhook API
+## 10. LINE Webhook API
 
-### 9.1 メッセージ受信
+### 10.1 メッセージ受信
 
 ```http
 POST /api/v1/line/webhook
@@ -690,7 +851,7 @@ Content-Type: application/json
 }
 ```
 
-### 9.2 友だち追加
+### 10.2 友だち追加
 
 ```http
 POST /api/v1/line/webhook
@@ -715,7 +876,7 @@ Content-Type: application/json
 
 ---
 
-## 10. エラーコード一覧
+## 11. エラーコード一覧
 
 ### 認証エラー
 
@@ -750,9 +911,16 @@ Content-Type: application/json
 - `STORE_HOLIDAY` - 店舗休業日
 - `ADVANCE_BOOKING_LIMIT_EXCEEDED` - 事前予約期限超過
 
+### 店舗設定関連エラー
+
+- `INVALID_TIME_SLOT_DURATION` - 時間スロット間隔が無効（5 分〜480 分範囲外）
+- `INVALID_BUSINESS_HOURS` - 営業時間設定が無効
+- `INVALID_BREAK_TIME_SETTING` - 休憩時間設定が無効
+- `TIME_SLOT_SETTINGS_NOT_FOUND` - 時間スロット設定が見つからない
+
 ---
 
-## 11. レート制限
+## 12. レート制限
 
 ### プラン別制限
 
@@ -779,7 +947,7 @@ Content-Type: application/json
 
 ---
 
-## 12. セキュリティ
+## 13. セキュリティ
 
 ### CORS 設定
 
