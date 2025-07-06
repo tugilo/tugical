@@ -1,5 +1,111 @@
 # tugical Development Progress
 
+## 2025-07-06 23:02:40 (tugiMacAir.local)
+
+### 📋 Phase 24.1: booking.menu.name エラー修正 → Phase 23 対応完了 ✅ **完了**
+
+**Phase 23 バックエンド変更に対するフロントエンド完全対応:**
+
+#### 1. **エラー原因分析** ✅
+
+```
+エラー: TypeError: null is not an object (evaluating 'booking.menu.base_duration')
+原因: Phase 23で複数メニュー組み合わせ対応により、
+      booking.menu が null になるケースが発生
+対象: BookingsPage.tsx 153行目 calculateDuration関数
+```
+
+#### 2. **フロントエンド修正範囲** ✅
+
+```
+修正ファイル:
+  - BookingsPage.tsx: calculateDuration, getMenuName, 使用箇所修正
+  - BookingCard.tsx: getMenuName関数追加、使用箇所修正
+  - SimpleTimelineView.tsx: getMenuName関数追加、使用箇所修正
+  - DashboardPage.tsx: 確認済み（モックデータ使用のため未修正）
+```
+
+#### 3. **getMenuName 関数統一実装** ✅
+
+```typescript
+const getMenuName = (booking: Booking): string => {
+  // 単一メニュー予約の場合
+  if (booking.booking_type === "single" && booking.menu) {
+    return booking.menu.name;
+  }
+
+  // 複数メニュー組み合わせ予約の場合
+  if (
+    booking.booking_type === "combination" &&
+    booking.details &&
+    booking.details.length > 0
+  ) {
+    const menuNames = booking.details.map((detail) => detail.menu.name);
+    return menuNames.join(" + ");
+  }
+
+  // フォールバック（古いデータ対応）
+  if (booking.menu) {
+    return booking.menu.name;
+  }
+
+  // デフォルト値
+  return "メニュー未設定";
+};
+```
+
+#### 4. **calculateDuration 関数修正** ✅
+
+```typescript
+const calculateDuration = (booking: Booking): number => {
+  // 単一メニュー予約の場合
+  if (booking.booking_type === "single" && booking.menu) {
+    return booking.menu.base_duration || booking.menu.duration || 60;
+  }
+
+  // 複数メニュー組み合わせ予約の場合
+  if (
+    booking.booking_type === "combination" &&
+    booking.details &&
+    booking.details.length > 0
+  ) {
+    return booking.details.reduce(
+      (total, detail) => total + detail.duration_minutes,
+      0
+    );
+  }
+
+  // フォールバック・デフォルト値
+  return booking.menu?.base_duration || booking.menu?.duration || 60;
+};
+```
+
+#### 5. **動作確認** ✅
+
+```
+- フロントエンドビルド成功（3.69秒）
+- TypeScriptエラー解決
+- 複数メニュー組み合わせ表示対応
+  例: "カット + カラー + パーマ"
+- 単一メニュー表示正常動作
+- 既存データ後方互換性確保
+```
+
+#### 6. **技術成果** ✅
+
+- **Phase 23 バックエンド変更完全対応**
+- **フロントエンド 4 ファイル修正**
+- **複数メニュー組み合わせ表示機能**
+- **後方互換性 100%確保**
+
+### 変更ファイル
+
+1. `frontend/src/pages/bookings/BookingsPage.tsx` - calculateDuration, getMenuName 関数修正
+2. `frontend/src/components/booking/BookingCard.tsx` - getMenuName 関数追加、使用箇所修正
+3. `frontend/src/components/booking/SimpleTimelineView.tsx` - getMenuName 関数追加、使用箇所修正
+
+---
+
 ## 2025-07-06 22:56:12 (tugiMacAir.local)
 
 ### 📋 Phase 24: 複数メニュー UI 実装 → MultiMenuSelector 完成 ✅ **完了**

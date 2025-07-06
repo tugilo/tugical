@@ -211,9 +211,33 @@ const BookingsPage: React.FC = () => {
 
   /**
    * 所要時間の計算
+   * Phase 23対応: 複数メニュー組み合わせに対応
    */
   const calculateDuration = (booking: Booking): number => {
-    return booking.menu.base_duration || booking.menu.duration || 60;
+    // 単一メニュー予約の場合
+    if (booking.booking_type === 'single' && booking.menu) {
+      return booking.menu.base_duration || booking.menu.duration || 60;
+    }
+
+    // 複数メニュー組み合わせ予約の場合
+    if (
+      booking.booking_type === 'combination' &&
+      booking.details &&
+      booking.details.length > 0
+    ) {
+      return booking.details.reduce(
+        (total, detail) => total + detail.duration_minutes,
+        0
+      );
+    }
+
+    // フォールバック（古いデータ対応）
+    if (booking.menu) {
+      return booking.menu.base_duration || booking.menu.duration || 60;
+    }
+
+    // デフォルト値
+    return 60;
   };
 
   /**
@@ -254,6 +278,35 @@ const BookingsPage: React.FC = () => {
       4: '個室B',
     };
     return resourceMap[resourceId] || `担当者ID:${resourceId}`;
+  };
+
+  /**
+   * メニュー名の取得
+   * Phase 23対応: 複数メニュー組み合わせに対応
+   */
+  const getMenuName = (booking: Booking): string => {
+    // 単一メニュー予約の場合
+    if (booking.booking_type === 'single' && booking.menu) {
+      return booking.menu.name;
+    }
+
+    // 複数メニュー組み合わせ予約の場合
+    if (
+      booking.booking_type === 'combination' &&
+      booking.details &&
+      booking.details.length > 0
+    ) {
+      const menuNames = booking.details.map(detail => detail.menu.name);
+      return menuNames.join(' + ');
+    }
+
+    // フォールバック（古いデータ対応）
+    if (booking.menu) {
+      return booking.menu.name;
+    }
+
+    // デフォルト値
+    return 'メニュー未設定';
   };
 
   if (isLoading) {
@@ -449,7 +502,7 @@ const BookingsPage: React.FC = () => {
                               </div>
                               <div className='flex items-center space-x-4 mt-1'>
                                 <span className='text-sm text-gray-600'>
-                                  {booking.menu.name}
+                                  {getMenuName(booking)}
                                 </span>
                                 <span className='text-sm text-gray-500'>
                                   担当:{' '}

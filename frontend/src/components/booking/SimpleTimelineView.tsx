@@ -101,6 +101,33 @@ const SimpleTimelineView: React.FC<SimpleTimelineViewProps> = ({
     return colors[status as keyof typeof colors] || '#6b7280';
   };
 
+  // メニュー名の取得
+  // Phase 23対応: 複数メニュー組み合わせに対応
+  const getMenuName = (booking: Booking): string => {
+    // 単一メニュー予約の場合
+    if (booking.booking_type === 'single' && booking.menu) {
+      return booking.menu.name;
+    }
+
+    // 複数メニュー組み合わせ予約の場合
+    if (
+      booking.booking_type === 'combination' &&
+      booking.details &&
+      booking.details.length > 0
+    ) {
+      const menuNames = booking.details.map(detail => detail.menu.name);
+      return menuNames.join(' + ');
+    }
+
+    // フォールバック（古いデータ対応）
+    if (booking.menu) {
+      return booking.menu.name;
+    }
+
+    // デフォルト値
+    return 'メニュー未設定';
+  };
+
   if (isLoading) {
     return (
       <div className='flex items-center justify-center h-96'>
@@ -165,7 +192,7 @@ const SimpleTimelineView: React.FC<SimpleTimelineViewProps> = ({
                       {booking.customer.name}
                     </div>
                     <div className='truncate opacity-75'>
-                      {booking.menu.name}
+                      {getMenuName(booking)}
                     </div>
                   </div>
                 );
@@ -206,7 +233,7 @@ const SimpleTimelineView: React.FC<SimpleTimelineViewProps> = ({
                         {booking.customer.name}
                       </div>
                       <div className='truncate opacity-75'>
-                        {booking.menu.name}
+                        {getMenuName(booking)}
                       </div>
                     </div>
                   );

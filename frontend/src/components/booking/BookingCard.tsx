@@ -56,6 +56,35 @@ const getResourceName = (resourceId: number): string => {
 };
 
 /**
+ * メニュー名の取得
+ * Phase 23対応: 複数メニュー組み合わせに対応
+ */
+const getMenuName = (booking: Booking): string => {
+  // 単一メニュー予約の場合
+  if (booking.booking_type === 'single' && booking.menu) {
+    return booking.menu.name;
+  }
+
+  // 複数メニュー組み合わせ予約の場合
+  if (
+    booking.booking_type === 'combination' &&
+    booking.details &&
+    booking.details.length > 0
+  ) {
+    const menuNames = booking.details.map(detail => detail.menu.name);
+    return menuNames.join(' + ');
+  }
+
+  // フォールバック（古いデータ対応）
+  if (booking.menu) {
+    return booking.menu.name;
+  }
+
+  // デフォルト値
+  return 'メニュー未設定';
+};
+
+/**
  * 予約ステータスのスタイル設定
  */
 const statusStyles = {
@@ -200,7 +229,7 @@ const BookingCard: React.FC<BookingCardProps> = ({
           <div className='flex items-center gap-2'>
             <TagIcon className='w-4 h-4 text-gray-400' />
             <span className='text-sm text-gray-700'>
-              {booking.menu.name}
+              {getMenuName(booking)}
               {booking.options && booking.options.length > 0 && (
                 <span className='text-xs text-gray-500 ml-1'>
                   (+{booking.options.length}オプション)
