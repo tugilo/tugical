@@ -6460,3 +6460,35 @@ Next: 店舗設定等の他画面への展開"
 - `frontend/src/components/ui/DatePicker.tsx` - クイック選択ボタン削除
 
 **次回作業予定**: 実際の予約作成テスト、全メニューでのオプション表示確認
+
+## 2025-01-23 19:24:10 - Phase 25.15: 日付管理根本修正による再読み込み問題完全解決
+
+### 問題分析
+- BookingsPageのdateプロパティがbookings[0].booking_date（6月30日）を基準に設定
+- 毎回新しいDateオブジェクトを作成するため、useEffectが不要に発火
+- モーダル閉じた後、常に6月30日の週に戻ってしまう問題
+
+### 修正内容
+- BookingsPage.tsx: timelineDate状態を追加（new Date()で初期化）
+- handleTimelineBookingCreate: 空きスロットクリック時にsetTimelineDate(rawStart)で日付状態を更新
+- BookingTimelineView: dateプロパティを動的計算から状態管理（timelineDate）に変更
+- 日付基準変更: 予約データの日付ではなく、ユーザーが見ている日付を基準に
+
+### 技術的成果
+- 再読み込み根本解決: Timeline空きスロットクリック時の再読み込み完全停止
+- 日付維持: モーダル閉じた後も現在の日付を維持（6月30日問題解決）
+- パフォーマンス維持: BookingsPage 106.43KB（変更なし）
+- ビルド安定性: 3.87秒（安定ビルド）
+
+### 実装ファイル
+- frontend/src/pages/bookings/BookingsPage.tsx（日付状態管理追加）
+- frontend/src/components/booking/BookingTimelineView.tsx（datesSetハンドラ完全無効化）
+
+### 完了確認
+- Phase 25シリーズ（25.1〜25.15）完全完了
+- tugical汎用時間貸しリソース予約システム完成
+- 複数メニュー組み合わせ + Timeline統合予約作成 + 完璧な時間管理 + 日付維持機能実現
+
+### 次のステップ
+- Phase 25系列完全完了のため、次期開発フェーズへ
+

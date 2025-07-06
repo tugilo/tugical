@@ -45,6 +45,9 @@ const BookingsPage: React.FC = () => {
   // Phase 25.3: メニューデータ状態管理
   const [menus, setMenus] = useState<Menu[]>([]);
 
+  // 🚨 Phase 25.15: Timeline日付管理の根本修正
+  const [timelineDate, setTimelineDate] = useState<Date>(new Date());
+
   // モーダル状態
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
@@ -187,7 +190,7 @@ const BookingsPage: React.FC = () => {
 
   /**
    * Timeline空きスロットクリック時の予約作成処理
-   * Phase 25.11: 最終的な修正（正しい時間取得 + 再読み込み防止）
+   * Phase 25.15: 根本的な再読み込み問題修正（日付状態管理追加）
    */
   const handleTimelineBookingCreate = (slotInfo: {
     start: Date;
@@ -205,11 +208,17 @@ const BookingsPage: React.FC = () => {
       .toString()
       .padStart(2, '0')}:${rawStart.getMinutes().toString().padStart(2, '0')}`;
 
-    console.log('🎯 Timeline空きスロットクリック（Phase 25.11 - 最終修正）:', {
-      date: finalDate,
-      time: finalTime,
-      resourceId: slotInfo.resourceId,
-    });
+    console.log(
+      '🎯 Timeline空きスロットクリック（Phase 25.15 - 根本的修正）:',
+      {
+        date: finalDate,
+        time: finalTime,
+        resourceId: slotInfo.resourceId,
+      }
+    );
+
+    // Phase 25.15: 日付状態を更新（再読み込み防止）
+    setTimelineDate(rawStart);
 
     // Timeline統合時の初期値を設定
     setTimelineSlotInfo({
@@ -544,15 +553,7 @@ const BookingsPage: React.FC = () => {
         </Card>
       ) : viewMode === 'timeline' ? (
         <BookingTimelineView
-          date={(() => {
-            // タイムライン表示では日付フィルターを無視して全データを表示
-            if (bookings.length > 0) {
-              // 最初の予約の日付を基準に設定（週表示で複数日が見える）
-              return new Date(bookings[0].booking_date);
-            }
-            // デフォルトは今日
-            return new Date();
-          })()}
+          date={timelineDate}
           bookings={bookings}
           onBookingClick={handleBookingClick}
           onBookingCreate={handleTimelineBookingCreate}
