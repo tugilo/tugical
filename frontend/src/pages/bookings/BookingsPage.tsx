@@ -603,7 +603,7 @@ const BookingsPage: React.FC = () => {
                             <div className='flex-1 min-w-0'>
                               <div className='flex items-center space-x-2'>
                                 <h4 className='text-base font-medium text-gray-900 truncate'>
-                                  {booking.customer.name}
+                                  {booking.customer?.name || '顧客情報なし'}
                                 </h4>
                                 <span
                                   className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getStatusStyle(
