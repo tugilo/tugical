@@ -1,8 +1,9 @@
-# tugical API設計書
-## RESTful API仕様書
+# tugical API 設計書
 
-**Version**: 1.0  
-**Date**: 2025年6月28日  
+## RESTful API 仕様書
+
+**Version**: 1.1  
+**Date**: 2025 年 7 月 6 日  
 **Project**: tugical（ツギカル）  
 **Base URL**: `https://api.tugical.com`
 
@@ -11,11 +12,13 @@
 ## 基本仕様
 
 ### 認証方式
-- **管理者API**: Laravel Sanctum（Bearer Token）
-- **LIFF API**: LINE User ID検証
-- **LINE Webhook**: Channel Secret検証
+
+- **管理者 API**: Laravel Sanctum（Bearer Token）
+- **LIFF API**: LINE User ID 検証
+- **LINE Webhook**: Channel Secret 検証
 
 ### レスポンス形式
+
 ```json
 {
   "success": boolean,
@@ -29,6 +32,7 @@
 ```
 
 ### エラーレスポンス形式
+
 ```json
 {
   "success": false,
@@ -43,7 +47,8 @@
 }
 ```
 
-### HTTPステータスコード
+### HTTP ステータスコード
+
 - `200` OK - 成功
 - `201` Created - リソース作成成功
 - `400` Bad Request - リクエストエラー
@@ -56,9 +61,10 @@
 
 ---
 
-## 1. 認証API
+## 1. 認証 API
 
 ### 1.1 管理者ログイン
+
 ```http
 POST /api/v1/auth/login
 Content-Type: application/json
@@ -71,6 +77,7 @@ Content-Type: application/json
 ```
 
 **レスポンス**:
+
 ```json
 {
   "success": true,
@@ -93,12 +100,14 @@ Content-Type: application/json
 ```
 
 ### 1.2 ログアウト
+
 ```http
 POST /api/v1/auth/logout
 Authorization: Bearer {token}
 ```
 
 ### 1.3 ユーザー情報取得
+
 ```http
 GET /api/v1/auth/user
 Authorization: Bearer {token}
@@ -106,15 +115,17 @@ Authorization: Bearer {token}
 
 ---
 
-## 2. 予約管理API
+## 2. 予約管理 API
 
 ### 2.1 予約一覧取得
+
 ```http
 GET /api/v1/bookings?date=2025-06-28&status=confirmed&resource_id=1&page=1&per_page=20
 Authorization: Bearer {token}
 ```
 
 **レスポンス**:
+
 ```json
 {
   "success": true,
@@ -158,12 +169,14 @@ Authorization: Bearer {token}
 ```
 
 ### 2.2 予約詳細取得
+
 ```http
 GET /api/v1/bookings/123
 Authorization: Bearer {token}
 ```
 
 ### 2.3 予約作成（管理者）
+
 ```http
 POST /api/v1/bookings
 Authorization: Bearer {token}
@@ -183,6 +196,7 @@ Content-Type: application/json
 ```
 
 ### 2.4 予約更新
+
 ```http
 PUT /api/v1/bookings/123
 Authorization: Bearer {token}
@@ -197,6 +211,7 @@ Content-Type: application/json
 ```
 
 ### 2.5 予約キャンセル
+
 ```http
 DELETE /api/v1/bookings/123
 Authorization: Bearer {token}
@@ -209,6 +224,7 @@ Content-Type: application/json
 ```
 
 ### 2.6 予約ステータス変更
+
 ```http
 PATCH /api/v1/bookings/123/status
 Authorization: Bearer {token}
@@ -222,15 +238,17 @@ Content-Type: application/json
 
 ---
 
-## 3. 空き時間・可用性API
+## 3. 空き時間・可用性 API
 
 ### 3.1 空き時間取得
+
 ```http
 GET /api/v1/availability?date=2025-06-28&menu_id=789&resource_id=1
 Authorization: Bearer {token}
 ```
 
 **レスポンス**:
+
 ```json
 {
   "success": true,
@@ -264,6 +282,7 @@ Authorization: Bearer {token}
 ```
 
 ### 3.2 仮押さえ作成
+
 ```http
 POST /api/v1/hold-slots
 Authorization: Bearer {token}
@@ -279,6 +298,7 @@ Content-Type: application/json
 ```
 
 **レスポンス**:
+
 ```json
 {
   "success": true,
@@ -297,6 +317,7 @@ Content-Type: application/json
 ```
 
 ### 3.3 仮押さえ解除
+
 ```http
 DELETE /api/v1/hold-slots/{hold_token}
 Authorization: Bearer {token}
@@ -304,21 +325,24 @@ Authorization: Bearer {token}
 
 ---
 
-## 4. 顧客管理API
+## 4. 顧客管理 API
 
 ### 4.1 顧客一覧取得
+
 ```http
 GET /api/v1/customers?search=山田&rank=vip&page=1&per_page=20
 Authorization: Bearer {token}
 ```
 
 ### 4.2 顧客詳細取得
+
 ```http
 GET /api/v1/customers/456
 Authorization: Bearer {token}
 ```
 
 **レスポンス**:
+
 ```json
 {
   "success": true,
@@ -348,6 +372,7 @@ Authorization: Bearer {token}
 ```
 
 ### 4.3 顧客作成
+
 ```http
 POST /api/v1/customers
 Authorization: Bearer {token}
@@ -364,6 +389,7 @@ Content-Type: application/json
 ```
 
 ### 4.4 顧客更新
+
 ```http
 PUT /api/v1/customers/456
 Authorization: Bearer {token}
@@ -378,15 +404,17 @@ Content-Type: application/json
 
 ---
 
-## 5. リソース管理API
+## 5. リソース管理 API
 
 ### 5.1 リソース一覧取得
+
 ```http
 GET /api/v1/resources?type=staff&is_active=true
 Authorization: Bearer {token}
 ```
 
 **レスポンス**:
+
 ```json
 {
   "success": true,
@@ -405,8 +433,8 @@ Authorization: Bearer {token}
           "languages": ["japanese"]
         },
         "working_hours": {
-          "monday": {"start": "10:00", "end": "19:00"},
-          "tuesday": {"start": "09:00", "end": "18:00"},
+          "monday": { "start": "10:00", "end": "19:00" },
+          "tuesday": { "start": "09:00", "end": "18:00" },
           "wednesday": "off"
         },
         "efficiency_rate": 0.9,
@@ -420,6 +448,7 @@ Authorization: Bearer {token}
 ```
 
 ### 5.2 リソース作成
+
 ```http
 POST /api/v1/resources
 Authorization: Bearer {token}
@@ -447,15 +476,17 @@ Content-Type: application/json
 
 ---
 
-## 6. メニュー管理API
+## 6. メニュー管理 API
 
 ### 6.1 メニュー一覧取得
+
 ```http
 GET /api/v1/menus?category=hair&is_active=true
 Authorization: Bearer {token}
 ```
 
 ### 6.2 メニュー作成
+
 ```http
 POST /api/v1/menus
 Authorization: Bearer {token}
@@ -483,15 +514,17 @@ Content-Type: application/json
 
 ---
 
-## 7. 通知管理API
+## 7. 通知管理 API
 
 ### 7.1 通知履歴取得
+
 ```http
 GET /api/v1/notifications?customer_id=456&type=reminder&status=sent
 Authorization: Bearer {token}
 ```
 
 ### 7.2 通知送信
+
 ```http
 POST /api/v1/notifications/send
 Authorization: Bearer {token}
@@ -506,6 +539,7 @@ Content-Type: application/json
 ```
 
 ### 7.3 通知テンプレート取得
+
 ```http
 GET /api/v1/notification-templates?type=booking_confirmed
 Authorization: Bearer {token}
@@ -516,12 +550,14 @@ Authorization: Bearer {token}
 ## 8. LIFF API（顧客向け）
 
 ### 8.1 店舗情報取得
+
 ```http
 GET /api/v1/liff/stores/{store_slug}
 X-Line-User-Id: U1234567890abcdef
 ```
 
 **レスポンス**:
+
 ```json
 {
   "success": true,
@@ -533,8 +569,8 @@ X-Line-User-Id: U1234567890abcdef
       "address": "東京都渋谷区○○1-2-3",
       "phone": "03-1234-5678",
       "business_hours": {
-        "monday": {"start": "09:00", "end": "18:00"},
-        "tuesday": {"start": "09:00", "end": "18:00"}
+        "monday": { "start": "09:00", "end": "18:00" },
+        "tuesday": { "start": "09:00", "end": "18:00" }
       },
       "booking_settings": {
         "approval_mode": "auto",
@@ -547,6 +583,7 @@ X-Line-User-Id: U1234567890abcdef
 ```
 
 ### 8.2 顧客情報取得・作成
+
 ```http
 GET /api/v1/liff/customers/profile
 X-Line-User-Id: U1234567890abcdef
@@ -554,6 +591,7 @@ X-Store-Id: 1
 ```
 
 ### 8.3 メニュー一覧取得
+
 ```http
 GET /api/v1/liff/menus
 X-Line-User-Id: U1234567890abcdef
@@ -561,6 +599,7 @@ X-Store-Id: 1
 ```
 
 ### 8.4 空き時間取得
+
 ```http
 GET /api/v1/liff/availability?menu_id=789&date=2025-06-28&resource_id=1
 X-Line-User-Id: U1234567890abcdef
@@ -568,6 +607,7 @@ X-Store-Id: 1
 ```
 
 ### 8.5 予約申込み
+
 ```http
 POST /api/v1/liff/bookings
 X-Line-User-Id: U1234567890abcdef
@@ -594,6 +634,7 @@ Content-Type: application/json
 ```
 
 ### 8.6 予約履歴取得
+
 ```http
 GET /api/v1/liff/bookings/history
 X-Line-User-Id: U1234567890abcdef
@@ -601,6 +642,7 @@ X-Store-Id: 1
 ```
 
 ### 8.7 予約変更依頼
+
 ```http
 POST /api/v1/liff/bookings/123/change-request
 X-Line-User-Id: U1234567890abcdef
@@ -620,6 +662,7 @@ Content-Type: application/json
 ## 9. LINE Webhook API
 
 ### 9.1 メッセージ受信
+
 ```http
 POST /api/v1/line/webhook
 X-Line-Signature: signature_here
@@ -648,6 +691,7 @@ Content-Type: application/json
 ```
 
 ### 9.2 友だち追加
+
 ```http
 POST /api/v1/line/webhook
 X-Line-Signature: signature_here
@@ -674,11 +718,13 @@ Content-Type: application/json
 ## 10. エラーコード一覧
 
 ### 認証エラー
+
 - `AUTH_TOKEN_INVALID` - 認証トークンが無効
 - `AUTH_TOKEN_EXPIRED` - 認証トークンが期限切れ
 - `AUTH_INSUFFICIENT_PERMISSION` - 権限不足
 
 ### 予約関連エラー
+
 - `BOOKING_CONFLICT` - 予約時間の競合
 - `BOOKING_NOT_FOUND` - 予約が見つからない
 - `BOOKING_ALREADY_CANCELLED` - 既にキャンセル済み
@@ -687,16 +733,19 @@ Content-Type: application/json
 - `HOLD_TOKEN_EXPIRED` - 仮押さえトークンが期限切れ
 
 ### 顧客関連エラー
+
 - `CUSTOMER_NOT_FOUND` - 顧客が見つからない
 - `CUSTOMER_RESTRICTED` - 予約制限中の顧客
-- `LINE_USER_NOT_LINKED` - LINEユーザーが店舗に未登録
+- `LINE_USER_NOT_LINKED` - LINE ユーザーが店舗に未登録
 
 ### リソース関連エラー
+
 - `RESOURCE_NOT_AVAILABLE` - リソースが利用不可
 - `RESOURCE_NOT_FOUND` - リソースが見つからない
 - `MENU_RESOURCE_MISMATCH` - メニューとリソースの組み合わせが無効
 
 ### 営業時間関連エラー
+
 - `OUTSIDE_BUSINESS_HOURS` - 営業時間外
 - `STORE_HOLIDAY` - 店舗休業日
 - `ADVANCE_BOOKING_LIMIT_EXCEEDED` - 事前予約期限超過
@@ -706,12 +755,14 @@ Content-Type: application/json
 ## 11. レート制限
 
 ### プラン別制限
+
 - **フリープラン**: 100 requests/minute
 - **スタンダードプラン**: 500 requests/minute
 - **プロプラン**: 1000 requests/minute
 - **エンタープライズプラン**: 2000 requests/minute
 
 ### 制限超過時のレスポンス
+
 ```json
 {
   "success": false,
@@ -730,7 +781,8 @@ Content-Type: application/json
 
 ## 12. セキュリティ
 
-### CORS設定
+### CORS 設定
+
 ```
 Access-Control-Allow-Origin: https://liff.line.me, https://admin.tugical.com
 Access-Control-Allow-Methods: GET, POST, PUT, DELETE, PATCH
@@ -738,6 +790,7 @@ Access-Control-Allow-Headers: Authorization, Content-Type, X-Line-User-Id, X-Sto
 ```
 
 ### セキュリティヘッダー
+
 ```
 X-Content-Type-Options: nosniff
 X-Frame-Options: DENY
@@ -749,8 +802,9 @@ Strict-Transport-Security: max-age=31536000; includeSubDomains
 
 ## 変更履歴
 
-| バージョン | 日付 | 変更内容 | 担当者 |
-|-----------|------|----------|--------|
-| 1.0 | 2025-06-28 | 初版作成 | tugilo inc. |
+| バージョン | 日付       | 変更内容                  | 担当者      |
+| ---------- | ---------- | ------------------------- | ----------- |
+| 1.0        | 2025-06-28 | 初版作成                  | tugilo inc. |
+| 1.1        | 2025-07-06 | 時間スロット設定 API 追加 | tugilo inc. |
 
 ---

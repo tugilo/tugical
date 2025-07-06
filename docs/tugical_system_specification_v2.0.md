@@ -1,8 +1,8 @@
-# tugical システム仕様書 v2.0
+# tugical システム仕様書 v2.1
 
 **更新日**: 2025-07-06  
-**バージョン**: 2.0  
-**ステータス**: Phase 20.1 完了、Phase 21 Timeline 統合予約作成実装予定
+**バージョン**: 2.1  
+**ステータス**: Phase 21.3 完了（5 分刻み時間スロット設定システム実装済み）
 
 ---
 
@@ -13,14 +13,15 @@
 3. [実装済み機能](#実装済み機能)
 4. [FullCalendar Timeline 仕様](#fullcalendar-timeline仕様)
 5. [Timeline 統合予約作成仕様](#timeline統合予約作成仕様)
-6. [美容師向け UI/UX 仕様](#美容師向けuiux仕様)
-7. [API 仕様](#api仕様)
-8. [データベース設計](#データベース設計)
-9. [UI/UX 設計](#uiux設計)
-10. [セキュリティ仕様](#セキュリティ仕様)
-11. [パフォーマンス仕様](#パフォーマンス仕様)
-12. [デプロイメント仕様](#デプロイメント仕様)
-13. [今後の実装予定](#今後の実装予定)
+6. [汎用時間スロット設定システム](#汎用時間スロット設定システム)
+7. [汎用リソース予約 UI/UX 仕様](#汎用リソース予約uiux仕様)
+8. [API 仕様](#api仕様)
+9. [データベース設計](#データベース設計)
+10. [UI/UX 設計](#uiux設計)
+11. [セキュリティ仕様](#セキュリティ仕様)
+12. [パフォーマンス仕様](#パフォーマンス仕様)
+13. [デプロイメント仕様](#デプロイメント仕様)
+14. [今後の実装予定](#今後の実装予定)
 
 ---
 
@@ -29,22 +30,59 @@
 ### プロジェクト情報
 
 - **サービス名**: tugical（ツギカル）
-- **コンセプト**: "次の時間が、もっと自由になる。"
+- **公式コンセプト**: 時間貸しリソース予約システム
+- **統一概念**: 予約 = リソース × 時間枠 × メニュー
+- **スローガン**: "次の時間が、もっと自由になる。"
 - **種別**: LINE 連携型予約管理 SaaS
-- **対象業種**: 美容室、クリニック、レンタルスペース、学校、アクティビティ
+- **対応業種**: 汎用プラットフォーム（5 分〜480 分の任意の時間ベース予約業務）
 - **リポジトリ**: https://github.com/tugilo/tugical
 
-### 🎯 美容師向け特化設計
+### 🎯 汎用時間貸しリソース予約プラットフォーム
 
-**tugical**は美容師さんの現場運用を最優先に設計されています：
+**tugical**は時間ベースのリソース予約が必要な全ての業種に対応する汎用プラットフォームです：
 
 ```yaml
-電話予約シナリオ:
+適用業種（例）:
+  医療系:
+    - 予防接種: 5-10分スロット
+    - 診察: 10-30分スロット
+    - 検査: 30-120分スロット
+    - リハビリ: 30-60分スロット
+
+  美容・健康系:
+    - 美容院: 30-120分スロット
+    - ネイルサロン: 60-180分スロット
+    - 整体・マッサージ: 30-90分スロット
+    - エステ: 60-120分スロット
+
+  施設・設備系:
+    - 会議室: 30-480分スロット
+    - レンタルスペース: 60-1440分スロット
+    - スタジオ: 60-240分スロット
+    - 車両レンタル: 60-1440分スロット
+
+  教育・研修系:
+    - 個別指導: 30-90分スロット
+    - セミナー: 60-480分スロット
+    - ワークショップ: 120-480分スロット
+    - 資格講座: 240-480分スロット
+
+  アクティビティ系:
+    - 体験教室: 60-180分スロット
+    - アウトドア: 120-480分スロット
+    - フィットネス: 30-90分スロット
+    - スポーツ: 60-240分スロット
+```
+
+### 電話予約シナリオ改善例
+
+```yaml
+従来の課題:
   現在: "少々お待ちください" → 別画面で空き時間確認 → 30秒の沈黙
   改善後: Timeline上で即座に空き時間確認 → 5秒で提案 → 直感的予約作成
 
 対面予約シナリオ:
-  現在: 美容師がシステムを操作 → 顧客は待つ
+  現在: 担当者がシステムを操作 → 顧客は待つ
   改善後: 顧客と一緒にTimeline画面を見る → 共同で時間選択 → 透明性向上
 
 片手操作対応:
@@ -94,14 +132,15 @@ Production:    https://tugical.com
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                        tugical System                       │
+│                   tugical 汎用予約プラットフォーム              │
 ├─────────────────────────────────────────────────────────────┤
 │  Frontend (React + TypeScript)                             │
 │  ├── Admin Dashboard (管理者用)                             │
 │  │   ├── 予約管理 (FullCalendar Timeline)                  │
 │  │   ├── 顧客管理 (検索・フィルタリング)                   │
 │  │   ├── メニュー管理 (CRUD操作)                           │
-│  │   ├── リソース管理 (担当者・設備)                       │
+│  │   ├── リソース管理 (汎用リソース・設備)                 │
+│  │   ├── 時間スロット設定 (5分〜480分柔軟設定)             │
 │  │   └── 設定管理 (業種・通知設定)                         │
 │  └── LIFF App (顧客用LINE連携)                              │
 │      ├── 予約フロー (5ステップ)                             │
@@ -112,6 +151,7 @@ Production:    https://tugical.com
 │  ├── 認証・認可 (Sanctum)                                  │
 │  ├── マルチテナント (店舗分離)                              │
 │  ├── 予約管理 (競合チェック・仮押さえ)                      │
+│  ├── 柔軟時間スロット設定 (5分〜480分)                      │
 │  ├── 通知システム (LINE API)                               │
 │  └── 業種テンプレート                                       │
 ├─────────────────────────────────────────────────────────────┤
@@ -119,6 +159,7 @@ Production:    https://tugical.com
 │  ├── 店舗・テナント管理                                     │
 │  ├── 予約・顧客データ                                       │
 │  ├── メニュー・リソース                                     │
+│  ├── 時間スロット設定 (JSON構造)                           │
 │  └── 通知・設定データ                                       │
 ├─────────────────────────────────────────────────────────────┤
 │  External Services                                         │
@@ -128,33 +169,201 @@ Production:    https://tugical.com
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### マルチテナント設計
+### 汎用リソース概念
 
 ```typescript
-// 全テーブルにstore_id分離
-interface BaseModel {
+// 汎用リソース定義
+interface UniversalResource {
   id: number;
-  store_id: number; // 必須：テナント分離
-  created_at: string;
-  updated_at: string;
-  deleted_at?: string; // SoftDeletes対応
+  store_id: number;
+  type: "staff" | "room" | "equipment" | "vehicle" | "facility";
+  name: string;
+  display_name: string; // 業種別表示名
+
+  // 汎用属性
+  capacity: number; // 収容・対応人数
+  efficiency_rate: number; // 作業効率率 (0.5-2.0)
+  hourly_rate_diff: number; // 指名・設備差額
+
+  // 柔軟な属性設定
+  attributes: {
+    specialties?: string[]; // 専門分野
+    certifications?: string[]; // 資格・認定
+    equipment_specs?: object; // 設備仕様
+    restrictions?: {
+      // 制約条件
+      age?: { min: number; max: number };
+      gender?: "male" | "female" | "none";
+      medical_conditions?: string[];
+    };
+  };
+
+  // 稼働設定
+  working_hours: {
+    [dayOfWeek: string]: {
+      start: string;
+      end: string;
+      break_start?: string;
+      break_end?: string;
+    };
+  };
 }
 
-// 自動スコープ適用
-class TenantScope implements Scope {
-  apply(builder: Builder, model: Model): void {
-    if (auth().check() && auth().user().store_id) {
-      builder.where(model.getTable() + ".store_id", auth().user().store_id);
-    }
-  }
+// 業種別表示名例
+const industryDisplayNames = {
+  medical: {
+    staff: "医師・看護師",
+    room: "診察室",
+    equipment: "医療機器",
+  },
+  beauty: {
+    staff: "スタッフ",
+    room: "個室",
+    equipment: "設備",
+  },
+  rental: {
+    staff: "管理者",
+    room: "部屋",
+    equipment: "備品",
+  },
+  education: {
+    staff: "講師",
+    room: "教室",
+    equipment: "教材",
+  },
+};
+```
+
+---
+
+## 汎用時間スロット設定システム
+
+### Phase 21.3 実装済み機能
+
+#### データベース設計
+
+```sql
+-- stores テーブルに追加済み
+ALTER TABLE stores ADD COLUMN time_slot_settings JSON DEFAULT NULL;
+
+-- time_slot_settings JSON 構造
+{
+  "slot_duration_minutes": 30,
+  "available_durations": [5, 10, 15, 30, 60, 120, 240, 480],
+  "business_hours": {
+    "monday": {"start": "09:00", "end": "18:00"},
+    "tuesday": {"start": "09:00", "end": "18:00"},
+    "wednesday": {"start": "09:00", "end": "18:00"},
+    "thursday": {"start": "09:00", "end": "18:00"},
+    "friday": {"start": "09:00", "end": "18:00"},
+    "saturday": {"start": "09:00", "end": "17:00"},
+    "sunday": {"closed": true}
+  },
+  "break_times": [
+    {"start": "12:00", "end": "13:00", "label": "昼休み"}
+  ],
+  "timezone": "Asia/Tokyo"
 }
+```
+
+#### Store モデル機能
+
+```php
+// 実装済みメソッド
+class Store extends Model
+{
+    // 時間スロット設定の取得（デフォルト値補完）
+    public function getTimeSlotSettings(): array
+
+    // 時間スロット設定の更新（バリデーション付き）
+    public function updateTimeSlotSettings(array $settings): bool
+
+    // 業種別初期設定
+    public function initializeTimeSlotSettingsForIndustry(string $industry): array
+
+    // 現在のスロット間隔取得
+    public function getSlotDurationMinutes(): int
+
+    // 選択可能なスロット間隔一覧
+    public function getAvailableSlotDurations(): array
+}
+```
+
+#### API エンドポイント
+
+```php
+// 実装済みエンドポイント
+GET    /api/v1/store/time-slot-settings  // 設定取得
+PUT    /api/v1/store/time-slot-settings  // 設定更新
+
+// StoreController メソッド
+public function getTimeSlotSettings(): JsonResponse
+public function updateTimeSlotSettings(Request $request): JsonResponse
+```
+
+#### フロントエンド統合
+
+```typescript
+// 実装済み機能
+interface TimeSlotSettings {
+  slot_duration_minutes: number;
+  available_durations: number[];
+  business_hours: Record<string, BusinessHours>;
+  break_times: BreakTime[];
+  timezone: string;
+}
+
+// API クライアント
+class StoreApi {
+  async getTimeSlotSettings(): Promise<TimeSlotSettings>;
+  async updateTimeSlotSettings(settings: TimeSlotSettings): Promise<void>;
+}
+
+// FullCalendar 動的設定
+function getFullCalendarConfig(
+  timeSlotSettings: TimeSlotSettings
+): CalendarOptions {
+  return {
+    slotDuration: `${timeSlotSettings.slot_duration_minutes}:00`,
+    slotLabelInterval: `${timeSlotSettings.slot_duration_minutes}:00`,
+    businessHours: convertBusinessHours(timeSlotSettings.business_hours),
+    // ... その他の設定
+  };
+}
+```
+
+### 業種別推奨時間スロット
+
+```yaml
+医療系:
+  予防接種: 5-10分
+  診察: 10-30分
+  検査: 30-120分
+  手術: 60-480分
+
+美容・健康系:
+  カット: 30-60分
+  カラー: 60-120分
+  パーマ: 90-180分
+  エステ: 60-120分
+
+施設・設備系:
+  会議室: 30-240分
+  レンタルスペース: 60-480分
+  スタジオ: 60-240分
+
+教育・研修系:
+  個別指導: 30-90分
+  セミナー: 60-240分
+  ワークショップ: 120-480分
+  資格講座: 240-480分
 ```
 
 ---
 
 ## 実装済み機能
 
-### ✅ Phase 1-17: 基盤〜Timeline 準備完了
+### ✅ Phase 1-21.3: 基盤〜柔軟時間スロット設定完了
 
 #### **認証システム**
 
@@ -174,12 +383,15 @@ owner@tugical.test / tugical123
 ```typescript
 // 実装済み機能
 - CRUD操作 (作成・表示・更新・削除)
-- リスト表示 (タイムライン形式)
+- Timeline表示 (FullCalendar統合)
 - 時間選択UI (空き時間可視化)
+- 空きスロットクリック予約作成
+- リアルタイム空き時間表示
 - 表示モード切り替え (リスト/タイムライン)
-- フィルタリング (日付・ステータス・担当者)
+- フィルタリング (日付・ステータス・リソース)
 - 検索機能
 - ページネーション
+- 柔軟時間スロット設定 (5分〜480分)
 
 // API エンドポイント
 GET    /api/v1/bookings
@@ -198,18 +410,19 @@ DELETE /api/v1/bookings/{id}
 - ロイヤリティランク管理
 - LINE連携準備
 - 住所自動補完
+```
 
-// 顧客データ構造
-interface Customer {
-  id: number;
-  store_id: number;
-  line_user_id?: string; // nullable
-  name: string;
-  phone: string;
-  email?: string;
-  address?: string;
-  loyalty_rank: 'new' | 'regular' | 'vip' | 'premium';
-}
+#### **時間スロット設定システム**
+
+```typescript
+// Phase 21.3 実装済み機能
+- 5分〜480分の柔軟なスロット設定
+- 業種別推奨設定
+- リアルタイム FullCalendar 反映
+- 営業時間・休憩時間設定
+- タイムゾーン対応
+- 設定取得・更新 API
+- フロントエンド統合
 ```
 
 #### **メニュー管理システム**
@@ -1042,5 +1255,5 @@ Priority 3: デザインシステム拡張
 ---
 
 **最終更新**: 2025-07-06 08:31:32  
-**ドキュメントバージョン**: 2.0  
-**システムバージョン**: Phase 20.1 完了、Phase 21 Timeline 統合予約作成実装予定
+**ドキュメントバージョン**: 2.1  
+**システムバージョン**: Phase 21.3 完了（5 分刻み時間スロット設定システム実装済み）
