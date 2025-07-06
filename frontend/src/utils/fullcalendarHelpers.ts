@@ -89,6 +89,21 @@ export const convertToFullCalendarEvents = (
     sampleBooking: bookings[0] || null,
   });
 
+  // 詳細デバッグ情報
+  console.log('📊 予約データ詳細:', {
+    dates: bookings.map(b => b.booking_date).slice(0, 5),
+    resourceIds: bookings
+      .map(b => ({
+        original: b.resource_id,
+        type: typeof b.resource_id,
+        converted: b.resource_id?.toString() || 'unassigned',
+      }))
+      .slice(0, 5),
+    times: bookings
+      .map(b => ({ start: b.start_time, end: b.end_time }))
+      .slice(0, 5),
+  });
+
   const events = bookings.map(booking => {
     // 日時データの組み立て
     const startDateTime = new Date(
@@ -157,6 +172,20 @@ export const convertToFullCalendarEvents = (
       return acc;
     }, {} as Record<string, number>),
   });
+
+  // 生成されたイベントの詳細確認
+  console.log(
+    '📊 生成イベント詳細（最初の3件）:',
+    events.slice(0, 3).map(event => ({
+      id: event.id,
+      title: event.title,
+      start: event.start,
+      end: event.end,
+      resourceId: event.resourceId,
+      resourceIdType: typeof event.resourceId,
+      backgroundColor: event.backgroundColor,
+    }))
+  );
 
   return events;
 };

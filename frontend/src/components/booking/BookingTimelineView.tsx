@@ -29,6 +29,8 @@ interface BookingTimelineViewProps {
     newEnd: Date,
     newResourceId?: string
   ) => Promise<void>;
+  onDateChange?: (newDate: Date) => void;
+  onDateRangeChange?: (start: Date, end: Date) => void;
 }
 
 /**
@@ -51,6 +53,7 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
   onBookingClick,
   onBookingCreate,
   onBookingMove,
+  onDateChange,
 }) => {
   const calendarRef = useRef<FullCalendar>(null);
   const [resources, setResources] = useState<Resource[]>([]);
@@ -95,6 +98,13 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
       console.log('📊 FullCalendar データ変換開始');
       console.log('予約データ:', bookings.length, '件');
       console.log('リソースデータ:', resources.length, '件');
+      console.log(
+        '📊 表示日付:',
+        date.toISOString().split('T')[0],
+        '(',
+        date.toLocaleDateString('ja-JP'),
+        ')'
+      );
 
       // 予約データ変換
       const events = convertToFullCalendarEvents(bookings);
@@ -138,7 +148,7 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
   };
 
   // イベントドラッグ&ドロップ処理
-  const handleEventDrop = async info => {
+  const handleEventDrop = async (info: any) => {
     const booking = info.event.extendedProps.booking;
     const newStart = info.event.start;
     const newEnd = info.event.end;
@@ -180,7 +190,7 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
   };
 
   // イベントリサイズ処理
-  const handleEventResize = async info => {
+  const handleEventResize = async (info: any) => {
     const booking = info.event.extendedProps.booking;
     const newEnd = info.event.end;
 
@@ -218,7 +228,7 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
   };
 
   // イベントクリック処理
-  const handleEventClick = info => {
+  const handleEventClick = (info: any) => {
     const booking = info.event.extendedProps.booking;
     console.log('📅 予約クリック:', booking);
 
@@ -228,7 +238,7 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
   };
 
   // 空きスロットクリック処理
-  const handleDateClick = info => {
+  const handleDateClick = (info: any) => {
     console.log('📅 空きスロットクリック:', {
       date: info.date,
       resourceId: info.resource?.id,
@@ -316,14 +326,36 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
         <FullCalendar
           ref={calendarRef}
           plugins={[resourceTimelinePlugin, interactionPlugin]}
-          initialView='resourceTimelineDay'
-          // 基本設定
-          {...basicConfig}
-          locale={jaLocale}
+          initialView='resourceTimelineWeek'
           initialDate={date}
+          headerToolbar={{
+            left: 'prev,next today',
+            center: 'title',
+            right: 'resourceTimelineDay,resourceTimelineWeek',
+          }}
+          // 基本設定
+          slotMinTime='09:00:00'
+          slotMaxTime='21:00:00'
+          slotDuration='00:30:00'
+          slotLabelInterval='01:00:00'
+          timeZone='Asia/Tokyo'
+          resourceAreaWidth='200px'
+          locale={jaLocale}
           // データ
           events={calendarEvents}
           resources={calendarResources}
+          // 日付範囲変更時の処理
+          datesSet={dateInfo => {
+            console.log('📅 Date range changed:', {
+              start: dateInfo.start,
+              end: dateInfo.end,
+              view: dateInfo.view.type,
+            });
+
+            if (onDateChange) {
+              onDateChange(dateInfo.start);
+            }
+          }}
           // イベントハンドラー
           eventMouseEnter={handleEventMouseEnter}
           eventDrop={handleEventDrop}
