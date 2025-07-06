@@ -50,7 +50,7 @@ export const MultiMenuSelector: React.FC<MultiMenuSelectorProps> = ({
   const [isCalculating, setIsCalculating] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState<Set<number>>(new Set());
 
-  // リアルタイム料金計算
+  // Phase 23: 料金計算（デバウンス処理付き）
   useEffect(() => {
     if (selectedMenus.length === 0) {
       setCalculationResult(null);
@@ -63,6 +63,11 @@ export const MultiMenuSelector: React.FC<MultiMenuSelectorProps> = ({
     }
 
     const calculateCombination = async () => {
+      // 計算中は重複API呼び出しを防ぐ
+      if (isCalculating) {
+        return;
+      }
+
       setIsCalculating(true);
       try {
         const result = await api.calculateCombination({
@@ -73,17 +78,24 @@ export const MultiMenuSelector: React.FC<MultiMenuSelectorProps> = ({
         onCalculationResult?.(result);
       } catch (error) {
         console.error('料金計算エラー:', error);
-        setCalculationResult(null);
-        onCalculationResult?.(null);
+
+        // 429エラーの場合は特別な処理
+        if ((error as any).response?.status === 429) {
+          console.warn('レート制限に達しました。しばらくお待ちください。');
+          // 計算結果をクリアしない（前の結果を保持）
+        } else {
+          setCalculationResult(null);
+          onCalculationResult?.(null);
+        }
       } finally {
         setIsCalculating(false);
       }
     };
 
-    // デバウンス処理（500ms）
-    const timer = setTimeout(calculateCombination, 500);
+    // デバウンス処理を1秒に延長（429エラー対策）
+    const timer = setTimeout(calculateCombination, 1000);
     return () => clearTimeout(timer);
-  }, [selectedMenus, calculationContext, onCalculationResult]);
+  }, [selectedMenus, calculationContext, onCalculationResult, isCalculating]);
 
   // メニュー追加
   const handleMenuAdd = (menu: Menu) => {
