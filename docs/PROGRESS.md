@@ -1,5 +1,63 @@
 # tugical Development Progress
 
+## 2025-07-06 23:30:44 (tugiMacAir.local)
+
+### 📋 Phase 25.2.1: 通常新規予約作成フロー修正 → Timeline 統合モード分離完了 ✅ **完了**
+
+**通常の新規予約作成と Timeline 統合予約作成の完全分離:**
+
+#### 1. **問題特定** ✅
+
+```
+問題: 右上の「新規予約」ボタンから開くモーダルが
+      以前のtimelineSlotInfo値を引き継いでしまう
+影響: 通常の新規予約でもTimeline統合モードで動作
+結果: ユーザー体験の混乱、意図しない事前入力
+```
+
+#### 2. **根本修正実装** ✅
+
+```typescript
+// Before: Timeline統合時の情報が残存
+const handleCreateBooking = () => {
+  setIsCreateModalOpen(true);
+};
+
+// After: 通常新規予約時に明示的にクリア
+const handleCreateBooking = () => {
+  console.log("📝 通常の新規予約作成を開始");
+
+  // Timeline統合時の情報をクリア（通常の新規予約作成では使用しない）
+  setTimelineSlotInfo(null);
+
+  // 通常の予約作成モーダルを開く
+  setIsCreateModalOpen(true);
+};
+```
+
+#### 3. **予約作成フロー完全分離** ✅
+
+```
+📝 通常の新規予約作成フロー:
+  1. 右上「新規予約」ボタンクリック
+  2. timelineSlotInfo = null に設定
+  3. 空の予約作成モーダルが開く
+  4. 全項目を手動入力
+
+🎯 Timeline統合予約作成フロー:
+  1. Timeline空きスロットクリック
+  2. timelineSlotInfo に時間・リソース設定
+  3. 事前入力済み予約作成モーダルが開く
+  4. 顧客・メニューのみ選択
+```
+
+#### 4. **技術成果** ✅
+
+- ✅ **ビルド成功**（3.65 秒）
+- ✅ **BookingsPage**：76.83KB（+0.04KB ログ出力追加）
+- ✅ **明確な分離**：通常予約と Timeline 統合予約の完全分離
+- ✅ **ユーザー体験**：混乱のない直感的な操作フロー
+
 ## 2025-07-06 23:18:19 (tugiMacAir.local)
 
 ### 📋 Phase 25.2: Timeline 統合予約作成完全実装 → 複数メニュー UI 統合完了 ✅ **完了**

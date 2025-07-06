@@ -135,8 +135,15 @@ const BookingsPage: React.FC = () => {
 
   /**
    * 新規予約作成ボタンクリック
+   * Phase 25.2: 通常の新規予約作成（Timeline統合モードではない）
    */
   const handleCreateBooking = () => {
+    console.log('📝 通常の新規予約作成を開始');
+
+    // Timeline統合時の情報をクリア（通常の新規予約作成では使用しない）
+    setTimelineSlotInfo(null);
+
+    // 通常の予約作成モーダルを開く
     setIsCreateModalOpen(true);
   };
 
