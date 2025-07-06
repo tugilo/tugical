@@ -35,6 +35,12 @@ import type {
   MenuCategoriesResponse,
   MenuOption,
   BookingListResponse,
+  // Phase 23: 複数メニュー組み合わせ対応
+  CalculateCombinationRequest,
+  CalculateCombinationResponse,
+  PhoneBookingAvailabilityRequest,
+  PhoneBookingAvailabilityResponse,
+  CreateCombinationBookingRequest,
 } from '../types';
 
 // ========================================
@@ -377,6 +383,77 @@ class ApiClient {
     }
 
     throw new Error(response.data.error?.message || '予約の移動に失敗しました');
+  }
+
+  /**
+   * Phase 23: メニュー組み合わせ計算
+   */
+  async calculateCombination(
+    requestData: CalculateCombinationRequest
+  ): Promise<CalculateCombinationResponse> {
+    const response = await this.client.post<
+      ApiResponse<CalculateCombinationResponse>
+    >('/bookings/calculate', requestData);
+
+    if (response.data.success && response.data.data) {
+      return response.data.data;
+    }
+
+    throw new Error(
+      response.data.error?.message || 'メニュー組み合わせ計算に失敗しました'
+    );
+  }
+
+  /**
+   * Phase 23: 電話予約最適化空き時間取得
+   */
+  async getPhoneBookingAvailability(
+    requestData: PhoneBookingAvailabilityRequest
+  ): Promise<PhoneBookingAvailabilityResponse> {
+    const params = new URLSearchParams();
+    Object.entries(requestData).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        if (Array.isArray(value)) {
+          value.forEach(v => params.append(`${key}[]`, v));
+        } else {
+          params.append(key, String(value));
+        }
+      }
+    });
+
+    const response = await this.client.get<
+      ApiResponse<PhoneBookingAvailabilityResponse>
+    >(`/bookings/phone-availability?${params.toString()}`);
+
+    if (response.data.success && response.data.data) {
+      return response.data.data;
+    }
+
+    throw new Error(
+      response.data.error?.message ||
+        '電話予約最適化空き時間の取得に失敗しました'
+    );
+  }
+
+  /**
+   * Phase 23: 複数メニュー組み合わせ予約作成
+   */
+  async createCombinationBooking(
+    requestData: CreateCombinationBookingRequest
+  ): Promise<Booking> {
+    const response = await this.client.post<ApiResponse<Booking>>(
+      '/bookings/combination',
+      requestData
+    );
+
+    if (response.data.success && response.data.data) {
+      return response.data.data;
+    }
+
+    throw new Error(
+      response.data.error?.message ||
+        '複数メニュー組み合わせ予約の作成に失敗しました'
+    );
   }
 
   // ========================================

@@ -30,6 +30,7 @@ export { default as DashboardLayout } from './layout/DashboardLayout';
 // ========================================
 export { default as BookingCard } from './booking/BookingCard';
 export { default as BookingCreateModal } from './booking/BookingCreateModal';
+export { MultiMenuSelector } from './booking/MultiMenuSelector';
 
 // ========================================
 // 顧客管理コンポーネント

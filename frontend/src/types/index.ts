@@ -172,6 +172,15 @@ export interface Booking {
   staff_notes?: string;
   created_at: string;
   updated_at: string;
+
+  // Phase 23: 複数メニュー組み合わせ対応
+  booking_type: 'single' | 'combination';
+  details?: BookingDetail[];
+  combination_rules?: any;
+  set_discount_amount?: number;
+  base_total_price?: number;
+  auto_added_services?: any;
+  phone_booking_context?: any;
 }
 
 export interface BookingCustomer {
@@ -203,6 +212,33 @@ export interface BookingOption {
   price: number;
 }
 
+// Phase 23: 複数メニュー組み合わせ対応
+export interface BookingDetail {
+  id: number;
+  booking_id: number;
+  menu_id: number;
+  resource_id?: number;
+  sequence_order: number;
+  start_time_offset: number;
+  end_time_offset: number;
+  duration_minutes: number;
+  price: number;
+  discount_amount?: number;
+  status: 'pending' | 'in_progress' | 'completed' | 'cancelled' | 'skipped';
+  customer_notes?: string;
+  staff_notes?: string;
+  service_type: 'main' | 'additional' | 'auto_added';
+  completion_time?: string;
+  quality_rating?: number;
+  quality_notes?: string;
+  created_at: string;
+  updated_at: string;
+
+  // リレーション
+  menu: BookingMenu;
+  resource?: BookingResource;
+}
+
 export interface CreateBookingRequest {
   customer_id: number;
   menu_id: number;
@@ -212,6 +248,102 @@ export interface CreateBookingRequest {
   customer_notes?: string;
   option_ids?: number[];
   hold_token?: string;
+}
+
+// Phase 23: 複数メニュー組み合わせ予約作成
+export interface CreateCombinationBookingRequest {
+  customer_id: number;
+  resource_id?: number;
+  booking_date: string;
+  start_time: string;
+  menus: CombinationMenuRequest[];
+  customer_notes?: string;
+  staff_notes?: string;
+  phone_booking_context?: any;
+  hold_token?: string;
+}
+
+export interface CombinationMenuRequest {
+  menu_id: number;
+  sequence_order: number;
+  option_ids?: number[];
+  service_type: 'main' | 'additional' | 'auto_added';
+  customer_notes?: string;
+  staff_notes?: string;
+}
+
+// Phase 23: メニュー組み合わせ計算
+export interface CalculateCombinationRequest {
+  resource_id?: number;
+  booking_date: string;
+  start_time: string;
+  menus: CombinationMenuRequest[];
+}
+
+export interface CalculateCombinationResponse {
+  total_price: number;
+  base_total_price: number;
+  set_discount_amount: number;
+  total_duration: number;
+  details: CombinationDetail[];
+  auto_added_services: any[];
+  combination_rules: any;
+  warnings: string[];
+}
+
+export interface CombinationDetail {
+  menu_id: number;
+  menu_name: string;
+  sequence_order: number;
+  start_time_offset: number;
+  end_time_offset: number;
+  duration_minutes: number;
+  price: number;
+  discount_amount: number;
+  service_type: 'main' | 'additional' | 'auto_added';
+  options: CombinationDetailOption[];
+}
+
+export interface CombinationDetailOption {
+  option_id: number;
+  option_name: string;
+  price: number;
+  duration_minutes: number;
+}
+
+// Phase 23: 電話予約最適化空き時間取得
+export interface PhoneBookingAvailabilityRequest {
+  booking_date: string;
+  resource_id?: number;
+  total_duration: number;
+  preferred_times?: string[];
+}
+
+export interface PhoneBookingAvailabilityResponse {
+  available_slots: PhoneAvailabilitySlot[];
+  business_hours: {
+    start: string;
+    end: string;
+  };
+  optimized_suggestions: OptimizedSuggestion[];
+}
+
+export interface PhoneAvailabilitySlot {
+  start_time: string;
+  end_time: string;
+  available_duration: number;
+  is_optimal: boolean;
+  optimization_score: number;
+  resource_id?: number;
+  resource_name?: string;
+}
+
+export interface OptimizedSuggestion {
+  start_time: string;
+  resource_id?: number;
+  resource_name?: string;
+  reason: string;
+  confidence: number;
 }
 
 export interface BookingListResponse {
