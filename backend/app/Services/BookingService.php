@@ -974,6 +974,7 @@ class BookingService
             $booking = Booking::create([
                 'store_id' => $storeId,
                 'customer_id' => $bookingData['customer_id'],
+                'resource_id' => $bookingData['resource_id'] ?? null,
                 'booking_type' => 'combination',
                 'booking_date' => $bookingData['booking_date'],
                 'start_time' => $bookingData['start_time'],
@@ -1007,7 +1008,7 @@ class BookingService
                 BookingDetail::create([
                     'booking_id' => $booking->id,
                     'menu_id' => $menu->id,
-                    'resource_id' => $menuData['resource_id'] ?? null,
+                    'resource_id' => $menuData['resource_id'] ?? $bookingData['resource_id'] ?? null,
                     'sequence_order' => $menuData['sequence_order'] ?? $index + 1,
                     'service_name' => $menu->name,
                     'service_description' => $menu->description,

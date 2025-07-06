@@ -1,5 +1,83 @@
 # tugical Development Progress
 
+## 2025-07-08 08:55:00 (tugiMacAir.local)
+
+### 📋 Phase 25.23: 複数メニュー組み合わせ予約の担当者設定修正 ✅ **完了**
+
+**担当者（リソース）情報が「指定なし」として登録される問題の解決:**
+
+#### 1. **問題特定** ✅
+
+```
+問題: 担当者の任意の日付スロットをタップしてモーダル上では設定されているのに、
+     登録すると「指定なし」として登録されている
+症状: メイン予約、各メニュー詳細の両方で resource_id が null になる
+原因: BookingService::createCombinationBooking でリソース情報が正しく設定されていない
+```
+
+#### 2. **根本原因分析** ✅
+
+```
+1. メイン予約の resource_id 設定漏れ:
+   - BookingService でメイン予約作成時に resource_id が設定されていない
+   - フロントエンドからは正しく resource_id: 2 が送信されている
+
+2. primary_resource_id カラム不存在:
+   - bookings テーブルに primary_resource_id カラムが存在しない
+   - 設定しようとしてもエラーにならずに無視される
+
+3. 各メニュー詳細の resource_id 設定漏れ:
+   - 各メニューデータに個別 resource_id がない場合の fallback 処理なし
+   - メイン担当者の情報が各メニュー詳細に引き継がれない
+```
+
+#### 3. **修正実装** ✅
+
+```php
+// 1. メイン予約にリソース情報設定
+$booking = Booking::create([
+    'store_id' => $storeId,
+    'customer_id' => $bookingData['customer_id'],
+    'resource_id' => $bookingData['resource_id'] ?? null,  // ← 追加
+    // primary_resource_id は削除（カラム不存在のため）
+    // ... 他のフィールド
+]);
+
+// 2. 各メニュー詳細にもリソース情報設定
+BookingDetail::create([
+    'booking_id' => $booking->id,
+    'menu_id' => $menu->id,
+    'resource_id' => $menuData['resource_id'] ?? $bookingData['resource_id'] ?? null,  // ← 修正
+    // メニュー個別のリソースがない場合は、メイン担当者を使用
+    // ... 他のフィールド
+]);
+```
+
+#### 4. **動作確認** ✅
+
+```
+修正前（予約ID: 5-7）:
+- メイン予約: resource_id = null ← 「指定なし」として表示
+- 各メニュー詳細: resource_id = null
+
+修正後（予約ID: 8）:
+- メイン予約: resource_id = 2 ← 正しく担当者設定
+- 各メニュー詳細: cut (Resource: 2), color (Resource: 2) ← 両方とも正しく設定
+```
+
+#### 5. **技術成果** ✅
+
+- ✅ **担当者情報完全保存**: メイン予約・各メニュー詳細の両方で正しく保存
+- ✅ **フロントエンド連携**: モーダルでの担当者選択がそのまま反映
+- ✅ **データ整合性**: 担当者選択時は全メニューに同じ担当者が設定
+- ✅ **「指定なし」問題解決**: 担当者選択時に「指定なし」として表示される問題を完全解決
+
+#### 6. **ユーザー体験向上** ✅
+
+- **タイムライン表示**: 担当者別に予約が正しくグループ化される
+- **予約管理**: 担当者情報に基づく適切な予約管理が可能
+- **直感的操作**: モーダルでの選択結果がそのまま保存される信頼性
+
 ## 2025-07-08 08:50:00 (tugiMacAir.local)
 
 ### 📋 Phase 25.22: BookingController createCombination メソッド修正 ✅ **完了**
