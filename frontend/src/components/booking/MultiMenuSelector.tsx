@@ -291,7 +291,7 @@ export const MultiMenuSelector: React.FC<MultiMenuSelectorProps> = ({
               </div>
 
               {/* 自動追加サービス */}
-              {calculationResult.auto_added_services.length > 0 && (
+              {calculationResult.auto_added_services?.length > 0 && (
                 <div className='mt-3 pt-3 border-t border-emerald-200'>
                   <p className='text-sm text-emerald-700'>
                     自動追加サービス:{' '}
@@ -301,7 +301,7 @@ export const MultiMenuSelector: React.FC<MultiMenuSelectorProps> = ({
               )}
 
               {/* 警告 */}
-              {calculationResult.warnings.length > 0 && (
+              {calculationResult.warnings?.length > 0 && (
                 <div className='mt-3 pt-3 border-t border-emerald-200'>
                   {calculationResult.warnings.map((warning, index) => (
                     <p key={index} className='text-sm text-orange-700 mb-1'>

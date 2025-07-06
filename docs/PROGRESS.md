@@ -6464,65 +6464,84 @@ Next: 店舗設定等の他画面への展開"
 ## 2025-01-23 19:24:10 - Phase 25.15: 日付管理根本修正による再読み込み問題完全解決
 
 ### 問題分析
-- BookingsPageのdateプロパティがbookings[0].booking_date（6月30日）を基準に設定
-- 毎回新しいDateオブジェクトを作成するため、useEffectが不要に発火
-- モーダル閉じた後、常に6月30日の週に戻ってしまう問題
+
+- BookingsPage の date プロパティが bookings[0].booking_date（6 月 30 日）を基準に設定
+- 毎回新しい Date オブジェクトを作成するため、useEffect が不要に発火
+- モーダル閉じた後、常に 6 月 30 日の週に戻ってしまう問題
 
 ### 修正内容
-- BookingsPage.tsx: timelineDate状態を追加（new Date()で初期化）
-- handleTimelineBookingCreate: 空きスロットクリック時にsetTimelineDate(rawStart)で日付状態を更新
-- BookingTimelineView: dateプロパティを動的計算から状態管理（timelineDate）に変更
+
+- BookingsPage.tsx: timelineDate 状態を追加（new Date()で初期化）
+- handleTimelineBookingCreate: 空きスロットクリック時に setTimelineDate(rawStart)で日付状態を更新
+- BookingTimelineView: date プロパティを動的計算から状態管理（timelineDate）に変更
 - 日付基準変更: 予約データの日付ではなく、ユーザーが見ている日付を基準に
 
 ### 技術的成果
-- 再読み込み根本解決: Timeline空きスロットクリック時の再読み込み完全停止
-- 日付維持: モーダル閉じた後も現在の日付を維持（6月30日問題解決）
+
+- 再読み込み根本解決: Timeline 空きスロットクリック時の再読み込み完全停止
+- 日付維持: モーダル閉じた後も現在の日付を維持（6 月 30 日問題解決）
 - パフォーマンス維持: BookingsPage 106.43KB（変更なし）
-- ビルド安定性: 3.87秒（安定ビルド）
+- ビルド安定性: 3.87 秒（安定ビルド）
 
 ### 実装ファイル
+
 - frontend/src/pages/bookings/BookingsPage.tsx（日付状態管理追加）
-- frontend/src/components/booking/BookingTimelineView.tsx（datesSetハンドラ完全無効化）
+- frontend/src/components/booking/BookingTimelineView.tsx（datesSet ハンドラ完全無効化）
 
 ### 完了確認
-- Phase 25シリーズ（25.1〜25.15）完全完了
-- tugical汎用時間貸しリソース予約システム完成
-- 複数メニュー組み合わせ + Timeline統合予約作成 + 完璧な時間管理 + 日付維持機能実現
+
+- Phase 25 シリーズ（25.1〜25.15）完全完了
+- tugical 汎用時間貸しリソース予約システム完成
+- 複数メニュー組み合わせ + Timeline 統合予約作成 + 完璧な時間管理 + 日付維持機能実現
 
 ### 次のステップ
-- Phase 25系列完全完了のため、次期開発フェーズへ
 
+- Phase 25 系列完全完了のため、次期開発フェーズへ
 
 ## 2025-01-23 19:30:15 - Phase 25.16: 空きスロット表示機能無効化
 
 ### 問題分析
+
 - 初期表示：空きスロット表示なし
-- スロットタップ後：タップした日（7月7日）のみ大量の「空き」イベントが生成
+- スロットタップ後：タップした日（7 月 7 日）のみ大量の「空き」イベントが生成
 - 根本原因：単一日付での空きスロット生成（週表示なのに特定日のみ）
 - ユーザビリティ問題：「これは正直何のために生成しているのかわからない」状態
 
 ### 修正内容
-- BookingTimelineView.tsx: showAvailableSlots初期値をfalseに変更
-- 空き時間表示切り替えUI: 完全にコメントアウト
+
+- BookingTimelineView.tsx: showAvailableSlots 初期値を false に変更
+- 空き時間表示切り替え UI: 完全にコメントアウト
 - 空き時間凡例: 無効化
 - 操作ガイド: 「空きエリアをクリックして新規予約作成」に簡素化
 - ヘッダー空き時間数表示: 無効化
 
 ### 技術的成果
+
 - 混乱排除: 特定日のみの大量「空き」イベント表示を完全停止
 - パフォーマンス向上: BookingsPage 106.43KB → 104.25KB（-2.18KB、2%軽量化）
-- ビルド高速化: 3.87秒 → 3.57秒（-0.30秒、8%高速化）
-- UI簡素化: 不要な空きスロット関連UI要素を完全削除
+- ビルド高速化: 3.87 秒 → 3.57 秒（-0.30 秒、8%高速化）
+- UI 簡素化: 不要な空きスロット関連 UI 要素を完全削除
 
 ### 実装ファイル
+
 - frontend/src/components/booking/BookingTimelineView.tsx（空きスロット表示無効化）
 
 ### 完了確認
-- Phase 25シリーズ（25.1〜25.16）完全完了
-- tugical汎用時間貸しリソース予約システム完成
-- Timeline空きエリアクリック新規予約作成機能は維持（dateClickハンドラ）
+
+- Phase 25 シリーズ（25.1〜25.16）完全完了
+- tugical 汎用時間貸しリソース予約システム完成
+- Timeline 空きエリアクリック新規予約作成機能は維持（dateClick ハンドラ）
 - 混乱を招く空きスロット表示機能は無効化
 
-### 次のステップ
-- Phase 25系列完全完了のため、次期開発フェーズへ
+## 2025-07-07 07:05:03 - Phase 25.17: 複数メニュー料金計算 API 422 エラー修正
 
+### 問題・修正・成果
+
+- **問題**: 複数メニュー選択時に 422 エラー（データ形式不一致）
+- **修正**: api.ts calculateCombination で API 仕様書準拠のデータ変換実装
+- **成果**: 料金計算 API 422 エラー完全解決、ビルド成功（3.80 秒）
+- **コミット**: 8112e3e
+
+### 次のステップ
+
+- Phase 25 系列完全完了のため、次期開発フェーズへ
