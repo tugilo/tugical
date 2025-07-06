@@ -236,6 +236,189 @@ export interface AvailabilityResponse {
 }
 
 // ========================================
+// Timeline統合予約作成関連型定義 (Phase 21)
+// ========================================
+
+/**
+ * Timeline空きスロットクリック時の情報
+ * 美容師向け直感的予約作成のためのコンテキスト情報
+ */
+export interface TimelineSlotClickInfo {
+  /** 開始日時 */
+  start: Date;
+  /** 終了日時（デフォルト30分後） */
+  end: Date;
+  /** リソースID（担当者ID） */
+  resourceId: string;
+  /** リソース情報 */
+  resourceInfo?: {
+    id: number;
+    name: string;
+    display_name: string;
+    type: 'staff' | 'room' | 'equipment' | 'vehicle';
+    is_available: boolean;
+  };
+  /** 空きスロット情報 */
+  slotInfo: {
+    /** 利用可能時間（分） */
+    availableMinutes: number;
+    /** 次の予約までの時間（分） */
+    nextBookingIn?: number;
+    /** 前の予約からの時間（分） */
+    prevBookingGap?: number;
+  };
+  /** UI表示用情報 */
+  displayInfo: {
+    /** 日本語日時表示 */
+    dateTimeJa: string;
+    /** 時間表示 */
+    timeRange: string;
+    /** リソース表示名 */
+    resourceDisplayName: string;
+  };
+}
+
+/**
+ * 予約作成コンテキスト情報
+ * 美容師の操作状況に応じた予約作成支援情報
+ */
+export interface BookingCreationContext {
+  /** 作成方法 */
+  creationMethod: 'timeline_click' | 'drag_drop' | 'manual_form';
+  /** 予約作成時の状況 */
+  scenario: 'phone_reservation' | 'face_to_face' | 'walk_in' | 'online';
+  /** 推奨メニュー（前回履歴、時間枠から推測） */
+  suggestedMenus?: {
+    menu: BookingMenu;
+    reason: 'previous_booking' | 'time_fit' | 'popular';
+    priority: number;
+  }[];
+  /** 推奨顧客（電話番号、過去履歴から推測） */
+  suggestedCustomers?: {
+    customer: BookingCustomer;
+    reason: 'phone_match' | 'frequent_time' | 'resource_preference';
+    confidence: number;
+  }[];
+  /** 時間調整の提案 */
+  timeAdjustments?: {
+    suggestedStart: Date;
+    suggestedEnd: Date;
+    reason: 'avoid_overlap' | 'optimize_gap' | 'extend_available';
+  }[];
+}
+
+/**
+ * Timeline上での予約作成フォームデータ
+ * 軽量フォーム用の最小限データ構造
+ */
+export interface TimelineBookingFormData {
+  /** 顧客ID（必須） */
+  customer_id: number;
+  /** 顧客情報（新規作成時） */
+  customer_info?: {
+    name: string;
+    phone: string;
+    email?: string;
+    notes?: string;
+  };
+  /** メニューID（必須） */
+  menu_id: number;
+  /** リソースID */
+  resource_id: number;
+  /** 予約日 */
+  booking_date: string;
+  /** 開始時間 */
+  start_time: string;
+  /** 終了時間（メニューから自動計算） */
+  end_time: string;
+  /** 選択されたオプション */
+  selected_options?: number[];
+  /** 顧客からの要望 */
+  customer_notes?: string;
+  /** スタッフメモ */
+  staff_notes?: string;
+  /** 仮押さえトークン */
+  hold_token?: string;
+  /** 確認状態 */
+  confirmation_status: 'draft' | 'confirmed' | 'pending_approval';
+}
+
+/**
+ * Timeline予約作成モーダルの状態
+ * 美容師向け操作性を重視した状態管理
+ */
+export interface TimelineBookingModalState {
+  /** 表示状態 */
+  isVisible: boolean;
+  /** 読み込み中 */
+  isLoading: boolean;
+  /** 現在のステップ */
+  currentStep:
+    | 'customer_selection'
+    | 'menu_selection'
+    | 'time_adjustment'
+    | 'confirmation';
+  /** 選択されたスロット情報 */
+  selectedSlot?: TimelineSlotClickInfo;
+  /** 予約作成コンテキスト */
+  context?: BookingCreationContext;
+  /** フォームデータ */
+  formData: Partial<TimelineBookingFormData>;
+  /** バリデーションエラー */
+  errors: Record<string, string>;
+  /** 一時的なメッセージ */
+  temporaryMessage?: {
+    type: 'success' | 'error' | 'warning' | 'info';
+    text: string;
+    duration: number;
+  };
+}
+
+/**
+ * 顧客クイック検索結果
+ * 美容師の片手操作に最適化された検索結果
+ */
+export interface CustomerQuickSearchResult {
+  /** 顧客情報 */
+  customer: BookingCustomer;
+  /** マッチ情報 */
+  match: {
+    /** 検索キーワードとのマッチ度 */
+    score: number;
+    /** マッチした項目 */
+    matchedFields: ('name' | 'phone' | 'email')[];
+    /** ハイライト用情報 */
+    highlights: {
+      name?: string;
+      phone?: string;
+      email?: string;
+    };
+  };
+  /** 予約履歴サマリー */
+  bookingHistory: {
+    /** 総予約数 */
+    totalBookings: number;
+    /** 最終予約日 */
+    lastBookingDate?: string;
+    /** よく利用するメニュー */
+    frequentMenus: string[];
+    /** 好みの担当者 */
+    preferredResource?: string;
+  };
+  /** 推奨度 */
+  recommendation: {
+    /** 推奨理由 */
+    reason:
+      | 'frequent_customer'
+      | 'phone_match'
+      | 'recent_booking'
+      | 'new_customer';
+    /** 推奨度スコア */
+    score: number;
+  };
+}
+
+// ========================================
 // 顧客関連型定義
 // ========================================
 

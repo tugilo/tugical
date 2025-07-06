@@ -4,7 +4,12 @@ import FullCalendar from '@fullcalendar/react';
 import resourceTimelinePlugin from '@fullcalendar/resource-timeline';
 import interactionPlugin from '@fullcalendar/interaction';
 import jaLocale from '@fullcalendar/core/locales/ja';
-import { Booking, Resource } from '../../types';
+import {
+  Booking,
+  Resource,
+  TimelineSlotClickInfo,
+  BookingCreationContext,
+} from '../../types';
 import { resourceApi } from '../../services/api';
 import { useUIStore } from '../../stores/uiStore';
 import {
@@ -237,23 +242,190 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
     }
   };
 
-  // 空きスロットクリック処理
-  const handleDateClick = (info: any) => {
-    console.log('📅 空きスロットクリック:', {
-      date: info.date,
-      resourceId: info.resource?.id,
+  // 空きスロットクリック処理（美容師向け直感操作）
+  const handleTimelineSlotClick = (info: any) => {
+    const clickedDate = info.date;
+    const resourceId = info.resource?.id || 'unassigned';
+    const resourceData = resources.find(r => r.id.toString() === resourceId);
+
+    console.log('🎯 Timeline空きスロットクリック:', {
+      date: clickedDate.toISOString(),
+      resourceId,
+      resourceData: resourceData?.name,
+      jsTime: clickedDate.toLocaleString('ja-JP'),
     });
 
-    if (onBookingCreate) {
-      // デフォルト30分予約として作成
-      const endDate = new Date(info.date.getTime() + 30 * 60 * 1000);
+    // 空きスロット情報を計算
+    const slotInfo = calculateSlotInfo(clickedDate, resourceId);
 
+    // UI表示用情報を準備
+    const displayInfo = {
+      dateTimeJa: clickedDate.toLocaleString('ja-JP', {
+        month: 'long',
+        day: 'numeric',
+        weekday: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+      }),
+      timeRange: `${clickedDate.toLocaleTimeString('ja-JP', {
+        hour: '2-digit',
+        minute: '2-digit',
+      })} - ${new Date(
+        clickedDate.getTime() + 30 * 60 * 1000
+      ).toLocaleTimeString('ja-JP', {
+        hour: '2-digit',
+        minute: '2-digit',
+      })}`,
+      resourceDisplayName:
+        resourceData?.display_name || resourceData?.name || '指定なし',
+    };
+
+    // TimelineSlotClickInfo型のデータを作成
+    const timelineSlotInfo: TimelineSlotClickInfo = {
+      start: clickedDate,
+      end: new Date(clickedDate.getTime() + 30 * 60 * 1000),
+      resourceId: resourceId,
+      resourceInfo: resourceData
+        ? {
+            id: resourceData.id,
+            name: resourceData.name,
+            display_name: resourceData.display_name,
+            type: resourceData.type,
+            is_available: resourceData.is_active,
+          }
+        : undefined,
+      slotInfo,
+      displayInfo,
+    };
+
+    // 予約作成コンテキストを生成
+    const context: BookingCreationContext = {
+      creationMethod: 'timeline_click',
+      scenario: 'face_to_face', // デフォルト、後で変更可能
+      suggestedMenus: getSuggestedMenus(clickedDate, resourceId),
+      suggestedCustomers: getSuggestedCustomers(clickedDate, resourceId),
+      timeAdjustments: getTimeAdjustments(clickedDate, resourceId),
+    };
+
+    // 美容師向け予約作成フローを開始
+    if (onBookingCreate) {
+      // 基本的な予約作成情報を親コンポーネントに渡す
       onBookingCreate({
-        start: info.date,
-        end: endDate,
-        resourceId: info.resource?.id || 'unassigned',
+        start: timelineSlotInfo.start,
+        end: timelineSlotInfo.end,
+        resourceId: timelineSlotInfo.resourceId,
       });
     }
+
+    // 将来的には、ここでTimeline統合予約作成モーダルを開く
+    console.log('🎯 予約作成コンテキスト:', context);
+    console.log('🎯 TimelineSlotInfo:', timelineSlotInfo);
+
+    // 美容師向け通知
+    addNotification({
+      type: 'info',
+      title: '予約作成',
+      message: `${displayInfo.resourceDisplayName} の ${displayInfo.timeRange} に予約を作成します`,
+      duration: 3000,
+    });
+  };
+
+  /**
+   * 空きスロット情報を計算
+   * 前後の予約との間隔や利用可能時間を算出
+   */
+  const calculateSlotInfo = (clickedDate: Date, resourceId: string) => {
+    const resourceBookings = bookings.filter(
+      booking => booking.resource_id?.toString() === resourceId
+    );
+
+    const clickedTime = clickedDate.getTime();
+    const clickedDateStr = clickedDate.toISOString().split('T')[0];
+
+    // 同日の予約を取得
+    const sameDayBookings = resourceBookings.filter(
+      booking => booking.booking_date === clickedDateStr
+    );
+
+    // 時間順にソート
+    const sortedBookings = sameDayBookings.sort((a, b) =>
+      a.start_time.localeCompare(b.start_time)
+    );
+
+    // 前の予約を探す
+    const prevBooking = sortedBookings
+      .filter(booking => {
+        const bookingStart = new Date(
+          `${booking.booking_date}T${booking.start_time}`
+        );
+        return bookingStart.getTime() <= clickedTime;
+      })
+      .pop();
+
+    // 次の予約を探す
+    const nextBooking = sortedBookings.find(booking => {
+      const bookingStart = new Date(
+        `${booking.booking_date}T${booking.start_time}`
+      );
+      return bookingStart.getTime() > clickedTime;
+    });
+
+    // 利用可能時間を計算
+    let availableMinutes = 30; // デフォルト30分
+    let nextBookingIn: number | undefined;
+    let prevBookingGap: number | undefined;
+
+    if (nextBooking) {
+      const nextBookingTime = new Date(
+        `${nextBooking.booking_date}T${nextBooking.start_time}`
+      );
+      nextBookingIn = Math.round(
+        (nextBookingTime.getTime() - clickedTime) / (1000 * 60)
+      );
+      availableMinutes = Math.min(availableMinutes, nextBookingIn);
+    }
+
+    if (prevBooking) {
+      const prevBookingEnd = new Date(
+        `${prevBooking.booking_date}T${prevBooking.end_time}`
+      );
+      prevBookingGap = Math.round(
+        (clickedTime - prevBookingEnd.getTime()) / (1000 * 60)
+      );
+    }
+
+    return {
+      availableMinutes,
+      nextBookingIn,
+      prevBookingGap,
+    };
+  };
+
+  /**
+   * 推奨メニューを取得
+   * 時間枠や履歴から適合するメニューを提案
+   */
+  const getSuggestedMenus = (clickedDate: Date, resourceId: string) => {
+    // 実装は後で追加（APIから取得）
+    return undefined;
+  };
+
+  /**
+   * 推奨顧客を取得
+   * 時間帯や担当者から常連客を推測
+   */
+  const getSuggestedCustomers = (clickedDate: Date, resourceId: string) => {
+    // 実装は後で追加（APIから取得）
+    return undefined;
+  };
+
+  /**
+   * 時間調整の提案を取得
+   * 前後の予約との重複を避ける最適化提案
+   */
+  const getTimeAdjustments = (clickedDate: Date, resourceId: string) => {
+    // 実装は後で追加（前後の予約を考慮した最適化）
+    return undefined;
   };
 
   const basicConfig = getFullCalendarConfig();
@@ -369,7 +541,7 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
           eventDrop={handleEventDrop}
           eventResize={handleEventResize}
           eventClick={handleEventClick}
-          dateClick={handleDateClick}
+          dateClick={handleTimelineSlotClick}
           // スタイル設定
           schedulerLicenseKey='GPL-My-Project-Is-Open-Source'
           height='auto'
