@@ -391,12 +391,25 @@ class ApiClient {
   async calculateCombination(
     requestData: CalculateCombinationRequest
   ): Promise<CalculateCombinationResponse> {
+    // API仕様書に従ってデータ形式を変換
+    const payload = {
+      menu_ids: requestData.menus.map(menu => menu.menu_id),
+      resource_id: requestData.resource_id,
+      booking_date: requestData.booking_date,
+      selected_options: requestData.menus.reduce((acc, menu) => {
+        if (menu.option_ids && menu.option_ids.length > 0) {
+          acc[menu.menu_id] = menu.option_ids;
+        }
+        return acc;
+      }, {} as Record<number, number[]>),
+    };
+
     const response = await this.client.post<
-      ApiResponse<CalculateCombinationResponse>
-    >('/bookings/calculate', requestData);
+      ApiResponse<{ calculation: CalculateCombinationResponse }>
+    >('/bookings/calculate', payload);
 
     if (response.data.success && response.data.data) {
-      return response.data.data;
+      return response.data.data.calculation;
     }
 
     throw new Error(
