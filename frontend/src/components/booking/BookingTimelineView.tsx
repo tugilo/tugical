@@ -9,14 +9,18 @@ import {
   Resource,
   TimelineSlotClickInfo,
   BookingCreationContext,
+  AvailabilitySlot,
 } from '../../types';
-import { resourceApi } from '../../services/api';
+import { resourceApi, storeApi } from '../../services/api';
 import { useUIStore } from '../../stores/uiStore';
 import {
   convertToFullCalendarEvents,
   convertToFullCalendarResources,
   getFullCalendarConfig,
   getStatusDisplayName,
+  generateAvailableTimeSlots,
+  convertAvailableSlotsToEvents,
+  mergeBookingAndAvailableEvents,
 } from '../../utils/fullcalendarHelpers';
 
 interface BookingTimelineViewProps {
@@ -49,6 +53,7 @@ interface BookingTimelineViewProps {
  * - ツールチップ詳細表示
  * - 30分単位時間軸
  * - 9:00-21:00 営業時間対応
+ * - ✨ NEW: 空き時間リアルタイム表示（Phase 21.2）
  *
  * tugical_system_specification_v2.0.md 完全準拠
  */
@@ -65,7 +70,64 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
   const [loadingResources, setLoadingResources] = useState(true);
   const [calendarEvents, setCalendarEvents] = useState<any[]>([]);
   const [calendarResources, setCalendarResources] = useState<any[]>([]);
+
+  // ✨ Phase 21.2: 空き時間表示機能
+  const [showAvailableSlots, setShowAvailableSlots] = useState(true);
+  const [availableSlots, setAvailableSlots] = useState<AvailabilitySlot[]>([]);
+  const [businessHours] = useState({ start: '09:00', end: '21:00' });
+
+  // ✨ Phase 21.3: 店舗設定ベース動的時間スロット設定
+  const [timeSlotSettings, setTimeSlotSettings] = useState<{
+    slot_duration_minutes: number;
+    slot_label_interval_minutes: number;
+    business_hours: { start: string; end: string };
+    available_durations: number[];
+    display_format: string;
+    timezone: string;
+  } | null>(null);
+  const [loadingTimeSlotSettings, setLoadingTimeSlotSettings] = useState(true);
+
   const { addNotification } = useUIStore();
+
+  // ✨ Phase 21.3: 店舗時間スロット設定取得
+  useEffect(() => {
+    const fetchTimeSlotSettings = async () => {
+      try {
+        setLoadingTimeSlotSettings(true);
+        const response = await storeApi.getTimeSlotSettings();
+        setTimeSlotSettings(response.time_slot_settings);
+
+        console.log('⚙️ 店舗時間スロット設定取得完了:', {
+          slotDuration: response.time_slot_settings.slot_duration_minutes,
+          businessHours: response.time_slot_settings.business_hours,
+          availableDurations: response.time_slot_settings.available_durations,
+          storeInfo: response.store_info,
+        });
+      } catch (error) {
+        console.error('店舗設定取得エラー:', error);
+        addNotification({
+          type: 'warning',
+          title: '設定取得エラー',
+          message: 'デフォルト設定を使用します',
+          duration: 3000,
+        });
+
+        // エラー時はデフォルト設定を使用
+        setTimeSlotSettings({
+          slot_duration_minutes: 30,
+          slot_label_interval_minutes: 60,
+          business_hours: { start: '09:00', end: '21:00' },
+          available_durations: [5, 10, 15, 20, 30, 45, 60, 90, 120],
+          display_format: 'H:i',
+          timezone: 'Asia/Tokyo',
+        });
+      } finally {
+        setLoadingTimeSlotSettings(false);
+      }
+    };
+
+    fetchTimeSlotSettings();
+  }, [addNotification]);
 
   // リソース取得
   useEffect(() => {
@@ -97,12 +159,57 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
     fetchResources();
   }, [addNotification]);
 
-  // FullCalendar用データ変換
+  // ✨ 空き時間スロット生成（Phase 21.2 → Phase 21.3: 動的間隔対応）
+  useEffect(() => {
+    if (
+      !loadingResources &&
+      !loadingTimeSlotSettings &&
+      showAvailableSlots &&
+      timeSlotSettings
+    ) {
+      console.log('🕐 動的空き時間スロット生成開始 (Phase 21.3)');
+
+      const dateString = date.toISOString().split('T')[0]; // YYYY-MM-DD形式
+      const dynamicBusinessHours = timeSlotSettings.business_hours;
+      const slotDuration = timeSlotSettings.slot_duration_minutes;
+
+      const slots = generateAvailableTimeSlots(
+        dateString,
+        resources,
+        bookings,
+        dynamicBusinessHours, // ✨ 店舗設定の営業時間使用
+        slotDuration // ✨ 店舗設定のスロット間隔使用
+      );
+
+      setAvailableSlots(slots);
+
+      console.log('🕐 動的空き時間スロット生成完了 (Phase 21.3):', {
+        date: dateString,
+        slotsCount: slots.length,
+        businessHours: dynamicBusinessHours, // ✨ 店舗設定反映
+        slotDurationMinutes: slotDuration, // ✨ 店舗設定反映
+        settingsSource: 'store_api',
+      });
+    } else {
+      setAvailableSlots([]);
+    }
+  }, [
+    date,
+    resources,
+    bookings,
+    loadingResources,
+    loadingTimeSlotSettings, // ✨ 店舗設定ローディング状態追加
+    showAvailableSlots,
+    timeSlotSettings, // ✨ 店舗設定追加
+  ]);
+
+  // ✨ FullCalendar用データ変換（空き時間統合対応）
   useEffect(() => {
     if (!loadingResources) {
-      console.log('📊 FullCalendar データ変換開始');
+      console.log('📊 FullCalendar データ変換開始（空き時間統合対応）');
       console.log('予約データ:', bookings.length, '件');
       console.log('リソースデータ:', resources.length, '件');
+      console.log('空き時間スロット:', availableSlots.length, '件');
       console.log(
         '📊 表示日付:',
         date.toISOString().split('T')[0],
@@ -112,18 +219,47 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
       );
 
       // 予約データ変換
-      const events = convertToFullCalendarEvents(bookings);
-      setCalendarEvents(events);
+      const bookingEvents = convertToFullCalendarEvents(bookings);
+
+      // 空き時間データ変換
+      let mergedEvents = bookingEvents;
+      if (showAvailableSlots) {
+        const dateString = date.toISOString().split('T')[0];
+        const availableEvents = convertAvailableSlotsToEvents(
+          availableSlots,
+          dateString
+        );
+        mergedEvents = mergeBookingAndAvailableEvents(
+          bookingEvents,
+          availableEvents,
+          showAvailableSlots
+        );
+      }
+
+      setCalendarEvents(mergedEvents);
 
       // リソースデータ変換
       const calendarRes = convertToFullCalendarResources(resources);
       setCalendarResources(calendarRes);
 
-      console.log('📊 FullCalendar データ変換完了');
-      console.log('変換後イベント:', events.length, '件');
+      console.log('📊 FullCalendar データ変換完了（空き時間統合）');
+      console.log('変換後イベント:', mergedEvents.length, '件');
+      console.log('  - 予約イベント:', bookingEvents.length, '件');
+      console.log(
+        '  - 空き時間イベント:',
+        mergedEvents.length - bookingEvents.length,
+        '件'
+      );
       console.log('変換後リソース:', calendarRes.length, '件');
     }
-  }, [bookings, resources, loadingResources]);
+  }, [
+    bookings,
+    resources,
+    loadingResources,
+    availableSlots,
+    showAvailableSlots,
+    date,
+  ]);
 
   // 日付変更時のカレンダー更新
   useEffect(() => {
@@ -428,12 +564,23 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
     return undefined;
   };
 
-  const basicConfig = getFullCalendarConfig();
+  // ✨ Phase 21.3: 動的FullCalendar設定生成
+  const dynamicConfig = timeSlotSettings
+    ? getFullCalendarConfig(timeSlotSettings)
+    : getFullCalendarConfig(); // デフォルト設定
 
-  if (loadingResources) {
+  // ローディング状態管理（時間スロット設定も含む）
+  const isLoading = loadingResources || loadingTimeSlotSettings;
+
+  if (isLoading) {
     return (
       <div className='flex justify-center items-center h-96'>
         <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500'></div>
+        <div className='ml-3 text-gray-600'>
+          {loadingTimeSlotSettings
+            ? '時間スロット設定を読み込み中...'
+            : 'リソースを読み込み中...'}
+        </div>
       </div>
     );
   }
@@ -462,26 +609,62 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
             </div>
             <div className='text-sm text-gray-500'>
               {calendarEvents.length} 件の予約
+              {showAvailableSlots && availableSlots.length > 0 && (
+                <span className='ml-2 text-green-600'>
+                  + {availableSlots.length} 空き時間
+                </span>
+              )}
             </div>
           </div>
 
-          {/* 凡例 */}
-          <div className='flex items-center space-x-4 text-xs'>
-            <div className='flex items-center space-x-1'>
-              <div className='w-3 h-3 bg-emerald-500 rounded'></div>
-              <span>確定</span>
+          <div className='flex items-center space-x-6'>
+            {/* 空き時間表示切り替え */}
+            <div className='flex items-center space-x-2'>
+              <label className='text-sm font-medium text-gray-700'>
+                空き時間表示
+              </label>
+              <button
+                onClick={() => setShowAvailableSlots(!showAvailableSlots)}
+                className={`
+                  relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent 
+                  transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2
+                  ${showAvailableSlots ? 'bg-primary-600' : 'bg-gray-200'}
+                `}
+              >
+                <span
+                  className={`
+                    pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 
+                    transition duration-200 ease-in-out
+                    ${showAvailableSlots ? 'translate-x-5' : 'translate-x-0'}
+                  `}
+                />
+              </button>
             </div>
-            <div className='flex items-center space-x-1'>
-              <div className='w-3 h-3 bg-yellow-500 rounded'></div>
-              <span>申込中</span>
-            </div>
-            <div className='flex items-center space-x-1'>
-              <div className='w-3 h-3 bg-red-500 rounded'></div>
-              <span>キャンセル</span>
-            </div>
-            <div className='flex items-center space-x-1'>
-              <div className='w-3 h-3 bg-gray-500 rounded'></div>
-              <span>完了</span>
+
+            {/* 凡例 */}
+            <div className='flex items-center space-x-4 text-xs'>
+              <div className='flex items-center space-x-1'>
+                <div className='w-3 h-3 bg-emerald-500 rounded'></div>
+                <span>確定</span>
+              </div>
+              <div className='flex items-center space-x-1'>
+                <div className='w-3 h-3 bg-yellow-500 rounded'></div>
+                <span>申込中</span>
+              </div>
+              <div className='flex items-center space-x-1'>
+                <div className='w-3 h-3 bg-red-500 rounded'></div>
+                <span>キャンセル</span>
+              </div>
+              <div className='flex items-center space-x-1'>
+                <div className='w-3 h-3 bg-gray-500 rounded'></div>
+                <span>完了</span>
+              </div>
+              {showAvailableSlots && (
+                <div className='flex items-center space-x-1'>
+                  <div className='w-3 h-3 bg-green-100 border border-green-500 rounded'></div>
+                  <span>空き時間</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -490,6 +673,11 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
         <div className='mt-2 text-xs text-gray-500'>
           💡
           予約をドラッグして移動、端をドラッグして時間変更、クリックで詳細表示
+          {showAvailableSlots && (
+            <span className='ml-2 text-green-600'>
+              • 空き時間をクリックして新規予約作成
+            </span>
+          )}
         </div>
       </div>
 
@@ -506,12 +694,12 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
             center: 'title',
             right: 'resourceTimelineDay,resourceTimelineWeek',
           }}
-          // 基本設定
-          slotMinTime='09:00:00'
-          slotMaxTime='21:00:00'
-          slotDuration='00:30:00'
-          slotLabelInterval='01:00:00'
-          timeZone='Asia/Tokyo'
+          // ✨ Phase 21.3: 動的時間軸設定
+          slotMinTime={dynamicConfig.slotMinTime}
+          slotMaxTime={dynamicConfig.slotMaxTime}
+          slotDuration={dynamicConfig.slotDuration}
+          slotLabelInterval={dynamicConfig.slotLabelInterval}
+          timeZone={dynamicConfig.timeZone}
           resourceAreaWidth='200px'
           locale={jaLocale}
           // データ

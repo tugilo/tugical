@@ -100,6 +100,7 @@ class Store extends Model
         'business_hours' => 'array',
         'booking_rules' => 'array',
         'notification_settings' => 'array',
+        'time_slot_settings' => 'array',
         'social_links' => 'array',
         'last_activity_at' => 'datetime',
         'deleted_at' => 'datetime',
@@ -513,5 +514,110 @@ class Store extends Model
     {
         return $query->whereNotNull('line_integration')
             ->where('line_integration->channel_id', '!=', null);
+    }
+
+    /**
+     * 時間スロット設定のデフォルト値を取得
+     * 
+     * @return array デフォルト時間スロット設定
+     */
+    public static function getDefaultTimeSlotSettings(): array
+    {
+        return [
+            'slot_duration_minutes' => 30,          // スロット間隔（分）
+            'slot_label_interval_minutes' => 60,    // ラベル表示間隔（分）
+            'min_slot_duration' => 5,               // 最小スロット（分）
+            'max_slot_duration' => 480,             // 最大スロット（8時間）
+            'available_durations' => [5, 10, 15, 20, 30, 45, 60, 90, 120], // 選択可能な時間間隔
+            'business_hours' => [
+                'start' => '09:00',
+                'end' => '21:00',
+            ],
+            'display_format' => 'H:i',              // 時間表示形式
+            'timezone' => 'Asia/Tokyo',             // タイムゾーン
+        ];
+    }
+
+    /**
+     * 時間スロット設定を取得（デフォルト値で補完）
+     * 
+     * @return array 時間スロット設定
+     */
+    public function getTimeSlotSettings(): array
+    {
+        $settings = $this->time_slot_settings ?? [];
+        $defaults = self::getDefaultTimeSlotSettings();
+
+        return array_merge($defaults, $settings);
+    }
+
+    /**
+     * 時間スロット間隔を取得
+     * 
+     * @return int スロット間隔（分）
+     */
+    public function getSlotDurationMinutes(): int
+    {
+        $settings = $this->getTimeSlotSettings();
+        return $settings['slot_duration_minutes'] ?? 30;
+    }
+
+    /**
+     * 利用可能な時間間隔オプションを取得
+     * 
+     * @return array 時間間隔オプション
+     */
+    public function getAvailableSlotDurations(): array
+    {
+        $settings = $this->getTimeSlotSettings();
+        return $settings['available_durations'] ?? [5, 10, 15, 20, 30, 45, 60, 90, 120];
+    }
+
+    /**
+     * 時間スロット設定を更新
+     * 
+     * @param array $settings 新しい設定値
+     * @return bool 更新結果
+     */
+    public function updateTimeSlotSettings(array $settings): bool
+    {
+        $currentSettings = $this->getTimeSlotSettings();
+        $newSettings = array_merge($currentSettings, $settings);
+
+        // バリデーション
+        if (isset($newSettings['slot_duration_minutes'])) {
+            $duration = $newSettings['slot_duration_minutes'];
+            if ($duration < 5 || $duration > 480) {
+                return false;
+            }
+        }
+
+        $this->time_slot_settings = $newSettings;
+        return $this->save();
+    }
+
+    /**
+     * 時間スロット設定を業種テンプレートに基づいて初期化
+     * 
+     * @return array 業種別デフォルト設定
+     */
+    public function initializeTimeSlotSettingsForIndustry(): array
+    {
+        $industryDefaults = match ($this->industry_type) {
+            'beauty' => ['slot_duration_minutes' => 30, 'available_durations' => [15, 30, 45, 60, 90, 120]],
+            'clinic' => ['slot_duration_minutes' => 15, 'available_durations' => [10, 15, 20, 30, 45, 60]],
+            'rental' => ['slot_duration_minutes' => 60, 'available_durations' => [30, 60, 120, 180, 240, 480]],
+            'school' => ['slot_duration_minutes' => 60, 'available_durations' => [30, 60, 90, 120, 180]],
+            'activity' => ['slot_duration_minutes' => 120, 'available_durations' => [60, 120, 180, 240, 360, 480]],
+            default => ['slot_duration_minutes' => 30, 'available_durations' => [5, 10, 15, 20, 30, 45, 60, 90, 120]],
+        };
+
+        $defaultSettings = self::getDefaultTimeSlotSettings();
+        $settings = array_merge($defaultSettings, $industryDefaults);
+
+        $this->time_slot_settings = $settings;
+        $this->save();
+
+        return $settings;
     }
 }

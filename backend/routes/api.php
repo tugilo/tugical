@@ -11,6 +11,8 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\MenuController;
 use App\Http\Controllers\Api\ResourceController;
+use App\Http\Controllers\Api\MenuOptionController;
+use App\Http\Controllers\Api\StoreController;
 use Illuminate\Support\Facades\Http;
 
 /*
@@ -95,6 +97,10 @@ Route::prefix('v1')->middleware(['auth:sanctum'])->name('api.v1.')->group(functi
     Route::apiResource('resources', ResourceController::class);
     Route::get('resources-types', [ResourceController::class, 'getTypes'])->name('resources.types');
     Route::patch('resources-order', [ResourceController::class, 'updateOrder'])->name('resources.update-order');
+
+    // 店舗設定管理（NEW: 時間スロット設定対応）
+    Route::get('store/time-slot-settings', [StoreController::class, 'getTimeSlotSettings']);
+    Route::put('store/time-slot-settings', [StoreController::class, 'updateTimeSlotSettings']);
 });
 
 // ===========================

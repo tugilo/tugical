@@ -1,4 +1,4 @@
-import { Booking, Resource } from '../types';
+import { Booking, Resource, AvailabilitySlot } from '../types';
 
 // FullCalendar型定義（tugical用）
 interface EventInput {
@@ -73,6 +73,28 @@ export const resourceColors = {
   equipment: '#8b5cf6', // パープル
   vehicle: '#f59e0b', // アンバー
   unassigned: '#9ca3af', // グレー
+} as const;
+
+/**
+ * 空き時間スロット用色分け設定
+ * 美容師が一目で空き時間を識別できるよう設計
+ */
+export const availabilityColors = {
+  available: {
+    backgroundColor: '#dcfce7', // 薄いグリーン
+    borderColor: '#16a34a',
+    textColor: '#166534',
+  },
+  partially_available: {
+    backgroundColor: '#fef3c7', // 薄いイエロー
+    borderColor: '#d97706',
+    textColor: '#92400e',
+  },
+  break_time: {
+    backgroundColor: '#f1f5f9', // 薄いグレー
+    borderColor: '#64748b',
+    textColor: '#475569',
+  },
 } as const;
 
 /**
@@ -339,38 +361,356 @@ export const getResourceTypeDisplayName = (type: string): string => {
 /**
  * FullCalendar Timeline用基本設定
  * tugical_system_specification_v2.0.md 準拠
+ *
+ * ✨ Phase 21.3: 店舗設定ベースの動的設定対応
  */
-export const getFullCalendarConfig = () => ({
-  // 時間軸設定
-  slotMinTime: '09:00:00',
-  slotMaxTime: '21:00:00',
-  slotDuration: '00:30:00',
-  slotLabelInterval: '01:00:00',
+export const getFullCalendarConfig = (timeSlotSettings?: {
+  slot_duration_minutes?: number;
+  slot_label_interval_minutes?: number;
+  business_hours?: {
+    start: string;
+    end: string;
+  };
+  display_format?: string;
+  timezone?: string;
+}) => {
+  // デフォルト値（設定がない場合）
+  const slotDuration = timeSlotSettings?.slot_duration_minutes || 30;
+  const labelInterval = timeSlotSettings?.slot_label_interval_minutes || 60;
+  const businessHours = timeSlotSettings?.business_hours || {
+    start: '09:00',
+    end: '21:00',
+  };
+  const timezone = timeSlotSettings?.timezone || 'Asia/Tokyo';
 
-  // 日本語対応
-  locale: 'ja',
-  timeZone: 'Asia/Tokyo',
+  // 時間形式をFullCalendar形式に変換
+  const formatTime = (minutes: number): string => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours.toString().padStart(2, '0')}:${mins
+      .toString()
+      .padStart(2, '0')}:00`;
+  };
 
-  // スタイル設定
-  height: 'auto',
-  contentHeight: 400,
-  resourceAreaWidth: '200px',
+  return {
+    // ✨ 動的時間軸設定
+    slotMinTime: `${businessHours.start}:00`,
+    slotMaxTime: `${businessHours.end}:00`,
+    slotDuration: formatTime(slotDuration),
+    slotLabelInterval: formatTime(labelInterval),
 
-  // ヘッダー設定
-  headerToolbar: {
-    left: 'prev,next today',
-    center: 'title',
-    right: 'resourceTimelineDay,resourceTimelineWeek',
+    // 日本語対応
+    locale: 'ja',
+    timeZone: timezone,
+
+    // スタイル設定
+    height: 'auto',
+    contentHeight: 400,
+    resourceAreaWidth: '200px',
+
+    // ヘッダー設定
+    headerToolbar: {
+      left: 'prev,next today',
+      center: 'title',
+      right: 'resourceTimelineDay,resourceTimelineWeek',
+    },
+
+    // インタラクション設定
+    editable: true,
+    droppable: true,
+    eventResizableFromStart: true,
+    eventDurationEditable: true,
+
+    // 表示設定
+    nowIndicator: true,
+    weekNumbers: false,
+    dayMaxEvents: false,
+
+    // デバッグ情報
+    _debugInfo: {
+      slotDurationMinutes: slotDuration,
+      labelIntervalMinutes: labelInterval,
+      businessHours,
+      timezone,
+      appliedSettings: timeSlotSettings || 'デフォルト値使用',
+    },
+  };
+};
+
+/**
+ * 営業時間内の空き時間スロットを生成
+ *
+ * @param date 対象日（YYYY-MM-DD形式）
+ * @param resources 利用可能リソース一覧
+ * @param existingBookings 既存予約一覧
+ * @param businessHours 営業時間設定
+ * @param slotDurationMinutes スロット間隔（分）✨ Phase 21.3: 動的対応
+ * @returns 空き時間スロット配列
+ */
+export const generateAvailableTimeSlots = (
+  date: string,
+  resources: Resource[],
+  existingBookings: Booking[],
+  businessHours: { start: string; end: string } = {
+    start: '09:00',
+    end: '21:00',
   },
+  slotDurationMinutes: number = 30 // ✨ Phase 21.3: 動的スロット間隔
+): AvailabilitySlot[] => {
+  console.log('🕐 空き時間スロット生成開始（動的間隔対応）:', {
+    date,
+    resourceCount: resources.length,
+    existingBookingCount: existingBookings.length,
+    businessHours,
+    slotDurationMinutes, // ✨ 新ログ項目
+  });
 
-  // インタラクション設定
-  editable: true,
-  droppable: true,
-  eventResizableFromStart: true,
-  eventDurationEditable: true,
+  const availableSlots: AvailabilitySlot[] = [];
 
-  // 表示設定
-  nowIndicator: true,
-  weekNumbers: false,
-  dayMaxEvents: false,
-});
+  // 該当日の予約のみ抽出
+  const dayBookings = existingBookings.filter(booking => {
+    let bookingDate = booking.booking_date;
+    if (typeof bookingDate === 'string' && bookingDate.includes('T')) {
+      bookingDate = bookingDate.split('T')[0];
+    }
+    return bookingDate === date;
+  });
+
+  // 各リソースに対して空き時間を計算
+  resources.forEach(resource => {
+    const resourceBookings = dayBookings.filter(
+      booking => booking.resource_id === resource.id
+    );
+
+    // 営業時間内のタイムスロットを生成（✨ 動的間隔）
+    const startTime = parseTime(businessHours.start);
+    const endTime = parseTime(businessHours.end);
+
+    for (
+      let currentTime = startTime;
+      currentTime < endTime;
+      currentTime += slotDurationMinutes // ✨ 動的間隔使用
+    ) {
+      const slotStart = formatTime(currentTime);
+      const slotEnd = formatTime(currentTime + slotDurationMinutes); // ✨ 動的間隔使用
+
+      // このタイムスロットに予約があるかチェック
+      const hasBooking = resourceBookings.some(booking => {
+        const bookingStart = parseTime(booking.start_time);
+        const bookingEnd = parseTime(booking.end_time);
+
+        return (
+          (currentTime >= bookingStart && currentTime < bookingEnd) ||
+          (currentTime + slotDurationMinutes > bookingStart &&
+            currentTime + slotDurationMinutes <= bookingEnd) ||
+          (currentTime <= bookingStart &&
+            currentTime + slotDurationMinutes >= bookingEnd)
+        );
+      });
+
+      if (!hasBooking) {
+        // 空きスロットを追加
+        availableSlots.push({
+          start_time: slotStart,
+          end_time: slotEnd,
+          is_available: true,
+          resource_id: resource.id,
+          resource_name: resource.display_name || resource.name,
+          slot_type: 'available',
+          duration_minutes: slotDurationMinutes, // ✨ 動的間隔反映
+        });
+      }
+    }
+  });
+
+  // 指定なしリソースの空き時間も生成（✨ 動的間隔対応）
+  const unassignedBookings = dayBookings.filter(
+    booking => !booking.resource_id
+  );
+
+  const startTime = parseTime(businessHours.start);
+  const endTime = parseTime(businessHours.end);
+
+  for (
+    let currentTime = startTime;
+    currentTime < endTime;
+    currentTime += slotDurationMinutes // ✨ 動的間隔使用
+  ) {
+    const slotStart = formatTime(currentTime);
+    const slotEnd = formatTime(currentTime + slotDurationMinutes); // ✨ 動的間隔使用
+
+    const hasBooking = unassignedBookings.some(booking => {
+      const bookingStart = parseTime(booking.start_time);
+      const bookingEnd = parseTime(booking.end_time);
+
+      return (
+        (currentTime >= bookingStart && currentTime < bookingEnd) ||
+        (currentTime + slotDurationMinutes > bookingStart &&
+          currentTime + slotDurationMinutes <= bookingEnd) ||
+        (currentTime <= bookingStart &&
+          currentTime + slotDurationMinutes >= bookingEnd)
+      );
+    });
+
+    if (!hasBooking) {
+      availableSlots.push({
+        start_time: slotStart,
+        end_time: slotEnd,
+        is_available: true,
+        resource_id: null,
+        resource_name: '指定なし',
+        slot_type: 'available',
+        duration_minutes: slotDurationMinutes, // ✨ 動的間隔反映
+      });
+    }
+  }
+
+  console.log('🕐 空き時間スロット生成完了（動的間隔）:', {
+    totalSlots: availableSlots.length,
+    slotDurationMinutes, // ✨ ログ出力
+    resourceDistribution: availableSlots.reduce((acc, slot) => {
+      const key = slot.resource_id?.toString() || 'unassigned';
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>),
+  });
+
+  return availableSlots;
+};
+
+/**
+ * 空き時間スロットをFullCalendarイベントに変換
+ *
+ * @param availableSlots 空き時間スロット配列
+ * @param date 対象日（YYYY-MM-DD形式）
+ * @returns FullCalendar EventInput配列
+ */
+export const convertAvailableSlotsToEvents = (
+  availableSlots: AvailabilitySlot[],
+  date: string
+): EventInput[] => {
+  console.log('🕐 空き時間イベント変換開始:', {
+    slotsCount: availableSlots.length,
+    date,
+  });
+
+  const events = availableSlots.map((slot, index) => {
+    const startDateTime = `${date}T${slot.start_time}`;
+    const endDateTime = `${date}T${slot.end_time}`;
+
+    const resourceId = slot.resource_id?.toString() || 'unassigned';
+    const colors = availabilityColors.available;
+
+    const event: EventInput = {
+      id: `available_${date}_${resourceId}_${slot.start_time}_${index}`,
+      title: '空き時間',
+      start: startDateTime,
+      end: endDateTime,
+      resourceId: resourceId,
+      backgroundColor: colors.backgroundColor,
+      borderColor: colors.borderColor,
+      textColor: colors.textColor,
+
+      extendedProps: {
+        isAvailableSlot: true,
+        availableSlot: slot,
+        slotType: 'available',
+        resourceName: slot.resource_name,
+        durationMinutes: slot.duration_minutes,
+
+        // インタラクション用情報
+        clickable: true,
+        bookingCreatable: true,
+
+        // ツールチップ用データ
+        tooltip: {
+          title: '空き時間',
+          time: `${slot.start_time} - ${slot.end_time}`,
+          duration: `${slot.duration_minutes}分`,
+          resource: slot.resource_name,
+          action: 'クリックして予約作成',
+        },
+      },
+    };
+
+    return event;
+  });
+
+  console.log('🕐 空き時間イベント変換完了:', {
+    eventsCount: events.length,
+    sampleEvent: events[0] || null,
+  });
+
+  return events;
+};
+
+/**
+ * 予約イベントと空き時間イベントを統合
+ *
+ * @param bookingEvents 予約イベント配列
+ * @param availableEvents 空き時間イベント配列
+ * @param showAvailableSlots 空き時間を表示するかどうか
+ * @returns 統合されたイベント配列
+ */
+export const mergeBookingAndAvailableEvents = (
+  bookingEvents: EventInput[],
+  availableEvents: EventInput[],
+  showAvailableSlots: boolean = true
+): EventInput[] => {
+  console.log('🔄 イベント統合開始:', {
+    bookingEventsCount: bookingEvents.length,
+    availableEventsCount: availableEvents.length,
+    showAvailableSlots,
+  });
+
+  const mergedEvents = [...bookingEvents];
+
+  if (showAvailableSlots) {
+    mergedEvents.push(...availableEvents);
+  }
+
+  // イベントを時間順にソート
+  mergedEvents.sort((a, b) => {
+    const startA =
+      typeof a.start === 'string' ? a.start : a.start.toISOString();
+    const startB =
+      typeof b.start === 'string' ? b.start : b.start.toISOString();
+    return startA.localeCompare(startB);
+  });
+
+  console.log('🔄 イベント統合完了:', {
+    totalEvents: mergedEvents.length,
+    eventTypes: mergedEvents.reduce((acc, event) => {
+      const type = event.extendedProps?.isAvailableSlot
+        ? 'available'
+        : 'booking';
+      acc[type] = (acc[type] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>),
+  });
+
+  return mergedEvents;
+};
+
+/**
+ * 時間文字列（HH:MM）を分に変換
+ * @param timeStr 時間文字列（例: "09:30"）
+ * @returns 分（例: 570）
+ */
+const parseTime = (timeStr: string): number => {
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  return hours * 60 + minutes;
+};
+
+/**
+ * 分を時間文字列（HH:MM）に変換
+ * @param minutes 分（例: 570）
+ * @returns 時間文字列（例: "09:30"）
+ */
+const formatTime = (minutes: number): string => {
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return `${hours.toString().padStart(2, '0')}:${mins
+    .toString()
+    .padStart(2, '0')}`;
+};

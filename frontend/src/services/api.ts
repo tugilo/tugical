@@ -857,6 +857,87 @@ class ApiClient {
       response.data.error?.message || 'メニューオプションの取得に失敗しました'
     );
   }
+
+  // ========================================
+  // 店舗設定API (Phase 21.3: 5分刻み時間スロット設定)
+  // ========================================
+
+  /**
+   * 時間スロット設定を取得
+   * @returns 店舗の時間スロット設定
+   */
+  async getTimeSlotSettings(): Promise<{
+    time_slot_settings: {
+      slot_duration_minutes: number;
+      slot_label_interval_minutes: number;
+      min_slot_duration: number;
+      max_slot_duration: number;
+      available_durations: number[];
+      business_hours: {
+        start: string;
+        end: string;
+      };
+      display_format: string;
+      timezone: string;
+    };
+    store_info: {
+      id: number;
+      name: string;
+      industry_type: string;
+    };
+  }> {
+    const response = await this.client.get<
+      ApiResponse<{
+        time_slot_settings: any;
+        store_info: any;
+      }>
+    >('/store/time-slot-settings');
+
+    if (response.data.success && response.data.data) {
+      return response.data.data;
+    }
+
+    throw new Error(
+      response.data.error?.message || '時間スロット設定の取得に失敗しました'
+    );
+  }
+
+  /**
+   * 時間スロット設定を更新
+   * @param settings 更新する設定値
+   * @returns 更新後の設定
+   */
+  async updateTimeSlotSettings(settings: {
+    slot_duration_minutes?: number;
+    slot_label_interval_minutes?: number;
+    min_slot_duration?: number;
+    max_slot_duration?: number;
+    available_durations?: number[];
+    business_hours?: {
+      start?: string;
+      end?: string;
+    };
+    display_format?: string;
+    timezone?: string;
+  }): Promise<{
+    time_slot_settings: any;
+    message: string;
+  }> {
+    const response = await this.client.put<
+      ApiResponse<{
+        time_slot_settings: any;
+        message: string;
+      }>
+    >('/store/time-slot-settings', settings);
+
+    if (response.data.success && response.data.data) {
+      return response.data.data;
+    }
+
+    throw new Error(
+      response.data.error?.message || '時間スロット設定の更新に失敗しました'
+    );
+  }
 }
 
 // ========================================
@@ -972,6 +1053,24 @@ export const dashboardApi = {
 
 export const notificationApi = {
   getList: (filters?: FilterOptions) => apiClient.getNotifications(filters),
+};
+
+// ✨ Phase 21.3: 店舗設定API (5分刻み時間スロット設定)
+export const storeApi = {
+  getTimeSlotSettings: () => apiClient.getTimeSlotSettings(),
+  updateTimeSlotSettings: (settings: {
+    slot_duration_minutes?: number;
+    slot_label_interval_minutes?: number;
+    min_slot_duration?: number;
+    max_slot_duration?: number;
+    available_durations?: number[];
+    business_hours?: {
+      start?: string;
+      end?: string;
+    };
+    display_format?: string;
+    timezone?: string;
+  }) => apiClient.updateTimeSlotSettings(settings),
 };
 
 export default apiClient;

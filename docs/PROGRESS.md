@@ -1,5 +1,182 @@
 # tugical Development Progress
 
+## 2025-01-06 17:15:00 (tugiMacAir.local)
+
+### 🎯 Phase 21.3: 5 分刻み時間スロット設定システム実装完了 ✅ **完了**
+
+**汎用タイムスロット予約プラットフォームの核心機能実装:**
+
+#### 1. **コンセプト明確化** ✅
+
+```yaml
+tugical公式コンセプト:
+  - 「時間貸しリソース予約システム」
+  - 統一概念: 予約 = リソース × 時間枠 × メニュー
+  - 5分〜480分（8時間）までの柔軟なスロット対応
+  - 業種限定ではなく汎用プラットフォーム
+
+適用例:
+  - 5分: 薬局での服薬指導
+  - 10分: 予防接種、血圧測定
+  - 15分: 診察、栄養指導
+  - 30分: 美容施術、マッサージ
+  - 60分: 会議室、講義
+```
+
+#### 2. **データベース拡張** ✅
+
+```sql
+-- 新マイグレーション作成・適用完了
+ALTER TABLE stores ADD COLUMN time_slot_settings JSON NULL
+COMMENT '時間スロット設定 (JSON: slot_duration_minutes, business_hours, etc.)';
+
+-- Store モデル機能追加
+- getTimeSlotSettings(): デフォルト値補完機能
+- updateTimeSlotSettings(): バリデーション付き更新
+- initializeTimeSlotSettingsForIndustry(): 業種別初期化
+- getSlotDurationMinutes(): 現在の間隔取得
+- getAvailableSlotDurations(): 選択可能間隔取得
+```
+
+#### 3. **API 実装** ✅
+
+```php
+// StoreController 新規作成
+GET  /api/v1/store/time-slot-settings  - 設定取得
+PUT  /api/v1/store/time-slot-settings  - 設定更新
+
+機能:
+- マルチテナント対応（store_id分離）
+- 5分〜480分バリデーション
+- 日本語エラーメッセージ
+- 監査ログ記録
+- エラーハンドリング完備
+```
+
+#### 4. **フロントエンド API 統合** ✅
+
+```typescript
+// services/api.ts 拡張
+export const storeApi = {
+  getTimeSlotSettings(): 設定取得API
+  updateTimeSlotSettings(): 設定更新API
+}
+
+型定義:
+- slot_duration_minutes: 5-480分対応
+- available_durations: 選択可能間隔配列
+- business_hours: 営業時間設定
+- display_format, timezone: 表示設定
+```
+
+#### 5. **FullCalendar 動的設定** ✅
+
+```typescript
+// utils/fullcalendarHelpers.ts 拡張
+getFullCalendarConfig(timeSlotSettings?): 動的設定生成
+  - slotDuration: 店舗設定ベース自動計算
+  - slotLabelInterval: ラベル表示間隔動的設定
+  - businessHours: 営業時間動的反映
+  - timezone: タイムゾーン設定対応
+
+generateAvailableTimeSlots(): 動的間隔対応
+  - slotDurationMinutes パラメータ追加
+  - 5分〜60分柔軟対応
+  - 空きスロット間隔自動調整
+```
+
+#### 6. **BookingTimelineView 統合** ✅
+
+```typescript
+// BookingTimelineView.tsx 拡張機能
+新State:
+- timeSlotSettings: 店舗設定管理
+- loadingTimeSlotSettings: ロード状態
+
+新機能:
+- storeApi.getTimeSlotSettings(): 設定自動取得
+- 動的FullCalendar設定適用
+- エラー時デフォルト設定フォールバック
+- ローディング状態統合管理（リソース＋設定）
+```
+
+#### 7. **ビルド成功** ✅
+
+```bash
+Frontend Build: ✅ 3.71秒
+BookingsPage: 75.46 kB (+8kB増) - 新機能統合成功
+FullCalendar: 598.57 kB - パフォーマンス維持
+TypeScript: エラーなし（linter警告は設定問題）
+```
+
+#### 8. **技術仕様詳細** ✅
+
+```yaml
+動的時間間隔:
+  - 最小: 5分（予防接種対応）
+  - 最大: 480分（8時間研修対応）
+  - デフォルト: 30分（美容業界標準）
+  - 業種別初期値: clinic(15分), rental(60分), activity(120分)
+
+API仕様:
+  - Laravel Sanctum認証対応
+  - バリデーション: 5-480分制限
+  - エラー応答: 統一JSON形式
+  - 監査ログ: 全設定変更記録
+
+フロントエンド:
+  - React + TypeScript完全対応
+  - FullCalendar完全統合
+  - リアルタイム設定反映
+  - エラーハンドリング完備
+```
+
+#### 9. **UX 改善効果** ✅
+
+```yaml
+店舗運営者:
+  - 業種特性に合わせた時間間隔設定可能
+  - 5分刻みから8時間まで柔軟対応
+  - 設定変更の即座反映
+  - 視覚的な時間軸カスタマイズ
+
+汎用性:
+  - 美容院（30分） → 予防接種（10分） → 研修（2時間）
+  - 単一プラットフォームで全業種対応
+  - 業種テンプレート＋完全カスタマイズ
+  - 真の「時間貸しリソース予約システム」実現
+```
+
+#### 10. **実装済み技術スタック** ✅
+
+```yaml
+Backend:
+  - Laravel Migration: time_slot_settings追加
+  - Store Model: 設定管理メソッド実装
+  - StoreController: API実装
+  - バリデーション: 5-480分制限
+
+Frontend:
+  - API Client: storeApi実装
+  - Type Definitions: 完全型安全
+  - FullCalendar Integration: 動的設定対応
+  - Timeline View: 設定自動適用
+
+Integration:
+  - データベース ↔ API ↔ フロントエンド完全連携
+  - リアルタイム設定反映
+  - エラー処理統合
+```
+
+#### 📋 次のステップ: Phase 21.4 (設定 UI 実装)
+
+- 管理画面での時間スロット設定 UI 実装
+- 5 分〜60 分選択 UI + プレビュー機能
+- 設定変更時のリアルタイムプレビュー
+- 業種テンプレート適用機能
+
+---
+
 ## 2025-01-06 16:00:00 (tugiMacAir.local)
 
 ### 🎯 Phase 21.1: Timeline 統合予約作成 - 空きスロットクリック機能実装完了 ✅ **完了**

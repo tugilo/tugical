@@ -225,6 +225,12 @@ export interface AvailabilitySlot {
   is_available: boolean;
   booking_id?: number;
   customer_name?: string;
+
+  // Timeline空き時間表示用追加プロパティ
+  resource_id?: number | null;
+  resource_name?: string;
+  duration_minutes?: number;
+  slot_type?: 'available' | 'partially_available' | 'break_time';
 }
 
 export interface AvailabilityResponse {
