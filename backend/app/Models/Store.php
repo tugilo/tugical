@@ -284,7 +284,8 @@ class Store extends Model
 
         // 更新時の処理
         static::updating(function ($store) {
-            $store->last_activity_at = now();
+            // storesテーブルにlast_activity_atカラムが存在しないため、
+            // updated_atで代用（Laravelが自動的に設定）
         });
     }
 
