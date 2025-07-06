@@ -57,7 +57,7 @@ class BookingResource extends JsonResource
                     ),
                     'loyalty_rank' => $this->customer->loyalty_rank,
                     'line_user_id' => $this->when(
-                        auth()->user()->role === 'owner', // 管理者のみ表示
+                        auth()->check() && auth()->user()->role === 'owner', // 管理者のみ表示
                         $this->customer->line_user_id
                     )
                 ];
@@ -83,6 +83,82 @@ class BookingResource extends JsonResource
                 'name' => $this->resource->name,
                 'display_name' => $this->resource->display_name,
             ] : null,
+
+            // 複数メニュー組み合わせ対応 (v1.2 新機能)
+            'booking_type' => $this->when(
+                isset($this->booking_type),
+                $this->booking_type ?? 'single'
+            ),
+
+            'details' => $this->whenLoaded('bookingDetails', function () {
+                return $this->bookingDetails->map(function ($detail) {
+                    return [
+                        'id' => $detail->id,
+                        'menu_id' => $detail->menu_id,
+                        'service_name' => $detail->service_name,
+                        'service_description' => $detail->service_description,
+                        'sequence_order' => $detail->sequence_order,
+                        'base_price' => $detail->base_price,
+                        'base_duration' => $detail->base_duration,
+                        'total_duration' => $detail->total_duration,
+                        'start_time_offset' => $detail->start_time_offset,
+                        'end_time_offset' => $detail->end_time_offset,
+                        'is_auto_added' => $detail->is_auto_added,
+                        'auto_add_reason' => $detail->is_auto_added ? $detail->auto_add_reason : null,
+                        'selected_options' => $detail->selected_options,
+                        'completion_status' => $detail->completion_status,
+                        'completion_status_label' => $detail->completion_status_label,
+                        'actual_price' => $detail->actual_price,
+                        'total_amount' => $detail->total_amount,
+                        'scheduled_start_time' => $detail->scheduled_start_time?->format('H:i'),
+                        'scheduled_end_time' => $detail->scheduled_end_time?->format('H:i'),
+                        'actual_start_time' => $detail->actual_start_time?->toISOString(),
+                        'actual_end_time' => $detail->actual_end_time?->toISOString(),
+                        'staff_notes' => ($detail->staff_notes && auth()->check()) ? $detail->staff_notes : null,
+                        'customer_satisfaction' => $detail->customer_satisfaction,
+                        'menu' => $detail->relationLoaded('menu') ? [
+                            'id' => $detail->menu->id,
+                            'name' => $detail->menu->name,
+                            'category' => $detail->menu->category,
+                            'description' => $detail->menu->description
+                        ] : null,
+                        'resource' => $detail->resource ? [
+                            'id' => $detail->resource->id,
+                            'type' => $detail->resource->type,
+                            'name' => $detail->resource->name,
+                            'display_name' => $detail->resource->display_name,
+                        ] : null,
+                    ];
+                });
+            }),
+
+            // 組み合わせルール（複数メニュー時のみ）
+            'combination_rules' => $this->when(
+                isset($this->combination_rules) && !empty($this->combination_rules),
+                $this->combination_rules
+            ),
+
+            // セット割引情報
+            'set_discount_amount' => $this->when(
+                isset($this->set_discount_amount),
+                $this->set_discount_amount ?? 0
+            ),
+            'base_total_price' => $this->when(
+                isset($this->base_total_price),
+                $this->base_total_price
+            ),
+
+            // 自動追加サービス一覧
+            'auto_added_services' => $this->when(
+                isset($this->auto_added_services) && !empty($this->auto_added_services),
+                $this->auto_added_services
+            ),
+
+            // 電話予約コンテキスト（電話予約時のみ）
+            'phone_booking_context' => $this->when(
+                isset($this->phone_booking_context) && auth()->check(),
+                $this->phone_booking_context
+            ),
 
             'options' => $this->whenLoaded('options', function () {
                 return $this->options->map(function ($option) {
@@ -138,7 +214,7 @@ class BookingResource extends JsonResource
 
             // 店舗情報（デバッグ・管理用）
             'store_id' => $this->when(
-                auth()->user()->role === 'super_admin',
+                auth()->check() && auth()->user()->role === 'super_admin',
                 $this->store_id
             )
         ];
@@ -204,7 +280,7 @@ class BookingResource extends JsonResource
     private function getAvailableActions(): array
     {
         $actions = [];
-        $userRole = auth()->user()->role ?? 'staff';
+        $userRole = auth()->check() ? auth()->user()->role : 'staff';
 
         // ステータス別利用可能アクション
         switch ($this->status) {

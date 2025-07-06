@@ -118,7 +118,12 @@ class Booking extends Model
         'option_price' => 'integer',
         'resource_price' => 'integer',
         'total_price' => 'integer',
+        'base_total_price' => 'integer',
+        'set_discount_amount' => 'integer',
         'booking_data' => 'array',
+        'auto_added_services' => 'array',
+        'combination_rules' => 'array',
+        'phone_booking_context' => 'array',
         'notification_history' => 'array',
         'hold_expires_at' => 'datetime',
         'confirmed_at' => 'datetime',
@@ -294,6 +299,14 @@ class Booking extends Model
     public function bookingOptions(): HasMany
     {
         return $this->hasMany(BookingOption::class);
+    }
+
+    /**
+     * 予約明細との関係性（複数メニュー組み合わせ対応）
+     */
+    public function bookingDetails(): HasMany
+    {
+        return $this->hasMany(BookingDetail::class)->orderBy('sequence_order');
     }
 
     /**

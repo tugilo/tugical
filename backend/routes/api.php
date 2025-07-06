@@ -73,6 +73,11 @@ Route::prefix('v1')->middleware(['auth:sanctum'])->name('api.v1.')->group(functi
     Route::patch('bookings/{booking}/status', [BookingController::class, 'updateStatus']);
     Route::patch('bookings/{booking}/move', [BookingController::class, 'move']);
 
+    // 複数メニュー組み合わせ対応 (v1.2 新機能)
+    Route::post('bookings/calculate', [BookingController::class, 'calculate']);
+    Route::get('bookings/phone-availability', [BookingController::class, 'phoneAvailability']);
+    Route::post('bookings/combination', [BookingController::class, 'createCombination']);
+
     // 空き時間・可用性API（tugical_api_specification_v1.0.md Section 3）
     Route::get('availability', [AvailabilityController::class, 'index']);
     Route::post('hold-slots', [HoldTokenController::class, 'create']);
