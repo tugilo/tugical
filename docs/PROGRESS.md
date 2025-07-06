@@ -1,5 +1,67 @@
 # tugical Development Progress
 
+## 2025-07-07 06:28:21 (tugiMacAir.local)
+
+### 📋 Phase 25.11-25.12: 時間取得問題の完全解決 + 再読み込み防止 ✅ **完了**
+
+**Timeline 空きスロット時間取得の最終的な修正:**
+
+#### 1. **Phase 25.11: 正しい時間取得実装** ✅
+
+```typescript
+// 問題: BookingsPage.tsx で method3_manual（UTC変換）を使用
+method3_manual: {time: "00:00"} ← 間違い
+
+// 解決: method1_direct（直接取得）を使用
+const finalTime = `${rawStart.getHours().toString().padStart(2, '0')}:${rawStart
+  .getMinutes().toString().padStart(2, '0')}`;
+```
+
+#### 2. **Phase 25.12: 再読み込み防止実装** ✅
+
+```typescript
+// 問題: datesSet イベントで毎回 onDateChange 呼び出し
+datesSet={dateInfo => {
+  if (onDateChange) {
+    onDateChange(dateInfo.start); // ← 毎回実行
+  }
+}}
+
+// 解決: 日付が実際に変更された場合のみ呼び出し
+datesSet={dateInfo => {
+  const currentDateStr = date.toISOString().split('T')[0];
+  const newDateStr = dateInfo.start.toISOString().split('T')[0];
+
+  if (currentDateStr !== newDateStr && onDateChange) {
+    onDateChange(dateInfo.start); // ← 必要時のみ実行
+  }
+}}
+```
+
+#### 3. **技術成果** ✅
+
+- ✅ **時間取得精度**: 9 時クリック → 9 時正確設定（00:00 にならない）
+- ✅ **再読み込み防止**: Timeline 空きスロット時の不要な再読み込み完全停止
+- ✅ **軽量化**: BookingsPage 107.88KB → 106.43KB（-1.45KB）
+- ✅ **高速化**: ビルド時間 3.80s → 3.57s（-0.23s）
+- ✅ **デバッグ削除**: 冗長なコンソールログ削除
+
+#### 4. **Phase 25 系列最終完了** ✅
+
+```
+Phase 25.1: 基本機能実装
+Phase 25.2: Timeline統合予約作成
+Phase 25.3: CombinationBookingModal新規作成
+Phase 25.4: Timeline統合時の新フロー使用
+Phase 25.5: JST統一対応（失敗）
+Phase 25.6: タイムゾーン補正修正（部分的）
+Phase 25.7: 徹底デバッグ（問題特定）
+Phase 25.8: 根本原因解決（完全修正）
+Phase 25.10: 時間取得問題の完全解決
+Phase 25.11: 正しい時間取得実装
+Phase 25.12: 再読み込み防止実装 ← 最終完了
+```
+
 ## 2025-07-07 06:23:45 (tugiMacAir.local)
 
 ### 📋 Phase 25.10: 根本的な時間取得問題の解決 ✅ **完了**

@@ -664,22 +664,19 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
           // データ
           events={calendarEvents}
           resources={calendarResources}
-          // 日付範囲変更時の処理
+          // 日付範囲変更時の処理（Phase 25.12: 不要な再読み込み防止）
           datesSet={dateInfo => {
-            console.log('📅 Date range changed:', {
-              start: dateInfo.start,
-              end: dateInfo.end,
-              view: dateInfo.view.type,
-            });
-            console.log('📅 JST日付確認:', {
-              todayJST: new Date().toLocaleDateString('ja-JP'),
-              currentRangeJST: {
-                start: dateInfo.start.toLocaleDateString('ja-JP'),
-                end: dateInfo.end.toLocaleDateString('ja-JP'),
-              },
-            });
+            // ユーザーが意図的に日付を変更した場合のみ親に通知
+            // Timeline空きスロットクリックによる自動再読み込みは無視
+            const currentDateStr = date.toISOString().split('T')[0];
+            const newDateStr = dateInfo.start.toISOString().split('T')[0];
 
-            if (onDateChange) {
+            if (currentDateStr !== newDateStr && onDateChange) {
+              console.log('📅 Date range changed (user action):', {
+                from: currentDateStr,
+                to: newDateStr,
+                view: dateInfo.view.type,
+              });
               onDateChange(dateInfo.start);
             }
           }}
