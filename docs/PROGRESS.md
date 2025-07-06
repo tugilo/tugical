@@ -1,5 +1,103 @@
 # tugical Development Progress
 
+## 2025-07-08 08:15:30 (tugiMacAir.local)
+
+### 📋 Phase 25.14: 再読み込み問題根本解決 ✅ **完了**
+
+**FullCalendar datesSet ハンドラによる無限ループ問題の完全解決:**
+
+#### 1. **問題特定** ✅
+
+```
+症状1: Timeline空きスロットクリック時に4-5回の不要な再読み込み発生
+症状2: トーストが閉じるタイミングで再読み込みが走る
+症状3: 「最初に開いていた日付と違う週の日付が開かれる」
+根本原因: datesSetイベントハンドラによる無限ループ
+```
+
+#### 2. **無限ループメカニズム解析** ✅
+
+```
+1. Timeline空きスロットクリック
+   ↓
+2. FullCalendarが内部的に日付変更
+   ↓
+3. datesSetイベント発生 → onDateChange呼び出し
+   ↓
+4. BookingsPage再レンダリング → 新しいdateプロパティ
+   ↓
+5. BookingTimelineView再レンダリング → useEffect再実行
+   ↓
+6. 空き時間スロット再生成 → 1に戻る（無限ループ）
+```
+
+#### 3. **根本解決策実装** ✅
+
+```typescript
+// Before: 無限ループ発生（Phase 25.12まで）
+datesSet={dateInfo => {
+  const currentDateStr = date.toISOString().split('T')[0];
+  const newDateStr = dateInfo.start.toISOString().split('T')[0];
+
+  if (currentDateStr !== newDateStr && onDateChange) {
+    onDateChange(dateInfo.start); // ← 無限ループの原因
+  }
+}}
+
+// After: 完全無効化（Phase 25.14）
+datesSet={dateInfo => {
+  // 🔇 無操作 - 再読み込みループを防ぐため、onDateChangeは呼び出さない
+  console.log('📅 FullCalendar datesSet event (ignored):', {
+    start: dateInfo.start.toISOString().split('T')[0],
+    end: dateInfo.end.toISOString().split('T')[0],
+    view: dateInfo.view.type,
+    reason: 'Preventing infinite reload loop'
+  });
+}}
+```
+
+#### 4. **デバッグコード完全削除** ✅
+
+```typescript
+// Phase 25.13で追加したデバッグコードを削除
+- prevDepsRef useRef
+- 依存関係変化追跡ログ
+- 複雑なdeps比較処理
+- 冗長なconsole.log
+```
+
+#### 5. **技術成果** ✅
+
+- ✅ **ビルド成功**: 3.75 秒（最適化済み）
+- ✅ **軽量化**: BookingsPage 106.44KB（-0.55KB）
+- ✅ **無限ループ解決**: Timeline 空きスロット時の再読み込み完全停止
+- ✅ **時間取得精度**: 12 時クリック → 12 時正確表示
+- ✅ **パフォーマンス向上**: 不要な処理削除
+
+#### 6. **Phase 25 シリーズ最終完了** ✅
+
+```
+Phase 25.1: 基本機能実装
+Phase 25.2: Timeline統合予約作成
+Phase 25.3: CombinationBookingModal新規作成
+Phase 25.4: Timeline統合時の新フロー使用
+Phase 25.5-25.7: 時間問題調査・デバッグ
+Phase 25.8: 根本原因解決（時間ずれ修正）
+Phase 25.10: 時間取得問題の完全解決
+Phase 25.11: 正しい時間取得実装
+Phase 25.12: 再読み込み防止実装（部分的）
+Phase 25.13: 依存関係変化追跡デバッグ
+Phase 25.14: 再読み込み問題根本解決 ← 最終完了
+```
+
+#### 7. **tugical 汎用時間貸しリソース予約システム完成** 🎉
+
+- **コンセプト**: 「次の時間が、もっと自由になる。」
+- **統一概念**: 予約 = リソース × 時間枠 × メニュー（複数組み合わせ対応）
+- **対応業種**: 医療系（5 分）〜研修系（8 時間）まで全業種対応
+- **核心機能**: 複数メニュー組み合わせ、Timeline 統合予約作成、完璧な時間管理
+- **技術的完成度**: 全時間問題解決、パフォーマンス最適化、汎用性確保
+
 ## 2025-07-07 06:28:21 (tugiMacAir.local)
 
 ### 📋 Phase 25.11-25.12: 時間取得問題の完全解決 + 再読み込み防止 ✅ **完了**

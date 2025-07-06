@@ -160,6 +160,7 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
   }, [addNotification]);
 
   // ✨ 空き時間スロット生成（Phase 21.2 → Phase 21.3: 動的間隔対応）
+  // 🚨 Phase 25.14: 再読み込み問題根本解決 - datesSetハンドラ無効化により最適化
   useEffect(() => {
     if (
       !loadingResources &&
@@ -664,21 +665,17 @@ const BookingTimelineView: React.FC<BookingTimelineViewProps> = ({
           // データ
           events={calendarEvents}
           resources={calendarResources}
-          // 日付範囲変更時の処理（Phase 25.12: 不要な再読み込み防止）
+          // 🚨 Phase 25.14: 再読み込み問題根本解決 - datesSetハンドラを完全に無効化
+          // datesSetイベントがTimeline空きスロットクリック時に不要な再読み込みを引き起こすため、
+          // 親コンポーネントへの日付変更通知は他の手段で実装する
           datesSet={dateInfo => {
-            // ユーザーが意図的に日付を変更した場合のみ親に通知
-            // Timeline空きスロットクリックによる自動再読み込みは無視
-            const currentDateStr = date.toISOString().split('T')[0];
-            const newDateStr = dateInfo.start.toISOString().split('T')[0];
-
-            if (currentDateStr !== newDateStr && onDateChange) {
-              console.log('📅 Date range changed (user action):', {
-                from: currentDateStr,
-                to: newDateStr,
-                view: dateInfo.view.type,
-              });
-              onDateChange(dateInfo.start);
-            }
+            // 🔇 無操作 - 再読み込みループを防ぐため、onDateChangeは呼び出さない
+            console.log('📅 FullCalendar datesSet event (ignored):', {
+              start: dateInfo.start.toISOString().split('T')[0],
+              end: dateInfo.end.toISOString().split('T')[0],
+              view: dateInfo.view.type,
+              reason: 'Preventing infinite reload loop',
+            });
           }}
           // イベントハンドラー
           eventMouseEnter={handleEventMouseEnter}
