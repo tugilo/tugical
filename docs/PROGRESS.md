@@ -6856,64 +6856,62 @@ Next: 店舗設定等の他画面への展開"
 
 - Phase 25 系列完全完了のため、次期開発フェーズへ
 
-
 ## 2025-07-07 08:01:03 - Phase 25.24: 複数メニュー表示名修正とデバッグ表示削除
 
 ### 問題・修正・成果
 
 - **問題**: 予約モーダルでメニュー名が英語（name）表示、デバッグ用「料金計算結果」表示
-- **修正**: 
+- **修正**:
   - メニュー表示を `display_name || name` に変更（MultiMenuSelector、BookingCard、SimpleTimelineView）
   - デバッグ用自動計算フィールドを削除
-  - BookingMenu型に`display_name?: string`プロパティを追加
-- **成果**: メニュー日本語化実現、デバッグ表示削除、型安全性確保、ビルド成功（3.72秒、100.09KB）
-- **変更ファイル**: 
+  - BookingMenu 型に`display_name?: string`プロパティを追加
+- **成果**: メニュー日本語化実現、デバッグ表示削除、型安全性確保、ビルド成功（3.72 秒、100.09KB）
+- **変更ファイル**:
   - frontend/src/components/booking/MultiMenuSelector.tsx
   - frontend/src/components/booking/BookingCard.tsx
   - frontend/src/components/booking/SimpleTimelineView.tsx
   - frontend/src/types/index.ts
   - docs/PROGRESS.md
 
-
-## 2025-07-07 08:06:07 - Phase 25.25: 複数メニュー組み合わせ予約作成時の予約番号undefined問題修正
+## 2025-07-07 08:06:07 - Phase 25.25: 複数メニュー組み合わせ予約作成時の予約番号 undefined 問題修正
 
 ### 問題・修正・成果
 
 - **問題**: 複数メニュー組み合わせ予約作成時に予約番号が「undefined」として表示される
-- **原因**: APIレスポンス構造とフロントエンドの処理に不整合
-  - APIレスポンス: `{ data: { booking: BookingResource } }`
+- **原因**: API レスポンス構造とフロントエンドの処理に不整合
+  - API レスポンス: `{ data: { booking: BookingResource } }`
   - フロントエンド: `response.data.data` で直接アクセス（正しくは `response.data.data.booking`）
-- **修正**: 
+- **修正**:
   - `frontend/src/services/api.ts` の `createCombinationBooking` メソッドを修正
   - 型定義を `ApiResponse<{ booking: Booking }>` に変更
   - レスポンスアクセスを `response.data.data.booking` に変更
-- **成果**: 予約番号が正常に表示される、ビルド成功（3.60秒、BookingsPage 100.09KB）
-- **変更ファイル**: 
+- **成果**: 予約番号が正常に表示される、ビルド成功（3.60 秒、BookingsPage 100.09KB）
+- **変更ファイル**:
   - frontend/src/services/api.ts
   - docs/PROGRESS.md
 
 ### 次のステップ
 
 - 実際のブラウザでの動作確認
-- tugical複数メニュー組み合わせ機能の完全安定動作確認
+- tugical 複数メニュー組み合わせ機能の完全安定動作確認
 
-
-## 2025-07-07 08:13:20 - Phase 25.26: 複数メニュー組み合わせ予約の料金表示修正とUI改善
+## 2025-07-07 08:13:20 - Phase 25.26: 複数メニュー組み合わせ予約の料金表示修正と UI 改善
 
 ### 問題・修正・成果
 
-- **問題1**: 複数メニュー組み合わせ予約の料金が0円で表示される
-- **修正1**: BookingCard.tsx に getTotalPrice 関数を追加、複数メニューの場合は details の料金を合計し、セット割引を適用
-- **問題2**: デフォルトがリスト表示でタイムラインが分かりにくい
-- **修正2**: BookingsPage.tsx のデフォルト表示モードを 'list' → 'timeline' に変更
-- **成果**: 料金が正しく表示される、タイムラインがデフォルトで直感的UI、ビルド成功（3.90秒、BookingsPage 100.09KB）
+- **問題 1**: 複数メニュー組み合わせ予約の料金が 0 円で表示される
+- **修正 1**: BookingCard.tsx に getTotalPrice 関数を追加、複数メニューの場合は details の料金を合計し、セット割引を適用
+- **問題 2**: デフォルトがリスト表示でタイムラインが分かりにくい
+- **修正 2**: BookingsPage.tsx のデフォルト表示モードを 'list' → 'timeline' に変更
+- **成果**: 料金が正しく表示される、タイムラインがデフォルトで直感的 UI、ビルド成功（3.90 秒、BookingsPage 100.09KB）
 
-### UI/UX提案
+### UI/UX 提案
 
-**新規予約フロー**: A案（タイムライン空きスロットタップ→直接新規予約）を推奨
+**新規予約フロー**: A 案（タイムライン空きスロットタップ → 直接新規予約）を推奨
+
 - 電話予約時の片手操作に最適
-- Phase 25.2の Timeline統合予約作成機能を活用
-- 時間先決め→メニュー相談の自然な流れ
+- Phase 25.2 の Timeline 統合予約作成機能を活用
+- 時間先決め → メニュー相談の自然な流れ
 
 ### 変更ファイル
 
