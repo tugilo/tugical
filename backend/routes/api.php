@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\MenuController;
 use App\Http\Controllers\Api\ResourceController;
 use App\Http\Controllers\Api\MenuOptionController;
 use App\Http\Controllers\Api\StoreController;
+use App\Http\Controllers\Api\LiffController;
 use Illuminate\Support\Facades\Http;
 
 /*
@@ -126,6 +127,34 @@ Route::prefix('v1/liff')->name('liff.')->group(function () {
 // ===========================
 // LINE Webhook（LINE Platform認証）
 // ===========================
+// ===========================
+// LIFF API（顧客向け・認証不要）
+// ===========================
+Route::prefix('v1/liff')->name('liff.')->middleware('liff.auth')->group(function () {
+    // 店舗情報取得
+    Route::get('stores/{storeSlug}', [LiffController::class, 'getStore'])->name('stores.show');
+    
+    // 顧客プロフィール取得・作成
+    Route::get('customers/profile', [LiffController::class, 'getCustomerProfile'])->name('customers.profile');
+    
+    // メニュー一覧取得
+    Route::get('menus', [LiffController::class, 'getMenus'])->name('menus.index');
+    
+    // 空き時間取得
+    Route::get('availability', [LiffController::class, 'getAvailability'])->name('availability.index');
+    
+    // 予約作成
+    Route::post('bookings', [LiffController::class, 'createBooking'])->name('bookings.store');
+    
+    // 予約履歴取得
+    Route::get('bookings/history', [LiffController::class, 'getBookingHistory'])->name('bookings.history');
+    
+    // 仮押さえトークン管理
+    Route::post('hold-tokens', [LiffController::class, 'createHoldToken'])->name('hold-tokens.store');
+    Route::put('hold-tokens/{token}/extend', [LiffController::class, 'extendHoldToken'])->name('hold-tokens.extend');
+    Route::delete('hold-tokens/{token}', [LiffController::class, 'releaseHoldToken'])->name('hold-tokens.destroy');
+});
+
 Route::prefix('v1/line')->name('line.')->group(function () {
     // TODO: Phase 4.4 LINE連携実装時に追加
     // Route::post('webhook', [LineWebhookController::class, 'handle'])->name('webhook');

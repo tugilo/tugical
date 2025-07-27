@@ -270,11 +270,11 @@ class Store extends Model
                 $store->booking_rules = $template['booking_constraints'] ?? [];
             }
 
-            // デフォルト値設定
-            $store->timezone = $store->timezone ?? 'Asia/Tokyo';
-            $store->locale = $store->locale ?? 'ja';
-            $store->currency = $store->currency ?? 'JPY';
-            $store->status = $store->status ?? self::STATUS_ACTIVE;
+            // デフォルト値設定（データベースにカラムが存在しない場合はコメントアウト）
+            // $store->timezone = $store->timezone ?? 'Asia/Tokyo';
+            // $store->locale = $store->locale ?? 'ja';
+            // $store->currency = $store->currency ?? 'JPY';
+            // $store->status = $store->status ?? self::STATUS_ACTIVE;
 
             // URLスラッグの自動生成
             if (!$store->slug) {

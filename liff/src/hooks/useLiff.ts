@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { LiffState, LineUser } from '@/types/liff'
+import { liffApi } from '@/services/api'
 
 /**
  * LIFF初期化とLINE認証を管理するカスタムフック
@@ -35,12 +36,17 @@ export const useLiff = () => {
         
         // ユーザー情報取得
         const profile = await window.liff.getProfile()
-        setLineUser({
+        const user = {
           userId: profile.userId,
           displayName: profile.displayName,
           pictureUrl: profile.pictureUrl,
           statusMessage: profile.statusMessage
-        })
+        }
+        setLineUser(user)
+        
+        // APIクライアントに認証情報を設定
+        const storeId = import.meta.env.VITE_STORE_ID || '1'
+        liffApi.setAuth(user.userId, storeId)
       } else {
         // 未ログインの場合はログイン画面にリダイレクト
         window.liff.login()
