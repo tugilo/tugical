@@ -65,49 +65,30 @@ class Resource extends Model
     protected $table = 'resources';
 
     /**
-     * 一括代入可能な属性
+     * 一括代入から保護する属性
+     * 
+     * 開発の柔軟性を重視し、IDのみを保護
+     * これにより新しいフィールド追加時にfillableの更新が不要になる
      */
-    protected $fillable = [
-        'store_id',
-        'type',
-        'name',
-        'display_name',
-        'attributes',
-        'working_hours',
-        'constraints',
-        'efficiency_rate',
-        'hourly_rate_diff',
-        'capacity',
-        'equipment_specs',
-        'booking_rules',
-        'description',
-        'image_url',
-        'is_active',
-        'sort_order',
-    ];
+    protected $guarded = ['id'];
 
     /**
      * 非表示属性（API出力時に除外）
      */
     protected $hidden = [
-        'equipment_specs',
-        'booking_rules',
+        // 仕様書では特に非表示フィールドの指定なし
     ];
 
     /**
-     * 属性のキャスト設定
+     * 属性のキャスト設定（tugical_database_design_v1.0.md 準拠）
      */
     protected $casts = [
         'attributes' => 'array',
         'working_hours' => 'array',
-        'constraints' => 'array',
-        'equipment_specs' => 'array',
-        'booking_rules' => 'array',
         'efficiency_rate' => 'float',
         'hourly_rate_diff' => 'integer',
-        'capacity' => 'integer',
-        'is_active' => 'boolean',
         'sort_order' => 'integer',
+        'is_active' => 'boolean',
         'deleted_at' => 'datetime',
     ];
 
@@ -208,7 +189,7 @@ class Resource extends Model
     protected static function booted()
     {
         static::addGlobalScope(new TenantScope);
-        
+
         // 作成時に自動でstore_id設定
         static::creating(function ($resource) {
             if (!$resource->store_id && auth()->check()) {
@@ -225,10 +206,8 @@ class Resource extends Model
                 $resource->attributes = self::getDefaultAttributes($resource->type);
             }
 
-            // デフォルト制約設定
-            if (!$resource->constraints && $resource->type) {
-                $resource->constraints = self::getDefaultConstraints($resource->type);
-            }
+            // デフォルト制約設定は個別フィールドで管理
+            // 新しいデータベース構造では constraints フィールドは使用しない
 
             // デフォルト効率率設定
             if (!$resource->efficiency_rate) {
@@ -240,10 +219,7 @@ class Resource extends Model
                 $resource->hourly_rate_diff = 0;
             }
 
-            // デフォルト容量設定
-            if (!$resource->capacity) {
-                $resource->capacity = $resource->type === self::TYPE_STAFF ? 1 : 10;
-            }
+            // 仕様書では capacity フィールドは使用しない
 
             // デフォルトアクティブ状態
             $resource->is_active = $resource->is_active ?? true;
@@ -251,8 +227,8 @@ class Resource extends Model
             // デフォルト表示順序
             if (!$resource->sort_order) {
                 $maxSort = self::where('store_id', $resource->store_id)
-                              ->where('type', $resource->type)
-                              ->max('sort_order') ?? 0;
+                    ->where('type', $resource->type)
+                    ->max('sort_order') ?? 0;
                 $resource->sort_order = $maxSort + 10;
             }
         });
@@ -310,10 +286,10 @@ class Resource extends Model
     {
         $typeInfo = $this->getTypeInfo();
         $industryLabels = $typeInfo['industry_labels'] ?? [];
-        
+
         // 店舗の業種を取得
         $industryType = $this->store->industry_type ?? 'beauty';
-        
+
         return $industryLabels[$industryType] ?? $this->display_name ?? $this->name;
     }
 
@@ -331,10 +307,10 @@ class Resource extends Model
 
         $dateTime = $dateTime ?? now($this->store->timezone ?? 'Asia/Tokyo');
         $dayOfWeek = strtolower($dateTime->format('l'));
-        
+
         $workingHours = $this->working_hours ?? [];
         $todayHours = $workingHours[$dayOfWeek] ?? null;
-        
+
         if (!$todayHours || isset($todayHours['off'])) {
             return false;
         }
@@ -342,7 +318,7 @@ class Resource extends Model
         // 例外日チェック
         $dateString = $dateTime->format('Y-m-d');
         $exceptions = $workingHours['exceptions'] ?? [];
-        
+
         if (isset($exceptions[$dateString])) {
             $exceptionHours = $exceptions[$dateString];
             if (isset($exceptionHours['off']) && $exceptionHours['off']) {
@@ -357,7 +333,7 @@ class Resource extends Model
 
         $startTime = Carbon::createFromFormat('H:i', $todayHours['start'], $dateTime->timezone);
         $endTime = Carbon::createFromFormat('H:i', $todayHours['end'], $dateTime->timezone);
-        
+
         return $dateTime->between($startTime, $endTime);
     }
 
@@ -370,14 +346,14 @@ class Resource extends Model
     public function getNextWorkingTime(?Carbon $fromDateTime = null): ?Carbon
     {
         $fromDateTime = $fromDateTime ?? now($this->store->timezone ?? 'Asia/Tokyo');
-        
+
         for ($i = 0; $i < 14; $i++) { // 2週間先まで確認
             $checkDate = $fromDateTime->copy()->addDays($i);
             $dayOfWeek = strtolower($checkDate->format('l'));
-            
+
             $workingHours = $this->working_hours ?? [];
             $dayHours = $workingHours[$dayOfWeek] ?? null;
-            
+
             if (!$dayHours || isset($dayHours['off'])) {
                 continue;
             }
@@ -385,7 +361,7 @@ class Resource extends Model
             // 例外日チェック
             $dateString = $checkDate->format('Y-m-d');
             $exceptions = $workingHours['exceptions'] ?? [];
-            
+
             if (isset($exceptions[$dateString])) {
                 $exceptionHours = $exceptions[$dateString];
                 if (isset($exceptionHours['off']) && $exceptionHours['off']) {
@@ -396,13 +372,13 @@ class Resource extends Model
 
             if (isset($dayHours['start'])) {
                 $startTime = $checkDate->setTimeFromTimeString($dayHours['start']);
-                
+
                 if ($startTime->isFuture() || ($i === 0 && $startTime->isToday() && $startTime->gt($fromDateTime))) {
                     return $startTime;
                 }
             }
         }
-        
+
         return null;
     }
 
@@ -471,13 +447,13 @@ class Resource extends Model
         $query = $this->bookings()
             ->whereDate('booking_date', $startTime->format('Y-m-d'))
             ->whereIn('status', ['confirmed', 'pending'])
-            ->where(function($q) use ($startTime, $endTime) {
+            ->where(function ($q) use ($startTime, $endTime) {
                 $q->whereBetween('start_time', [$startTime->format('H:i'), $endTime->format('H:i')])
-                  ->orWhereBetween('end_time', [$startTime->format('H:i'), $endTime->format('H:i')])
-                  ->orWhere(function($subQ) use ($startTime, $endTime) {
-                      $subQ->where('start_time', '<=', $startTime->format('H:i'))
-                           ->where('end_time', '>=', $endTime->format('H:i'));
-                  });
+                    ->orWhereBetween('end_time', [$startTime->format('H:i'), $endTime->format('H:i')])
+                    ->orWhere(function ($subQ) use ($startTime, $endTime) {
+                        $subQ->where('start_time', '<=', $startTime->format('H:i'))
+                            ->where('end_time', '>=', $endTime->format('H:i'));
+                    });
             });
 
         if ($excludeBookingId) {
@@ -494,7 +470,7 @@ class Resource extends Model
      * @param mixed $default デフォルト値
      * @return mixed 属性値
      */
-    public function getAttributeValue(string $key, $default = null)
+    public function getCustomAttributeValue(string $key, $default = null)
     {
         $attributes = $this->attributes ?? [];
         return $attributes[$key] ?? $default;
@@ -554,7 +530,7 @@ class Resource extends Model
     {
         $types = self::getAvailableTypes();
         $typeInfo = $types[$type] ?? [];
-        
+
         return $typeInfo['default_constraints'] ?? [];
     }
 
@@ -587,18 +563,20 @@ class Resource extends Model
      */
     public function scopeWorking($query, ?Carbon $dateTime = null)
     {
-        return $query->active()->where(function($q) use ($dateTime) {
+        return $query->active()->where(function ($q) use ($dateTime) {
             // この実装では簡易チェックのみ実行（詳細は isWorkingAt メソッドで）
             $q->whereNotNull('working_hours');
         });
     }
 
     /**
-     * 検索スコープ: 容量以上
+     * 検索スコープ: 容量以上（仕様書では capacity フィールドなし）
      */
     public function scopeWithCapacity($query, int $minCapacity)
     {
-        return $query->where('capacity', '>=', $minCapacity);
+        // 仕様書通りの構造では capacity フィールドは存在しない
+        // 必要に応じて attributes JSON 内の capacity を使用
+        return $query->whereJsonContains('attributes->capacity', ['>=', $minCapacity]);
     }
 
     /**
@@ -609,7 +587,7 @@ class Resource extends Model
         if ($attributeValue === null) {
             return $query->whereJsonContains('attributes', [$attributeKey]);
         }
-        
+
         return $query->where("attributes->{$attributeKey}", $attributeValue);
     }
 
@@ -620,4 +598,4 @@ class Resource extends Model
     {
         return $query->whereBetween('efficiency_rate', [$min, $max]);
     }
-} 
+}

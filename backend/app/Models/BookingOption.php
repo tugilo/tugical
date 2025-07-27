@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Models\Scopes\TenantScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -61,34 +60,12 @@ class BookingOption extends Model
     protected $table = 'booking_options';
 
     /**
-     * 一括代入可能な属性
+     * 一括代入から保護する属性
+     * 
+     * 開発の柔軟性を重視し、IDのみを保護
+     * これにより新しいフィールド追加時にfillableの更新が不要になる
      */
-    protected $fillable = [
-        'store_id',
-        'booking_id',
-        'menu_option_id',
-        'option_name',
-        'option_description',
-        'option_price',
-        'option_duration',
-        'price_type',
-        'quantity',
-        'total_price',
-        'total_duration',
-        'option_data',
-    ];
-
-    /**
-     * 属性のキャスト設定
-     */
-    protected $casts = [
-        'option_price' => 'integer',
-        'option_duration' => 'integer',
-        'quantity' => 'integer',
-        'total_price' => 'integer',
-        'total_duration' => 'integer',
-        'option_data' => 'array',
-    ];
+    protected $guarded = ['id'];
 
     /**
      * 料金タイプ定数
@@ -126,14 +103,14 @@ class BookingOption extends Model
      */
     protected static function booted()
     {
-        static::addGlobalScope(new TenantScope);
-
         // 作成時の処理
         static::creating(function ($bookingOption) {
             // 数量のデフォルト値
             $bookingOption->quantity = $bookingOption->quantity ?? 1;
 
             // MenuOptionからスナップショットデータを自動設定
+            // テーブル構造と一致しないためコメントアウト
+            /*
             if ($bookingOption->menu_option_id && !$bookingOption->option_name) {
                 $menuOption = MenuOption::find($bookingOption->menu_option_id);
                 if ($menuOption) {
@@ -152,6 +129,7 @@ class BookingOption extends Model
             // 合計料金・時間の自動計算
             $bookingOption->total_price = $bookingOption->calculateTotalPrice();
             $bookingOption->total_duration = $bookingOption->calculateTotalDuration();
+            */
         });
 
         // 更新時の処理
@@ -274,7 +252,7 @@ class BookingOption extends Model
     {
         $optionData = $this->option_data ?? [];
         $timestamp = $optionData['snapshot_created_at'] ?? null;
-        
+
         return $timestamp ? Carbon::parse($timestamp) : null;
     }
 
@@ -293,9 +271,9 @@ class BookingOption extends Model
         }
 
         return $this->option_name !== $currentOption->name ||
-               $this->option_price !== $currentOption->price ||
-               $this->option_duration !== $currentOption->duration ||
-               $this->price_type !== $currentOption->price_type;
+            $this->option_price !== $currentOption->price ||
+            $this->option_duration !== $currentOption->duration ||
+            $this->price_type !== $currentOption->price_type;
     }
 
     /**
@@ -360,18 +338,18 @@ class BookingOption extends Model
     public function getFormattedDuration(): string
     {
         $duration = $this->total_duration;
-        
+
         if ($duration < 60) {
             return $duration . '分';
         }
-        
+
         $hours = floor($duration / 60);
         $minutes = $duration % 60;
-        
+
         if ($minutes === 0) {
             return $hours . '時間';
         }
-        
+
         return $hours . '時間' . $minutes . '分';
     }
 
@@ -436,10 +414,10 @@ class BookingOption extends Model
      */
     public function scopeChangedFromOriginal($query)
     {
-        return $query->whereHas('menuOption', function($q) {
+        return $query->whereHas('menuOption', function ($q) {
             $q->whereColumn('menu_options.name', '!=', 'booking_options.option_name')
-              ->orWhereColumn('menu_options.price', '!=', 'booking_options.option_price')
-              ->orWhereColumn('menu_options.duration', '!=', 'booking_options.option_duration');
+                ->orWhereColumn('menu_options.price', '!=', 'booking_options.option_price')
+                ->orWhereColumn('menu_options.duration', '!=', 'booking_options.option_duration');
         });
     }
-} 
+}

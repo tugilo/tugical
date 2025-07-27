@@ -74,28 +74,12 @@ class BusinessCalendar extends Model
     protected $table = 'business_calendars';
 
     /**
-     * 一括代入可能な属性
+     * 一括代入から保護する属性
+     * 
+     * 開発の柔軟性を重視し、IDのみを保護
+     * これにより新しいフィールド追加時にfillableの更新が不要になる
      */
-    protected $fillable = [
-        'store_id',
-        'title',
-        'type',
-        'date',
-        'start_time',
-        'end_time',
-        'is_closed',
-        'is_recurring',
-        'recurring_pattern',
-        'recurring_config',
-        'affected_resources',
-        'affected_staff',
-        'description',
-        'color',
-        'priority',
-        'is_public',
-        'blocks_booking',
-        'recurring_end_date',
-    ];
+    protected $guarded = ['id'];
 
     /**
      * 属性のキャスト設定
@@ -301,15 +285,6 @@ class BusinessCalendar extends Model
     }
 
     /**
-     * 優先度情報取得
-     */
-    public function getPriorityInfo(): array
-    {
-        $priorities = self::getPriorityInfo();
-        return $priorities[$this->priority] ?? [];
-    }
-
-    /**
      * 繰り返しパターン情報取得
      */
     public function getRecurringPatternInfo(): array
@@ -418,7 +393,7 @@ class BusinessCalendar extends Model
             'type' => $this->getTypeInfo()['name'] ?? $this->type,
             'date' => $this->date->format('Y年n月j日'),
             'color' => $this->color,
-            'priority' => $this->getPriorityInfo()['name'] ?? $this->priority,
+            'priority' => self::getPriorityInfo()[$this->priority]['name'] ?? $this->priority,
         ];
 
         if ($this->start_time && $this->end_time) {
@@ -581,9 +556,9 @@ class BusinessCalendar extends Model
      */
     public function scopeAffectsStaff($query, int $staffId)
     {
-        return $query->where(function($q) use ($staffId) {
+        return $query->where(function ($q) use ($staffId) {
             $q->whereNull('affected_staff')
-              ->orWhereJsonContains('affected_staff', $staffId);
+                ->orWhereJsonContains('affected_staff', $staffId);
         });
     }
 
@@ -592,9 +567,9 @@ class BusinessCalendar extends Model
      */
     public function scopeAffectsResource($query, int $resourceId)
     {
-        return $query->where(function($q) use ($resourceId) {
+        return $query->where(function ($q) use ($resourceId) {
             $q->whereNull('affected_resources')
-              ->orWhereJsonContains('affected_resources', $resourceId);
+                ->orWhereJsonContains('affected_resources', $resourceId);
         });
     }
 
@@ -623,7 +598,7 @@ class BusinessCalendar extends Model
     public function scopeThisMonth($query)
     {
         return $query->whereMonth('date', now()->month)
-                    ->whereYear('date', now()->year);
+            ->whereYear('date', now()->year);
     }
 
     /**
@@ -639,9 +614,9 @@ class BusinessCalendar extends Model
      */
     public function scopeSearch($query, string $keyword)
     {
-        return $query->where(function($q) use ($keyword) {
+        return $query->where(function ($q) use ($keyword) {
             $q->where('title', 'like', "%{$keyword}%")
-              ->orWhere('description', 'like', "%{$keyword}%");
+                ->orWhere('description', 'like', "%{$keyword}%");
         });
     }
-} 
+}

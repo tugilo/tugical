@@ -44,12 +44,13 @@ class BookingController extends Controller
     public function __construct(BookingService $bookingService)
     {
         $this->bookingService = $bookingService;
-        
+
         // Sanctum認証必須
         $this->middleware('auth:sanctum');
-        
-        // マルチテナント分離（TenantScopeMiddleware適用想定）
-        $this->middleware('tenant.scope');
+
+        // マルチテナント分離はモデルのTenantScopeで自動処理
+        // （TenantScopeMiddleware は未実装のため一時的にコメントアウト）
+        // $this->middleware('tenant.scope');
     }
 
     /**
@@ -73,7 +74,7 @@ class BookingController extends Controller
     {
         try {
             $storeId = auth()->user()->store_id;
-            
+
             Log::info('予約一覧取得開始', [
                 'store_id' => $storeId,
                 'filters' => $request->query()
@@ -81,19 +82,19 @@ class BookingController extends Controller
 
             // フィルター条件構築
             $filters = [];
-            
+
             if ($request->has('date')) {
                 $filters['date'] = $request->get('date');
             }
-            
+
             if ($request->has('status')) {
                 $filters['status'] = $request->get('status');
             }
-            
+
             if ($request->has('resource_id')) {
                 $filters['resource_id'] = $request->get('resource_id');
             }
-            
+
             if ($request->has('customer_id')) {
                 $filters['customer_id'] = $request->get('customer_id');
             }
@@ -101,7 +102,7 @@ class BookingController extends Controller
             // ページング設定
             $perPage = min(max(1, intval($request->get('per_page', 20))), 100);
             $filters['per_page'] = $perPage;
-            
+
             if ($request->has('page')) {
                 $filters['page'] = max(1, intval($request->get('page')));
             }
@@ -128,7 +129,6 @@ class BookingController extends Controller
                     'version' => '1.0'
                 ]
             ]);
-
         } catch (\Exception $e) {
             Log::error('予約一覧取得エラー', [
                 'error' => $e->getMessage(),
@@ -159,24 +159,35 @@ class BookingController extends Controller
      * - Hold Token対応
      * - 自動通知送信
      * 
-     * @param CreateBookingRequest $request
-     * @return JsonResponse
+     * @param CreateBookingRequest $request バリデーション済みリクエスト
+     * @return JsonResponse 予約作成結果
      */
     public function store(CreateBookingRequest $request): JsonResponse
     {
         try {
-            $storeId = auth()->user()->store_id;
-            $bookingData = $request->validated();
-            
-            Log::info('予約作成開始（管理者）', [
-                'store_id' => $storeId,
-                'customer_id' => $bookingData['customer_id'],
-                'menu_id' => $bookingData['menu_id'],
-                'booking_date' => $bookingData['booking_date']
+            // デバッグ: リクエストデータをログに記録
+            Log::info('予約作成リクエスト受信', [
+                'all_data' => $request->all(),
+                'validated_data' => $request->validated(),
+                'user_id' => auth()->id(),
+                'store_id' => auth()->user()->store_id,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
             ]);
 
-            // BookingServiceで予約作成
-            $booking = $this->bookingService->createBooking($storeId, $bookingData);
+            $booking = $this->bookingService->createBooking(
+                storeId: auth()->user()->store_id,
+                bookingData: $request->validated()
+            );
+
+            // 成功ログ
+            Log::info('予約作成成功', [
+                'booking_id' => $booking->id,
+                'booking_number' => $booking->booking_number,
+                'customer_id' => $booking->customer_id,
+                'menu_id' => $booking->menu_id,
+                'store_id' => $booking->store_id,
+            ]);
 
             return response()->json([
                 'success' => true,
@@ -189,7 +200,6 @@ class BookingController extends Controller
                     'version' => '1.0'
                 ]
             ], 201);
-
         } catch (\App\Exceptions\BookingConflictException $e) {
             Log::warning('予約競合エラー', [
                 'error' => $e->getMessage(),
@@ -211,7 +221,6 @@ class BookingController extends Controller
                     'timestamp' => now()->toISOString()
                 ]
             ], 409);
-
         } catch (\App\Exceptions\HoldTokenExpiredException $e) {
             Log::warning('Hold Token期限切れ', [
                 'error' => $e->getMessage(),
@@ -231,7 +240,6 @@ class BookingController extends Controller
                     'timestamp' => now()->toISOString()
                 ]
             ], 410);
-
         } catch (\App\Exceptions\OutsideBusinessHoursException $e) {
             Log::warning('営業時間外予約', [
                 'error' => $e->getMessage(),
@@ -248,13 +256,12 @@ class BookingController extends Controller
                     'timestamp' => now()->toISOString()
                 ]
             ], 422);
-
         } catch (\Exception $e) {
             Log::error('予約作成エラー', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'store_id' => auth()->user()->store_id,
-                'request_data' => $request->validated()
+                'request_data' => $request->all(),
             ]);
 
             return response()->json([
@@ -305,7 +312,10 @@ class BookingController extends Controller
                 'success' => true,
                 'data' => [
                     'booking' => new BookingResource($booking->load([
-                        'customer', 'menu', 'resource', 'options'
+                        'customer',
+                        'menu',
+                        'resource',
+                        'bookingOptions'
                     ]))
                 ],
                 'message' => '予約詳細を取得しました',
@@ -314,7 +324,6 @@ class BookingController extends Controller
                     'version' => '1.0'
                 ]
             ]);
-
         } catch (\Exception $e) {
             Log::error('予約詳細取得エラー', [
                 'booking_id' => $booking->id ?? null,
@@ -362,7 +371,7 @@ class BookingController extends Controller
             }
 
             $updateData = $request->validated();
-            
+
             Log::info('予約更新開始', [
                 'booking_id' => $booking->id,
                 'booking_number' => $booking->booking_number,
@@ -384,7 +393,6 @@ class BookingController extends Controller
                     'version' => '1.0'
                 ]
             ]);
-
         } catch (\App\Exceptions\BookingConflictException $e) {
             return response()->json([
                 'success' => false,
@@ -396,7 +404,6 @@ class BookingController extends Controller
                     'timestamp' => now()->toISOString()
                 ]
             ], 409);
-
         } catch (\Exception $e) {
             Log::error('予約更新エラー', [
                 'booking_id' => $booking->id,
@@ -446,7 +453,7 @@ class BookingController extends Controller
 
             $cancellationReason = $request->get('cancellation_reason');
             $sendNotification = $request->boolean('send_notification', true);
-            
+
             Log::info('予約キャンセル開始', [
                 'booking_id' => $booking->id,
                 'booking_number' => $booking->booking_number,
@@ -475,7 +482,6 @@ class BookingController extends Controller
             } else {
                 throw new \Exception('予約キャンセル処理に失敗しました');
             }
-
         } catch (\Exception $e) {
             Log::error('予約キャンセルエラー', [
                 'booking_id' => $booking->id,
@@ -534,7 +540,7 @@ class BookingController extends Controller
 
             $newStatus = $request->get('status');
             $notes = $request->get('completion_notes') ?? $request->get('staff_notes');
-            
+
             Log::info('予約ステータス変更開始', [
                 'booking_id' => $booking->id,
                 'booking_number' => $booking->booking_number,
@@ -552,7 +558,9 @@ class BookingController extends Controller
                     'success' => true,
                     'data' => [
                         'booking' => new BookingResource($booking->fresh()->load([
-                            'customer', 'menu', 'resource'
+                            'customer',
+                            'menu',
+                            'resource'
                         ]))
                     ],
                     'message' => '予約ステータスを更新しました',
@@ -564,7 +572,6 @@ class BookingController extends Controller
             } else {
                 throw new \Exception('ステータス更新処理に失敗しました');
             }
-
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
@@ -577,7 +584,6 @@ class BookingController extends Controller
                     'timestamp' => now()->toISOString()
                 ]
             ], 422);
-
         } catch (\Exception $e) {
             Log::error('予約ステータス変更エラー', [
                 'booking_id' => $booking->id,
@@ -591,6 +597,401 @@ class BookingController extends Controller
                 'error' => [
                     'code' => 'STATUS_UPDATE_ERROR',
                     'message' => 'ステータスの更新に失敗しました'
+                ],
+                'meta' => [
+                    'timestamp' => now()->toISOString()
+                ]
+            ], 500);
+        }
+    }
+
+    /**
+     * 予約移動（タイムライン専用）
+     * 
+     * PATCH /api/v1/bookings/{booking}/move
+     * 
+     * FullCalendar Timelineからのドラッグ&ドロップによる予約移動
+     * 日時・時間・担当者を一括更新
+     * 
+     * @param Request $request
+     * @param Booking $booking
+     * @return JsonResponse
+     */
+    public function move(Request $request, Booking $booking): JsonResponse
+    {
+        try {
+            // バリデーション
+            $request->validate([
+                'booking_date' => 'required|date|after_or_equal:today',
+                'start_time' => 'required|date_format:H:i',
+                'end_time' => 'required|date_format:H:i|after:start_time',
+                'resource_id' => 'nullable|exists:resources,id'
+            ]);
+
+            // マルチテナント確認
+            if ($booking->store_id !== auth()->user()->store_id) {
+                return response()->json([
+                    'success' => false,
+                    'error' => [
+                        'code' => 'BOOKING_NOT_FOUND',
+                        'message' => '予約が見つかりません'
+                    ],
+                    'meta' => [
+                        'timestamp' => now()->toISOString()
+                    ]
+                ], 404);
+            }
+
+            $moveData = $request->only(['booking_date', 'start_time', 'end_time', 'resource_id']);
+
+            Log::info('予約移動開始', [
+                'booking_id' => $booking->id,
+                'booking_number' => $booking->booking_number,
+                'current_data' => [
+                    'date' => $booking->booking_date,
+                    'start_time' => $booking->start_time,
+                    'end_time' => $booking->end_time,
+                    'resource_id' => $booking->resource_id,
+                ],
+                'new_data' => $moveData,
+                'store_id' => $booking->store_id
+            ]);
+
+            // BookingServiceで予約移動
+            $movedBooking = $this->bookingService->updateBooking($booking, $moveData);
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'booking' => new BookingResource($movedBooking)
+                ],
+                'message' => '予約を移動しました',
+                'meta' => [
+                    'timestamp' => now()->toISOString(),
+                    'version' => '1.0'
+                ]
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'error' => [
+                    'code' => 'VALIDATION_ERROR',
+                    'message' => '移動先の設定に誤りがあります',
+                    'details' => $e->errors()
+                ],
+                'meta' => [
+                    'timestamp' => now()->toISOString()
+                ]
+            ], 422);
+        } catch (\App\Exceptions\BookingConflictException $e) {
+            return response()->json([
+                'success' => false,
+                'error' => [
+                    'code' => 'BOOKING_CONFLICT',
+                    'message' => $e->getMessage()
+                ],
+                'meta' => [
+                    'timestamp' => now()->toISOString()
+                ]
+            ], 409);
+        } catch (\Exception $e) {
+            Log::error('予約移動エラー', [
+                'booking_id' => $booking->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'store_id' => $booking->store_id
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => [
+                    'code' => 'BOOKING_MOVE_ERROR',
+                    'message' => '予約の移動に失敗しました'
+                ],
+                'meta' => [
+                    'timestamp' => now()->toISOString()
+                ]
+            ], 500);
+        }
+    }
+
+    /**
+     * メニュー組み合わせ計算 (v1.2 新機能)
+     * 
+     * POST /api/v1/bookings/calculate
+     * 
+     * 電話予約時にリアルタイムで料金・時間を計算
+     * 複数メニューの組み合わせ、セット割引、自動追加サービスを計算
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function calculate(Request $request): JsonResponse
+    {
+        try {
+            // バリデーション
+            $request->validate([
+                'menu_ids' => 'required|array|min:1',
+                'menu_ids.*' => 'integer|exists:menus,id',
+                'resource_id' => 'nullable|integer|exists:resources,id',
+                'booking_date' => 'nullable|date',
+                'selected_options' => 'nullable|array',
+                'selected_options.*' => 'array'
+            ]);
+
+            $storeId = auth()->user()->store_id;
+            $menuIds = $request->get('menu_ids');
+            $resourceId = $request->get('resource_id');
+            $bookingDate = $request->get('booking_date');
+            $selectedOptions = $request->get('selected_options', []);
+
+            Log::info('メニュー組み合わせ計算開始', [
+                'store_id' => $storeId,
+                'menu_ids' => $menuIds,
+                'resource_id' => $resourceId,
+                'booking_date' => $bookingDate,
+                'selected_options' => $selectedOptions
+            ]);
+
+            // BookingServiceで複数メニュー組み合わせ計算
+            $calculation = $this->bookingService->calculateCombinationPricing(
+                $storeId,
+                $menuIds,
+                $resourceId,
+                $bookingDate,
+                $selectedOptions
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'calculation' => $calculation
+                ],
+                'message' => 'メニュー組み合わせ計算が完了しました',
+                'meta' => [
+                    'timestamp' => now()->toISOString(),
+                    'version' => '1.2'
+                ]
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'error' => [
+                    'code' => 'VALIDATION_ERROR',
+                    'message' => '入力内容に誤りがあります',
+                    'details' => $e->errors()
+                ],
+                'meta' => [
+                    'timestamp' => now()->toISOString()
+                ]
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('メニュー組み合わせ計算エラー', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'store_id' => auth()->user()->store_id ?? null,
+                'menu_ids' => $request->get('menu_ids'),
+                'resource_id' => $request->get('resource_id')
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => [
+                    'code' => 'CALCULATION_ERROR',
+                    'message' => 'メニュー組み合わせ計算に失敗しました'
+                ],
+                'meta' => [
+                    'timestamp' => now()->toISOString()
+                ]
+            ], 500);
+        }
+    }
+
+    /**
+     * 電話予約最適化 空き時間取得 (v1.2 新機能)
+     * 
+     * GET /api/v1/bookings/phone-availability
+     * 
+     * 美容師が電話中に瞬時に空き時間を確認
+     * 複数日程の空き時間を一度に取得
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function phoneAvailability(Request $request): JsonResponse
+    {
+        try {
+            // バリデーション
+            $request->validate([
+                'resource_id' => 'nullable|integer|exists:resources,id',
+                'duration' => 'required|integer|min:5|max:480',
+                'date_from' => 'nullable|date|after_or_equal:today',
+                'date_to' => 'nullable|date|after:date_from'
+            ]);
+
+            $storeId = auth()->user()->store_id;
+            $resourceId = $request->get('resource_id');
+            $duration = $request->get('duration');
+            $dateFrom = $request->get('date_from');
+            $dateTo = $request->get('date_to');
+
+            Log::info('電話予約最適化 空き時間取得開始', [
+                'store_id' => $storeId,
+                'resource_id' => $resourceId,
+                'duration' => $duration,
+                'date_from' => $dateFrom,
+                'date_to' => $dateTo
+            ]);
+
+            // BookingServiceで電話予約最適化空き時間取得
+            $availability = $this->bookingService->getPhoneBookingAvailability(
+                $storeId,
+                $resourceId,
+                $duration,
+                $dateFrom,
+                $dateTo
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => $availability,
+                'message' => '電話予約用空き時間を取得しました',
+                'meta' => [
+                    'timestamp' => now()->toISOString(),
+                    'version' => '1.2'
+                ]
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'error' => [
+                    'code' => 'VALIDATION_ERROR',
+                    'message' => '検索条件に誤りがあります',
+                    'details' => $e->errors()
+                ],
+                'meta' => [
+                    'timestamp' => now()->toISOString()
+                ]
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('電話予約最適化 空き時間取得エラー', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'store_id' => auth()->user()->store_id ?? null,
+                'resource_id' => $request->get('resource_id'),
+                'duration' => $request->get('duration')
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => [
+                    'code' => 'AVAILABILITY_ERROR',
+                    'message' => '空き時間の取得に失敗しました'
+                ],
+                'meta' => [
+                    'timestamp' => now()->toISOString()
+                ]
+            ], 500);
+        }
+    }
+
+    /**
+     * 複数メニュー組み合わせ予約作成 (v1.2 新機能)
+     * 
+     * POST /api/v1/bookings/combination
+     * 
+     * 複数メニューの組み合わせ予約を作成
+     * booking_detailsテーブルを使用した詳細管理
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function createCombination(Request $request): JsonResponse
+    {
+        try {
+            // バリデーション
+            $request->validate([
+                'customer_id' => 'required|integer|exists:customers,id',
+                'primary_resource_id' => 'nullable|integer|exists:resources,id',
+                'booking_date' => 'required|date|after_or_equal:today',
+                'start_time' => 'required|date_format:H:i',
+                'customer_notes' => 'nullable|string|max:1000',
+                'staff_notes' => 'nullable|string|max:1000',
+                'booking_source' => 'nullable|string|in:admin,phone,liff,api',
+                'menus' => 'required|array|min:1',
+                'menus.*.menu_id' => 'required|integer|exists:menus,id',
+                'menus.*.resource_id' => 'nullable|integer|exists:resources,id',
+                'menus.*.sequence_order' => 'nullable|integer|min:1',
+                'menus.*.selected_options' => 'nullable|array',
+                'selected_options' => 'nullable|array',
+                'apply_set_discounts' => 'boolean',
+                'auto_add_services' => 'boolean',
+                'phone_booking_context' => 'nullable|array'
+            ]);
+
+            $storeId = auth()->user()->store_id;
+
+            Log::info('複数メニュー組み合わせ予約作成開始', [
+                'store_id' => $storeId,
+                'customer_id' => $request->get('customer_id'),
+                'booking_date' => $request->get('booking_date'),
+                'menus_count' => count($request->get('menus', []))
+            ]);
+
+            // BookingServiceで複数メニュー組み合わせ予約作成
+            $booking = $this->bookingService->createCombinationBooking(
+                $storeId,
+                $request->all()
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'booking' => new BookingResource($booking)
+                ],
+                'message' => '複数メニュー組み合わせ予約が作成されました',
+                'meta' => [
+                    'timestamp' => now()->toISOString(),
+                    'version' => '1.2'
+                ]
+            ], 201);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'error' => [
+                    'code' => 'VALIDATION_ERROR',
+                    'message' => '入力内容に誤りがあります',
+                    'details' => $e->errors()
+                ],
+                'meta' => [
+                    'timestamp' => now()->toISOString()
+                ]
+            ], 422);
+        } catch (\App\Exceptions\BookingConflictException $e) {
+            return response()->json([
+                'success' => false,
+                'error' => [
+                    'code' => 'BOOKING_CONFLICT',
+                    'message' => $e->getMessage()
+                ],
+                'meta' => [
+                    'timestamp' => now()->toISOString()
+                ]
+            ], 409);
+        } catch (\Exception $e) {
+            Log::error('複数メニュー組み合わせ予約作成エラー', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'store_id' => $storeId ?? null,
+                'customer_id' => $request->get('customer_id'),
+                'booking_date' => $request->get('booking_date')
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => [
+                    'code' => 'COMBINATION_BOOKING_ERROR',
+                    'message' => '複数メニュー組み合わせ予約の作成に失敗しました'
                 ],
                 'meta' => [
                     'timestamp' => now()->toISOString()

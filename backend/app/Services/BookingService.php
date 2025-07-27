@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Booking;
+use App\Models\BookingDetail;
 use App\Models\Menu;
 use App\Models\Resource;
 use App\Models\Customer;
@@ -113,7 +114,7 @@ class BookingService
                     'booking_date' => $bookingData['booking_date'],
                     'start_time' => $bookingData['start_time']
                 ]);
-                
+
                 throw new \Exception('指定時間は既に予約されています');
             }
 
@@ -129,12 +130,12 @@ class BookingService
 
             // 4. 料金計算
             $menu = Menu::where('store_id', $storeId)
-                       ->findOrFail($bookingData['menu_id']);
-            
+                ->findOrFail($bookingData['menu_id']);
+
             $resource = null;
             if (!empty($bookingData['resource_id'])) {
                 $resource = Resource::where('store_id', $storeId)
-                                  ->findOrFail($bookingData['resource_id']);
+                    ->findOrFail($bookingData['resource_id']);
             }
 
             $totalPrice = $this->calculateTotalPrice(
@@ -163,7 +164,19 @@ class BookingService
             // オプション関連付け
             if (!empty($bookingData['option_ids'])) {
                 foreach ($bookingData['option_ids'] as $optionId) {
-                    $booking->options()->attach($optionId);
+                    $menuOption = \App\Models\MenuOption::find($optionId);
+                    if ($menuOption) {
+                        $booking->bookingOptions()->create([
+                            'menu_option_id' => $optionId,
+                            'option_name' => $menuOption->name,
+                            'option_description' => $menuOption->description,
+                            'unit_price' => $menuOption->price,
+                            'duration' => $menuOption->duration,
+                            'quantity' => 1,
+                            'total_price' => $menuOption->price,
+                            'option_type' => 'addon',
+                        ]);
+                    }
                 }
             }
 
@@ -176,7 +189,8 @@ class BookingService
                 'total_price' => $totalPrice
             ]);
 
-            return $booking;
+            // リレーションをロードして返す
+            return $booking->load(['customer', 'menu', 'resource', 'bookingOptions']);
         });
     }
 
@@ -216,7 +230,26 @@ class BookingService
 
             // オプション更新
             if (isset($updateData['option_ids'])) {
-                $booking->options()->sync($updateData['option_ids']);
+                // 既存オプションを削除
+                $booking->bookingOptions()->delete();
+
+                // 新しいオプションを作成
+                foreach ($updateData['option_ids'] as $optionId) {
+                    $menuOption = \App\Models\MenuOption::find($optionId);
+                    if ($menuOption) {
+                        $booking->bookingOptions()->create([
+                            'menu_option_id' => $optionId,
+                            'option_name' => $menuOption->name,
+                            'option_description' => $menuOption->description,
+                            'unit_price' => $menuOption->price,
+                            'duration' => $menuOption->duration,
+                            'quantity' => 1,
+                            'total_price' => $menuOption->price,
+                            'option_type' => 'addon',
+                        ]);
+                    }
+                }
+
                 unset($updateData['option_ids']);
             }
 
@@ -304,8 +337,8 @@ class BookingService
 
         // リソース指定がない場合は店舗全体での競合チェック
         $query = Booking::where('store_id', $storeId)
-                       ->whereDate('booking_date', $bookingDate)
-                       ->whereIn('status', ['confirmed', 'pending']);
+            ->whereDate('booking_date', $bookingDate)
+            ->whereIn('status', ['confirmed', 'pending']);
 
         // リソース指定がある場合はそのリソースのみチェック
         if ($resourceId) {
@@ -328,12 +361,12 @@ class BookingService
                 // ケース3: 新規予約が既存予約を完全に包含
                 ->orWhere(function ($innerQuery) use ($startTime, $endTime) {
                     $innerQuery->where('start_time', '<=', $startTime)
-                              ->where('end_time', '>=', $endTime);
+                        ->where('end_time', '>=', $endTime);
                 })
                 // ケース4: 既存予約が新規予約を完全に包含
                 ->orWhere(function ($innerQuery) use ($startTime, $endTime) {
                     $innerQuery->where('start_time', '>=', $startTime)
-                              ->where('end_time', '<=', $endTime);
+                        ->where('end_time', '<=', $endTime);
                 });
         })->exists();
 
@@ -377,9 +410,9 @@ class BookingService
         // 2. オプション料金加算
         if (!empty($optionIds)) {
             $options = \App\Models\MenuOption::whereIn('id', $optionIds)
-                                             ->where('menu_id', $menu->id)
-                                             ->get();
-            
+                ->where('menu_id', $menu->id)
+                ->get();
+
             foreach ($options as $option) {
                 $totalPrice += $option->price;
                 Log::debug('オプション料金加算', [
@@ -411,13 +444,13 @@ class BookingService
             }
 
             // 指名料（attributes.nomination_fee）
-            $attributes = is_string($resource->attributes) 
-                ? json_decode($resource->attributes, true) 
+            $attributes = is_string($resource->attributes)
+                ? json_decode($resource->attributes, true)
                 : $resource->attributes;
-            
+
             if (isset($attributes['nomination_fee']) && $attributes['nomination_fee'] > 0) {
                 $totalPrice += $attributes['nomination_fee'];
-                
+
                 Log::debug('指名料加算', [
                     'resource_id' => $resource->id,
                     'nomination_fee' => $attributes['nomination_fee'],
@@ -456,10 +489,10 @@ class BookingService
      * @throws \Exception Token期限切れ・データ不整合時
      */
     private function validateAndReleaseHoldToken(
-        string $holdToken, 
-        int $storeId, 
-        ?int $resourceId, 
-        string $date, 
+        string $holdToken,
+        int $storeId,
+        ?int $resourceId,
+        string $date,
         string $startTime
     ): bool {
         Log::info('Hold Token検証開始', [
@@ -508,7 +541,6 @@ class BookingService
                 ]);
                 throw new \Exception('Hold Token解放に失敗しました');
             }
-
         } catch (\Exception $e) {
             Log::error('Hold Token検証エラー', [
                 'hold_token' => substr($holdToken, 0, 10) . '...',
@@ -516,7 +548,7 @@ class BookingService
                 'store_id' => $storeId,
                 'resource_id' => $resourceId
             ]);
-            
+
             throw new \Exception('Hold Token検証失敗: ' . $e->getMessage());
         }
     }
@@ -553,9 +585,9 @@ class BookingService
 
             // 特別営業時間チェック
             if ($specialCalendar->start_time && $specialCalendar->end_time) {
-                $isWithinSpecialHours = $startTime >= $specialCalendar->start_time && 
-                                       $endTime <= $specialCalendar->end_time;
-                
+                $isWithinSpecialHours = $startTime >= $specialCalendar->start_time &&
+                    $endTime <= $specialCalendar->end_time;
+
                 Log::info('特別営業時間チェック', [
                     'store_id' => $storeId,
                     'date' => $date,
@@ -565,15 +597,15 @@ class BookingService
                     'booking_end' => $endTime,
                     'is_within' => $isWithinSpecialHours
                 ]);
-                
+
                 return $isWithinSpecialHours;
             }
         }
 
         // 2. 通常営業時間チェック（stores.business_hours）
         $store = Store::findOrFail($storeId);
-        $businessHours = is_string($store->business_hours) 
-            ? json_decode($store->business_hours, true) 
+        $businessHours = is_string($store->business_hours)
+            ? json_decode($store->business_hours, true)
             : $store->business_hours;
 
         if (!$businessHours) {
@@ -600,27 +632,28 @@ class BookingService
         }
 
         $dayHours = $businessHours[$dayName];
-        
-        // 休業日チェック
-        if (!$dayHours['is_open']) {
-            Log::info('営業時間外（定休日）', [
+
+        // 営業時間の存在チェック（openとcloseキーが存在するかチェック）
+        if (!isset($dayHours['open']) || !isset($dayHours['close'])) {
+            Log::info('営業時間外（営業時間設定なし）', [
                 'store_id' => $storeId,
                 'date' => $date,
-                'day_of_week' => $dayName
+                'day_of_week' => $dayName,
+                'day_hours' => $dayHours
             ]);
             return false;
         }
 
         // 営業時間内チェック
-        $isWithinBusinessHours = $startTime >= $dayHours['start_time'] && 
-                                 $endTime <= $dayHours['end_time'];
+        $isWithinBusinessHours = $startTime >= $dayHours['open'] &&
+            $endTime <= $dayHours['close'];
 
         Log::info('通常営業時間チェック', [
             'store_id' => $storeId,
             'date' => $date,
             'day_of_week' => $dayName,
-            'business_start' => $dayHours['start_time'],
-            'business_end' => $dayHours['end_time'],
+            'business_start' => $dayHours['open'],
+            'business_end' => $dayHours['close'],
             'booking_start' => $startTime,
             'booking_end' => $endTime,
             'is_within' => $isWithinBusinessHours
@@ -632,27 +665,57 @@ class BookingService
     /**
      * 終了時間計算
      * 
-     * メニュー時間から予約終了時間を算出
+     * tugical仕様書準拠の正しい時間計算：
+     * 総所要時間 = base_duration + prep_duration + cleanup_duration + buffer_duration + オプション時間
      * 
      * @param array $bookingData 予約データ
      * @return string 終了時間（H:i）
+     * @throws \Exception メニューが見つからない場合
      */
     protected function calculateEndTime(array $bookingData): string
     {
         $startTime = $bookingData['start_time'];
         $menuId = $bookingData['menu_id'];
-        
+        $optionIds = $bookingData['option_ids'] ?? [];
+
+        Log::info('終了時間計算開始', [
+            'start_time' => $startTime,
+            'menu_id' => $menuId,
+            'option_ids' => $optionIds
+        ]);
+
         // メニュー取得
         $menu = Menu::find($menuId);
         if (!$menu) {
-            throw new \Exception('メニューが見つかりません');
+            throw new \Exception('メニューが見つかりません: ID ' . $menuId);
         }
 
-        // 開始時間に所要時間を加算
+        // 正しい総所要時間計算（仕様書準拠）
+        $totalDuration = $menu->calculateTotalDuration($optionIds);
+
+        Log::info('時間計算詳細', [
+            'menu_name' => $menu->name,
+            'base_duration' => $menu->base_duration,
+            'prep_duration' => $menu->prep_duration,
+            'cleanup_duration' => $menu->cleanup_duration,
+            'buffer_duration' => $menu->buffer_duration ?? 0,
+            'option_duration' => $totalDuration - ($menu->base_duration + $menu->prep_duration + $menu->cleanup_duration),
+            'total_duration' => $totalDuration
+        ]);
+
+        // 開始時間に総所要時間を加算
         $startDateTime = Carbon::createFromFormat('H:i', $startTime);
-        $endDateTime = $startDateTime->addMinutes($menu->duration);
-        
-        return $endDateTime->format('H:i');
+        $endDateTime = $startDateTime->addMinutes($totalDuration);
+
+        $endTime = $endDateTime->format('H:i');
+
+        Log::info('終了時間計算完了', [
+            'start_time' => $startTime,
+            'total_duration' => $totalDuration,
+            'end_time' => $endTime
+        ]);
+
+        return $endTime;
     }
 
     /**
@@ -668,14 +731,14 @@ class BookingService
     {
         $date = now()->format('Ymd');
         $storeIdPadded = str_pad($storeId, 3, '0', STR_PAD_LEFT);
-        
+
         // 本日の店舗予約数を取得
         $todayBookingsCount = Booking::where('store_id', $storeId)
             ->whereDate('created_at', now()->toDateString())
             ->count();
-        
+
         $sequence = str_pad($todayBookingsCount + 1, 3, '0', STR_PAD_LEFT);
-        
+
         return "TG{$date}{$storeIdPadded}{$sequence}";
     }
 
@@ -729,11 +792,11 @@ class BookingService
         }
 
         // Eager Loading
-        $query->with(['customer', 'menu', 'resource', 'options']);
+        $query->with(['customer', 'menu', 'resource', 'bookingOptions']);
 
         // ソート
         $query->orderBy('booking_date', 'asc')
-              ->orderBy('start_time', 'asc');
+            ->orderBy('start_time', 'asc');
 
         // ページング
         $perPage = $filters['per_page'] ?? 20;
@@ -741,4 +804,438 @@ class BookingService
 
         return $query->paginate($perPage, ['*'], 'page', $page);
     }
-} 
+
+    /**
+     * 複数メニュー組み合わせ計算 (v1.2 新機能)
+     * 
+     * 電話予約時にリアルタイムで料金・時間を計算
+     * 
+     * @param int $storeId 店舗ID
+     * @param array $menuIds メニューID一覧
+     * @param int|null $resourceId リソースID
+     * @param string $bookingDate 予約日
+     * @param array $selectedOptions 選択されたオプション
+     * @return array 計算結果
+     */
+    public function calculateCombinationPricing(
+        int $storeId,
+        array $menuIds,
+        ?int $resourceId = null,
+        string $bookingDate = null,
+        array $selectedOptions = []
+    ): array {
+        Log::info('複数メニュー組み合わせ計算開始', [
+            'store_id' => $storeId,
+            'menu_ids' => $menuIds,
+            'resource_id' => $resourceId,
+            'booking_date' => $bookingDate,
+            'selected_options' => $selectedOptions
+        ]);
+
+        // メニュー取得
+        $menus = Menu::where('store_id', $storeId)
+            ->whereIn('id', $menuIds)
+            ->get();
+
+        if ($menus->count() !== count($menuIds)) {
+            throw new \Exception('指定されたメニューが存在しません');
+        }
+
+        // リソース取得
+        $resource = null;
+        if ($resourceId) {
+            $resource = Resource::where('store_id', $storeId)->find($resourceId);
+            if (!$resource) {
+                throw new \Exception('指定されたリソースが存在しません');
+            }
+        }
+
+        // 基本料金計算
+        $baseTotalPrice = 0;
+        $totalDuration = 0;
+        $priceBreakdown = [];
+        $timeBreakdown = [];
+        $currentOffset = 0;
+
+        foreach ($menus as $index => $menu) {
+            $menuOptions = $selectedOptions[$menu->id] ?? [];
+            $menuOptionPrice = 0;
+            $menuOptionDuration = 0;
+
+            // メニューオプション価格・時間計算
+            if (!empty($menuOptions)) {
+                $options = $menu->menuOptions()->whereIn('id', $menuOptions)->get();
+                $menuOptionPrice = $options->sum('price');
+                $menuOptionDuration = $options->sum('duration');
+            }
+
+            $menuPrice = $menu->base_price + $menuOptionPrice;
+            $menuDuration = $menu->base_duration + $menu->prep_duration + $menu->cleanup_duration + $menuOptionDuration;
+
+            $baseTotalPrice += $menuPrice;
+            $totalDuration += $menuDuration;
+
+            // 料金内訳
+            $priceBreakdown[] = [
+                'service' => $menu->name,
+                'base_price' => $menu->base_price,
+                'options_price' => $menuOptionPrice,
+                'subtotal' => $menuPrice
+            ];
+
+            // 時間内訳
+            $timeBreakdown[] = [
+                'service' => $menu->name,
+                'duration' => $menuDuration,
+                'start_offset' => $currentOffset,
+                'end_offset' => $currentOffset + $menuDuration
+            ];
+
+            $currentOffset += $menuDuration;
+        }
+
+        // セット割引計算
+        $setDiscounts = $this->calculateSetDiscounts($menus, $baseTotalPrice);
+        $setDiscountAmount = collect($setDiscounts)->sum('amount');
+
+        // 自動追加サービス取得
+        $autoAddedServices = $this->getAutoAddedServices($menus);
+        foreach ($autoAddedServices as $autoService) {
+            $totalDuration += $autoService['duration'];
+            $priceBreakdown[] = [
+                'service' => $autoService['service'],
+                'base_price' => $autoService['price'],
+                'options_price' => 0,
+                'auto_added' => true
+            ];
+            $timeBreakdown[] = [
+                'service' => $autoService['service'],
+                'duration' => $autoService['duration'],
+                'start_offset' => $currentOffset,
+                'end_offset' => $currentOffset + $autoService['duration']
+            ];
+            $currentOffset += $autoService['duration'];
+        }
+
+        // 最終料金計算
+        $totalPrice = $baseTotalPrice - $setDiscountAmount;
+
+        // 推定終了時間計算
+        $estimatedEndTime = null;
+        if ($bookingDate) {
+            $startTime = '09:00'; // デフォルト開始時間
+            $endDateTime = Carbon::createFromFormat('Y-m-d H:i', $bookingDate . ' ' . $startTime)
+                ->addMinutes($totalDuration);
+            $estimatedEndTime = $endDateTime->format('H:i');
+        }
+
+        $result = [
+            'total_price' => $totalPrice,
+            'base_total_price' => $baseTotalPrice,
+            'set_discount_amount' => $setDiscountAmount,
+            'total_duration' => $totalDuration,
+            'estimated_end_time' => $estimatedEndTime,
+            'price_breakdown' => $priceBreakdown,
+            'time_breakdown' => $timeBreakdown,
+            'applied_discounts' => $setDiscounts,
+            'auto_added_services' => $autoAddedServices
+        ];
+
+        Log::info('複数メニュー組み合わせ計算完了', $result);
+
+        return $result;
+    }
+
+    /**
+     * 複数メニュー組み合わせ予約作成 (v1.2 新機能)
+     * 
+     * @param int $storeId 店舗ID
+     * @param array $bookingData 予約データ
+     * @return Booking 作成された予約
+     */
+    public function createCombinationBooking(int $storeId, array $bookingData): Booking
+    {
+        Log::info('複数メニュー組み合わせ予約作成開始', [
+            'store_id' => $storeId,
+            'booking_data' => $bookingData
+        ]);
+
+        return DB::transaction(function () use ($storeId, $bookingData) {
+            // 料金・時間計算
+            $calculation = $this->calculateCombinationPricing(
+                $storeId,
+                collect($bookingData['menus'])->pluck('menu_id')->toArray(),
+                $bookingData['primary_resource_id'] ?? null,
+                $bookingData['booking_date'],
+                $bookingData['selected_options'] ?? []
+            );
+
+            // 予約作成
+            $booking = Booking::create([
+                'store_id' => $storeId,
+                'customer_id' => $bookingData['customer_id'],
+                'resource_id' => $bookingData['resource_id'] ?? null,
+                'booking_type' => 'combination',
+                'booking_date' => $bookingData['booking_date'],
+                'start_time' => $bookingData['start_time'],
+                'end_time' => $calculation['estimated_end_time'],
+                'total_price' => $calculation['total_price'],
+                'base_total_price' => $calculation['base_total_price'],
+                'set_discount_amount' => $calculation['set_discount_amount'],
+                'auto_added_services' => $calculation['auto_added_services'],
+                'combination_rules' => [
+                    'applied_discounts' => $calculation['applied_discounts'],
+                    'auto_additions' => $calculation['auto_added_services']
+                ],
+                'status' => 'confirmed',
+                'customer_notes' => $bookingData['customer_notes'] ?? null,
+                'staff_notes' => $bookingData['staff_notes'] ?? null,
+                'booking_source' => $bookingData['booking_source'] ?? 'staff',
+                'phone_booking_context' => $bookingData['phone_booking_context'] ?? null
+            ]);
+
+            // 予約明細作成
+            foreach ($bookingData['menus'] as $index => $menuData) {
+                $menu = Menu::where('store_id', $storeId)->find($menuData['menu_id']);
+                if (!$menu) {
+                    continue;
+                }
+
+                $timeBreakdown = collect($calculation['time_breakdown'])
+                    ->where('service', $menu->name)
+                    ->first();
+
+                BookingDetail::create([
+                    'booking_id' => $booking->id,
+                    'menu_id' => $menu->id,
+                    'resource_id' => $menuData['resource_id'] ?? $bookingData['resource_id'] ?? null,
+                    'sequence_order' => $menuData['sequence_order'] ?? $index + 1,
+                    'service_name' => $menu->name,
+                    'service_description' => $menu->description,
+                    'base_price' => $menu->base_price,
+                    'base_duration' => $menu->base_duration,
+                    'prep_duration' => $menu->prep_duration,
+                    'cleanup_duration' => $menu->cleanup_duration,
+                    'total_duration' => $timeBreakdown['duration'] ?? 0,
+                    'start_time_offset' => $timeBreakdown['start_offset'] ?? 0,
+                    'end_time_offset' => $timeBreakdown['end_offset'] ?? 0,
+                    'selected_options' => $menuData['selected_options'] ?? [],
+                    'completion_status' => BookingDetail::COMPLETION_STATUS_PENDING
+                ]);
+            }
+
+            // 自動追加サービス明細作成
+            foreach ($calculation['auto_added_services'] as $index => $autoService) {
+                $timeBreakdown = collect($calculation['time_breakdown'])
+                    ->where('service', $autoService['service'])
+                    ->first();
+
+                BookingDetail::create([
+                    'booking_id' => $booking->id,
+                    'menu_id' => $autoService['menu_id'] ?? null,
+                    'sequence_order' => 100 + $index, // 自動追加は後順位
+                    'service_name' => $autoService['service'],
+                    'service_description' => $autoService['description'] ?? null,
+                    'base_price' => $autoService['price'],
+                    'total_duration' => $autoService['duration'],
+                    'start_time_offset' => $timeBreakdown['start_offset'] ?? 0,
+                    'end_time_offset' => $timeBreakdown['end_offset'] ?? 0,
+                    'is_auto_added' => true,
+                    'auto_add_reason' => $autoService['reason'],
+                    'completion_status' => BookingDetail::COMPLETION_STATUS_PENDING
+                ]);
+            }
+
+            // 通知送信
+            $this->notificationService->sendBookingConfirmation($booking);
+
+            Log::info('複数メニュー組み合わせ予約作成完了', [
+                'booking_id' => $booking->id,
+                'details_count' => $booking->bookingDetails()->count()
+            ]);
+
+            return $booking->load(['customer', 'bookingDetails.menu', 'bookingDetails.resource']);
+        });
+    }
+
+    /**
+     * 電話予約最適化 空き時間取得 (v1.2 新機能)
+     * 
+     * 美容師が電話中に瞬時に空き時間を確認
+     * 
+     * @param int $storeId 店舗ID
+     * @param int|null $resourceId リソースID
+     * @param int $duration 所要時間（分）
+     * @param string $dateFrom 開始日
+     * @param string $dateTo 終了日
+     * @return array 空き時間情報
+     */
+    public function getPhoneBookingAvailability(
+        int $storeId,
+        ?int $resourceId = null,
+        int $duration = 60,
+        string $dateFrom = null,
+        string $dateTo = null
+    ): array {
+        $dateFrom = $dateFrom ?? now()->toDateString();
+        $dateTo = $dateTo ?? now()->addDays(7)->toDateString();
+
+        Log::info('電話予約最適化 空き時間取得開始', [
+            'store_id' => $storeId,
+            'resource_id' => $resourceId,
+            'duration' => $duration,
+            'date_from' => $dateFrom,
+            'date_to' => $dateTo
+        ]);
+
+        $availability = [];
+        $current = Carbon::parse($dateFrom);
+        $end = Carbon::parse($dateTo);
+
+        while ($current->lte($end)) {
+            $dateString = $current->toDateString();
+            $dateLabel = $this->getDateLabel($dateString);
+
+            // 電話予約最適化では任意時間枠を検索するため、ダミーメニューIDを使用
+            // 実際のメニューは予約作成時に指定される
+            $dummyMenuId = 1; // カット（最も一般的なメニュー）を基準とする
+
+            // 空き時間取得
+            $availableSlots = $this->availabilityService->getAvailableSlots(
+                $storeId,
+                $dateString,
+                $dummyMenuId,
+                $resourceId
+            );
+
+            // 指定された時間で利用可能な枠のみフィルタリング
+            $availableSlots = $this->filterSlotsByDuration($availableSlots, $duration);
+
+            if (!empty($availableSlots)) {
+                $availability[$dateString] = [
+                    'date_label' => $dateLabel,
+                    'available_slots' => $availableSlots
+                ];
+            }
+
+            $current->addDay();
+        }
+
+        return [
+            'availability' => $availability,
+            'duration_minutes' => $duration,
+            'resource_id' => $resourceId
+        ];
+    }
+
+    /**
+     * セット割引計算
+     * 
+     * @param \Illuminate\Database\Eloquent\Collection $menus メニュー一覧
+     * @param int $baseTotalPrice 基本合計金額
+     * @return array 割引情報
+     */
+    protected function calculateSetDiscounts($menus, int $baseTotalPrice): array
+    {
+        $discounts = [];
+
+        // カット+カラーセット割引
+        $hasHaircut = $menus->where('category', 'haircut')->isNotEmpty();
+        $hasColor = $menus->where('category', 'color')->isNotEmpty();
+
+        if ($hasHaircut && $hasColor) {
+            $discounts[] = [
+                'rule' => 'カット+カラーセット',
+                'amount' => 500,
+                'description' => 'カット+カラーの組み合わせ割引'
+            ];
+        }
+
+        // 3メニュー以上割引
+        if ($menus->count() >= 3) {
+            $discounts[] = [
+                'rule' => '3メニュー以上割引',
+                'amount' => 1000,
+                'description' => '3つ以上のメニュー組み合わせ割引'
+            ];
+        }
+
+        return $discounts;
+    }
+
+    /**
+     * 自動追加サービス取得
+     * 
+     * @param \Illuminate\Database\Eloquent\Collection $menus メニュー一覧
+     * @return array 自動追加サービス一覧
+     */
+    protected function getAutoAddedServices($menus): array
+    {
+        $autoServices = [];
+
+        // カラー施術時のシャンプー自動追加
+        if ($menus->where('category', 'color')->isNotEmpty()) {
+            $autoServices[] = [
+                'service' => 'シャンプー',
+                'price' => 0,
+                'duration' => 15,
+                'reason' => 'カラー施術必須',
+                'description' => 'カラー施術に伴う必須シャンプー'
+            ];
+        }
+
+        // 3メニュー以上の場合のブロー自動追加
+        if ($menus->count() >= 3) {
+            $autoServices[] = [
+                'service' => 'ブロー',
+                'price' => 0,
+                'duration' => 20,
+                'reason' => 'セット仕上げ',
+                'description' => '複数メニュー仕上げブロー'
+            ];
+        }
+
+        return $autoServices;
+    }
+
+    /**
+     * 時間枠を指定時間でフィルタリング
+     * 
+     * @param array $slots 時間枠一覧
+     * @param int $requiredDuration 必要時間（分）
+     * @return array フィルタリング済み時間枠
+     */
+    protected function filterSlotsByDuration(array $slots, int $requiredDuration): array
+    {
+        return array_filter($slots, function ($slot) use ($requiredDuration) {
+            // 時間枠の長さを計算（分）
+            $startTime = Carbon::createFromFormat('H:i', $slot['start_time'] ?? '00:00');
+            $endTime = Carbon::createFromFormat('H:i', $slot['end_time'] ?? '00:00');
+            $slotDuration = $endTime->diffInMinutes($startTime);
+
+            // 必要時間以上の枠のみ返す
+            return $slotDuration >= $requiredDuration;
+        });
+    }
+
+    /**
+     * 日付ラベル取得
+     * 
+     * @param string $dateString 日付文字列
+     * @return string 日付ラベル
+     */
+    protected function getDateLabel(string $dateString): string
+    {
+        $date = Carbon::parse($dateString);
+        $today = now()->toDateString();
+        $tomorrow = now()->addDay()->toDateString();
+
+        if ($dateString === $today) {
+            return '今日';
+        } elseif ($dateString === $tomorrow) {
+            return '明日';
+        } else {
+            return $date->format('m月d日') . '(' . $date->isoFormat('ddd') . ')';
+        }
+    }
+}

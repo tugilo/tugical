@@ -40,7 +40,74 @@ class TestUserSeeder extends Seeder
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
 
         try {
-            // 認証テスト用ユーザー作成（store_id=1固定）
+            // テナントと店舗を直接作成
+            DB::table('tenants')->insertOrIgnore([
+                'id' => 1,
+                'name' => 'テストテナント',
+                'email' => 'test@tugical.test',
+                'plan' => 'standard',
+                'status' => 'active',
+                'max_stores' => 5,
+                'max_bookings_per_month' => 2000,
+                'max_staff_per_store' => 10,
+                'billing_cycle' => 'monthly',
+                'monthly_fee' => 19800,
+                'is_test_account' => true,
+                'settings' => json_encode([
+                    'features' => ['booking', 'customer', 'notification', 'analytics'],
+                ]),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            DB::table('stores')->insertOrIgnore([
+                'id' => 1,
+                'tenant_id' => 1,
+                'name' => 'テスト店舗',
+                'slug' => 'test-store',
+                'industry_type' => 'beauty',
+                'industry_settings' => json_encode([
+                    'template_name' => '美容・ネイル',
+                    'features' => ['staff_assignment', 'skill_level', 'gender_preference'],
+                    'labels' => [
+                        'resource' => 'スタッフ',
+                        'customer' => 'お客様',
+                        'booking' => 'ご予約',
+                    ],
+                ]),
+                'business_hours' => json_encode([
+                    'monday' => ['open' => '09:00', 'close' => '19:00'],
+                    'tuesday' => ['open' => '09:00', 'close' => '19:00'],
+                    'wednesday' => ['open' => '09:00', 'close' => '19:00'],
+                    'thursday' => ['open' => '09:00', 'close' => '19:00'],
+                    'friday' => ['open' => '09:00', 'close' => '19:00'],
+                    'saturday' => ['open' => '09:00', 'close' => '18:00'],
+                    'sunday' => ['open' => '10:00', 'close' => '17:00'],
+                ]),
+                'time_slot_interval' => 30,
+                'advance_booking_days' => 30,
+                'accept_same_day_booking' => true,
+                'booking_mode' => 'auto',
+                'booking_limit_per_day' => 50,
+                'hold_minutes' => 10,
+                'require_customer_info' => false,
+                'notification_settings' => json_encode([
+                    'booking_confirmation' => true,
+                    'booking_reminder' => true,
+                    'booking_reminder_hours' => 24,
+                ]),
+                'send_booking_notifications' => true,
+                'send_reminder_notifications' => true,
+                'reminder_hours_before' => 24,
+                'line_integration_active' => false,
+                'theme_color' => '#10b981',
+                'is_active' => true,
+                'is_public' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            // 認証テスト用ユーザー作成
             $storeId = 1;
             $this->createTestUsers($storeId);
 

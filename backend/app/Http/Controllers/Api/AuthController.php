@@ -54,7 +54,16 @@ class AuthController extends Controller
     {
         try {
             $credentials = $request->validated();
-            
+
+            // デバッグ：受信したリクエストデータをログ出力
+            Log::info('ログインリクエスト受信', [
+                'credentials' => $credentials,
+                'raw_input' => $request->all(),
+                'headers' => $request->headers->all(),
+                'method' => $request->method(),
+                'url' => $request->fullUrl(),
+            ]);
+
             // ユーザー認証（メール・パスワード・店舗ID）
             $user = User::where('email', $credentials['email'])
                 ->where('store_id', $credentials['store_id'])
@@ -134,7 +143,6 @@ class AuthController extends Controller
                     'version' => '1.0',
                 ]
             ]);
-
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
@@ -147,7 +155,6 @@ class AuthController extends Controller
                     'timestamp' => now()->toISOString(),
                 ]
             ], 422);
-
         } catch (\Exception $e) {
             Log::error('ログイン処理エラー', [
                 'error' => $e->getMessage(),
@@ -220,7 +227,6 @@ class AuthController extends Controller
                     'version' => '1.0',
                 ]
             ]);
-
         } catch (\Exception $e) {
             Log::error('ログアウト処理エラー', [
                 'error' => $e->getMessage(),
@@ -293,7 +299,7 @@ class AuthController extends Controller
                         'login_at' => $user->last_login_at?->toISOString(),
                         'login_ip' => $user->last_login_ip,
                         'current_ip' => $request->ip(),
-                        'session_duration_minutes' => $user->last_login_at ? 
+                        'session_duration_minutes' => $user->last_login_at ?
                             now()->diffInMinutes($user->last_login_at) : 0,
                     ],
                 ],
@@ -303,7 +309,6 @@ class AuthController extends Controller
                     'version' => '1.0',
                 ]
             ]);
-
         } catch (\Exception $e) {
             Log::error('ユーザー情報取得エラー', [
                 'error' => $e->getMessage(),
@@ -336,28 +341,56 @@ class AuthController extends Controller
     {
         $permissions = [
             'owner' => [
-                'booking.manage', 'booking.create', 'booking.update', 'booking.delete',
-                'customer.manage', 'customer.create', 'customer.update', 'customer.delete',
-                'staff.manage', 'staff.create', 'staff.update', 'staff.delete',
-                'menu.manage', 'menu.create', 'menu.update', 'menu.delete',
-                'notification.manage', 'notification.send',
-                'settings.manage', 'analytics.view', 'export.data',
-                'store.settings', 'user.manage'
+                'booking.manage',
+                'booking.create',
+                'booking.update',
+                'booking.delete',
+                'customer.manage',
+                'customer.create',
+                'customer.update',
+                'customer.delete',
+                'staff.manage',
+                'staff.create',
+                'staff.update',
+                'staff.delete',
+                'menu.manage',
+                'menu.create',
+                'menu.update',
+                'menu.delete',
+                'notification.manage',
+                'notification.send',
+                'settings.manage',
+                'analytics.view',
+                'export.data',
+                'store.settings',
+                'user.manage'
             ],
             'manager' => [
-                'booking.manage', 'booking.create', 'booking.update',
-                'customer.manage', 'customer.create', 'customer.update',
-                'staff.view', 'menu.view',
-                'notification.send', 'analytics.view'
+                'booking.manage',
+                'booking.create',
+                'booking.update',
+                'customer.manage',
+                'customer.create',
+                'customer.update',
+                'staff.view',
+                'menu.view',
+                'notification.send',
+                'analytics.view'
             ],
             'staff' => [
-                'booking.view', 'booking.update',
-                'customer.view', 'customer.update',
+                'booking.view',
+                'booking.update',
+                'customer.view',
+                'customer.update',
                 'notification.view'
             ],
             'reception' => [
-                'booking.manage', 'booking.create', 'booking.update',
-                'customer.view', 'customer.create', 'customer.update'
+                'booking.manage',
+                'booking.create',
+                'booking.update',
+                'customer.view',
+                'customer.create',
+                'customer.update'
             ]
         ];
 

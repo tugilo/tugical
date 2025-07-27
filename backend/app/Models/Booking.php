@@ -93,35 +93,12 @@ class Booking extends Model
     protected $table = 'bookings';
 
     /**
-     * 一括代入可能な属性
+     * 一括代入から保護する属性
+     * 
+     * 開発の柔軟性を重視し、IDのみを保護
+     * これにより新しいフィールド追加時にfillableの更新が不要になる
      */
-    protected $fillable = [
-        'store_id',
-        'booking_number',
-        'customer_id',
-        'menu_id',
-        'resource_id',
-        'staff_id',
-        'booking_date',
-        'start_time',
-        'end_time',
-        'duration',
-        'status',
-        'base_price',
-        'option_price',
-        'resource_price',
-        'total_price',
-        'hold_token',
-        'hold_expires_at',
-        'customer_notes',
-        'staff_notes',
-        'cancellation_reason',
-        'booking_data',
-        'notification_history',
-        'confirmed_at',
-        'cancelled_at',
-        'completed_at',
-    ];
+    protected $guarded = ['id'];
 
     /**
      * 非表示属性（API出力時に除外）
@@ -141,7 +118,12 @@ class Booking extends Model
         'option_price' => 'integer',
         'resource_price' => 'integer',
         'total_price' => 'integer',
+        'base_total_price' => 'integer',
+        'set_discount_amount' => 'integer',
         'booking_data' => 'array',
+        'auto_added_services' => 'array',
+        'combination_rules' => 'array',
+        'phone_booking_context' => 'array',
         'notification_history' => 'array',
         'hold_expires_at' => 'datetime',
         'confirmed_at' => 'datetime',
@@ -320,6 +302,14 @@ class Booking extends Model
     }
 
     /**
+     * 予約明細との関係性（複数メニュー組み合わせ対応）
+     */
+    public function bookingDetails(): HasMany
+    {
+        return $this->hasMany(BookingDetail::class)->orderBy('sequence_order');
+    }
+
+    /**
      * 総料金計算
      */
     public function calculateTotalPrice(): int
@@ -338,12 +328,12 @@ class Booking extends Model
     {
         $date = now()->format('Ymd');
         $prefix = "TG{$date}";
-        
+
         // 当日の最大連番を取得
         $lastNumber = self::where('store_id', $storeId)
-                         ->where('booking_number', 'like', $prefix . '%')
-                         ->orderBy('booking_number', 'desc')
-                         ->value('booking_number');
+            ->where('booking_number', 'like', $prefix . '%')
+            ->orderBy('booking_number', 'desc')
+            ->value('booking_number');
 
         if ($lastNumber) {
             $sequence = (int)substr($lastNumber, -3) + 1;
@@ -367,9 +357,9 @@ class Booking extends Model
      */
     public function isHoldTokenValid(): bool
     {
-        return $this->hold_token && 
-               $this->hold_expires_at && 
-               $this->hold_expires_at->isFuture();
+        return $this->hold_token &&
+            $this->hold_expires_at &&
+            $this->hold_expires_at->isFuture();
     }
 
     /**
@@ -377,9 +367,9 @@ class Booking extends Model
      */
     public function isHoldTokenExpired(): bool
     {
-        return $this->hold_token && 
-               $this->hold_expires_at && 
-               $this->hold_expires_at->isPast();
+        return $this->hold_token &&
+            $this->hold_expires_at &&
+            $this->hold_expires_at->isPast();
     }
 
     /**
@@ -429,7 +419,7 @@ class Booking extends Model
             'Y-m-d H:i',
             $this->booking_date->format('Y-m-d') . ' ' . $this->start_time
         );
-        
+
         return $bookingDateTime->isPast();
     }
 
@@ -442,7 +432,7 @@ class Booking extends Model
             'Y-m-d H:i',
             $this->booking_date->format('Y-m-d') . ' ' . $this->start_time
         );
-        
+
         return max(0, now()->diffInMinutes($bookingDateTime, false));
     }
 
@@ -457,7 +447,7 @@ class Booking extends Model
             'data' => $data,
             'sent_at' => now()->toISOString(),
         ];
-        
+
         $this->update(['notification_history' => $history]);
     }
 
@@ -519,7 +509,7 @@ class Booking extends Model
     public function scopeThisMonth($query)
     {
         return $query->whereMonth('booking_date', now()->month)
-                    ->whereYear('booking_date', now()->year);
+            ->whereYear('booking_date', now()->year);
     }
 
     /**
@@ -552,7 +542,7 @@ class Booking extends Model
     public function scopeTimeConflict($query, string $date, string $startTime, string $endTime, ?int $resourceId = null, ?int $excludeId = null)
     {
         $query = $query->where('booking_date', $date)
-                      ->whereIn('status', [self::STATUS_PENDING, self::STATUS_CONFIRMED]);
+            ->whereIn('status', [self::STATUS_PENDING, self::STATUS_CONFIRMED]);
 
         if ($resourceId) {
             $query->where('resource_id', $resourceId);
@@ -562,13 +552,13 @@ class Booking extends Model
             $query->where('id', '!=', $excludeId);
         }
 
-        return $query->where(function($q) use ($startTime, $endTime) {
+        return $query->where(function ($q) use ($startTime, $endTime) {
             $q->whereBetween('start_time', [$startTime, $endTime])
-              ->orWhereBetween('end_time', [$startTime, $endTime])
-              ->orWhere(function($subQuery) use ($startTime, $endTime) {
-                  $subQuery->where('start_time', '<=', $startTime)
-                           ->where('end_time', '>=', $endTime);
-              });
+                ->orWhereBetween('end_time', [$startTime, $endTime])
+                ->orWhere(function ($subQuery) use ($startTime, $endTime) {
+                    $subQuery->where('start_time', '<=', $startTime)
+                        ->where('end_time', '>=', $endTime);
+                });
         });
     }
 
@@ -578,7 +568,7 @@ class Booking extends Model
     public function scopeWithValidHoldToken($query)
     {
         return $query->whereNotNull('hold_token')
-                    ->where('hold_expires_at', '>', now());
+            ->where('hold_expires_at', '>', now());
     }
 
     /**
@@ -587,7 +577,7 @@ class Booking extends Model
     public function scopeWithExpiredHoldToken($query)
     {
         return $query->whereNotNull('hold_token')
-                    ->where('hold_expires_at', '<=', now());
+            ->where('hold_expires_at', '<=', now());
     }
 
     /**
@@ -603,12 +593,12 @@ class Booking extends Model
      */
     public function scopeSearch($query, string $keyword)
     {
-        return $query->where(function($q) use ($keyword) {
+        return $query->where(function ($q) use ($keyword) {
             $q->where('booking_number', 'like', "%{$keyword}%")
-              ->orWhereHas('customer', function($customerQuery) use ($keyword) {
-                  $customerQuery->where('name', 'like', "%{$keyword}%")
-                               ->orWhere('phone', 'like', "%{$keyword}%");
-              });
+                ->orWhereHas('customer', function ($customerQuery) use ($keyword) {
+                    $customerQuery->where('name', 'like', "%{$keyword}%")
+                        ->orWhere('phone', 'like', "%{$keyword}%");
+                });
         });
     }
-} 
+}

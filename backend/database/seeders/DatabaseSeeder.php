@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
         // tugical API統合テスト用データ作成
         $this->call([
             TestUserSeeder::class,
+            MenuSeeder::class,
         ]);
     }
 }

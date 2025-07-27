@@ -56,23 +56,12 @@ class Tenant extends Model
     protected $table = 'tenants';
 
     /**
-     * 一括代入可能な属性
+     * 一括代入から保護する属性
+     * 
+     * 開発の柔軟性を重視し、IDのみを保護
+     * これにより新しいフィールド追加時にfillableの更新が不要になる
      */
-    protected $fillable = [
-        'name',
-        'plan_type',
-        'plan_limits',
-        'billing_info',
-        'contract_start_date',
-        'contract_end_date',
-        'status',
-        'feature_flags',
-        'admin_email',
-        'admin_phone',
-        'company_info',
-        'notification_settings',
-        'last_login_at',
-    ];
+    protected $guarded = ['id'];
 
     /**
      * 非表示属性（API出力時に除外）
@@ -219,7 +208,7 @@ class Tenant extends Model
     {
         $currentStoreCount = $this->stores()->count();
         $storeLimit = $this->plan_limits['store_limit'] ?? 1;
-        
+
         return $currentStoreCount < $storeLimit;
     }
 
@@ -234,13 +223,13 @@ class Tenant extends Model
         $currentBookingCount = $this->stores()
             ->withCount(['bookings' => function ($query) use ($currentMonth) {
                 $query->whereYear('booking_date', '=', now()->year)
-                      ->whereMonth('booking_date', '=', now()->month);
+                    ->whereMonth('booking_date', '=', now()->month);
             }])
             ->get()
             ->sum('bookings_count');
 
         $monthlyLimit = $this->plan_limits['monthly_booking_limit'] ?? 500;
-        
+
         return $currentBookingCount < $monthlyLimit;
     }
 
@@ -253,9 +242,9 @@ class Tenant extends Model
     public function hasFeature(string $feature): bool
     {
         $enabledFeatures = $this->feature_flags['enabled'] ?? [];
-        
-        return in_array($feature, $enabledFeatures) || 
-               in_array('all_features', $enabledFeatures);
+
+        return in_array($feature, $enabledFeatures) ||
+            in_array('all_features', $enabledFeatures);
     }
 
     /**
@@ -279,8 +268,8 @@ class Tenant extends Model
      */
     public function isActive(): bool
     {
-        return $this->status === self::STATUS_ACTIVE && 
-               $this->isContractValid();
+        return $this->status === self::STATUS_ACTIVE &&
+            $this->isContractValid();
     }
 
     /**
@@ -291,7 +280,7 @@ class Tenant extends Model
     public function getPlanInfo(): array
     {
         $plans = self::getAvailablePlans();
-        
+
         return $plans[$this->plan_type] ?? [];
     }
 
@@ -311,7 +300,7 @@ class Tenant extends Model
 
         $lastBilling = Carbon::parse($lastBillingDate);
 
-        return match($billingCycle) {
+        return match ($billingCycle) {
             'monthly' => $lastBilling->addMonth(),
             'yearly' => $lastBilling->addYear(),
             default => null,
@@ -378,10 +367,10 @@ class Tenant extends Model
     public function scopeActive($query)
     {
         return $query->where('status', self::STATUS_ACTIVE)
-                    ->where(function ($q) {
-                        $q->whereNull('contract_end_date')
-                          ->orWhere('contract_end_date', '>', now());
-                    });
+            ->where(function ($q) {
+                $q->whereNull('contract_end_date')
+                    ->orWhere('contract_end_date', '>', now());
+            });
     }
 
     /**
@@ -393,6 +382,6 @@ class Tenant extends Model
     public function scopeExpired($query)
     {
         return $query->whereNotNull('contract_end_date')
-                    ->where('contract_end_date', '<=', now());
+            ->where('contract_end_date', '<=', now());
     }
-} 
+}

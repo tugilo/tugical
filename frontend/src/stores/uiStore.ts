@@ -232,4 +232,19 @@ export const toast = {
       duration,
     });
   },
+};
+
+/**
+ * Toast通知用カスタムフック
+ */
+export const useToast = () => {
+  const addNotification = useUIStore((state) => state.addNotification);
+  
+  return {
+    addToast: addNotification,
+    success: toast.success,
+    error: toast.error,
+    warning: toast.warning,
+    info: toast.info,
+  };
 }; 

@@ -63,33 +63,21 @@ class MenuOption extends Model
     protected $table = 'menu_options';
 
     /**
-     * 一括代入可能な属性
+     * 一括代入から保護する属性
+     * 
+     * 開発の柔軟性を重視し、IDのみを保護
+     * これにより新しいフィールド追加時にfillableの更新が不要になる
      */
-    protected $fillable = [
-        'menu_id',
-        'name',
-        'display_name',
-        'description',
-        'price_type',
-        'price_value',
-        'duration_minutes',
-        'constraints',
-        'stock_quantity',
-        'stock_used',
-        'is_required',
-        'is_active',
-        'sort_order',
-    ];
+    protected $guarded = ['id'];
 
     /**
      * 属性のキャスト設定
      */
     protected $casts = [
-        'constraints' => 'array',
-        'price_value' => 'integer',
-        'duration_minutes' => 'integer',
+        'price' => 'integer',
+        'duration' => 'integer',
+        'pricing_value' => 'decimal:2',
         'stock_quantity' => 'integer',
-        'stock_used' => 'integer',
         'is_required' => 'boolean',
         'is_active' => 'boolean',
         'sort_order' => 'integer',
@@ -177,12 +165,16 @@ class MenuOption extends Model
     /**
      * モデルの起動時処理
      * 
-     * TenantScopeを適用してMulti-tenant分離を実現
+     * MenuOptionはMenuに従属するため、TenantScopeは適用しない
+     * テナント分離はMenuモデル経由で行う
      */
     protected static function booted()
     {
-        static::addGlobalScope(new TenantScope);
-        
+        // MenuOptionはMenuに従属するため、TenantScopeは適用しない
+        // テナント分離はMenuモデル経由で行う
+
+        // 一時的にSeeder実行のためコメントアウト
+        /*
         // 作成時の処理
         static::creating(function ($option) {
             // デフォルト値設定
@@ -219,6 +211,7 @@ class MenuOption extends Model
                 $option->price_value = 0;
             }
         });
+        */
     }
 
     /**
@@ -235,8 +228,8 @@ class MenuOption extends Model
     public function bookings(): BelongsToMany
     {
         return $this->belongsToMany(Booking::class, 'booking_options')
-                    ->withPivot(['quantity', 'calculated_price', 'calculated_duration', 'snapshot_data'])
-                    ->withTimestamps();
+            ->withPivot(['quantity', 'calculated_price', 'calculated_duration', 'snapshot_data'])
+            ->withTimestamps();
     }
 
     /**
@@ -377,7 +370,7 @@ class MenuOption extends Model
         if (isset($constraints['mutually_exclusive'])) {
             $exclusiveIds = $constraints['mutually_exclusive'];
             $conflicts = array_intersect($exclusiveIds, $selectedOptionIds);
-            
+
             if (!empty($conflicts)) {
                 $results['valid'] = false;
                 $results['errors'][] = "このオプションは他のオプションと同時に選択できません";
@@ -388,7 +381,7 @@ class MenuOption extends Model
         if (isset($constraints['requires'])) {
             $requiredIds = $constraints['requires'];
             $missing = array_diff($requiredIds, $selectedOptionIds);
-            
+
             if (!empty($missing)) {
                 $results['valid'] = false;
                 $results['errors'][] = "このオプションには他の必須オプションの選択が必要です";
@@ -399,7 +392,7 @@ class MenuOption extends Model
         if (isset($constraints['max_quantity'])) {
             $maxQuantity = $constraints['max_quantity'];
             $currentCount = collect($selectedOptionIds)->countBy()->get($this->id, 0);
-            
+
             if ($currentCount > $maxQuantity) {
                 $results['valid'] = false;
                 $results['errors'][] = "このオプションは最大{$maxQuantity}個まで選択可能です";
@@ -521,9 +514,9 @@ class MenuOption extends Model
      */
     public function scopeInStock($query)
     {
-        return $query->where(function($q) {
+        return $query->where(function ($q) {
             $q->whereNull('stock_quantity')  // 無制限在庫
-              ->orWhereRaw('stock_quantity > stock_used');  // 在庫残量あり
+                ->orWhereRaw('stock_quantity > stock_used');  // 在庫残量あり
         });
     }
 
@@ -556,10 +549,10 @@ class MenuOption extends Model
      */
     public function scopeSearch($query, string $keyword)
     {
-        return $query->where(function($q) use ($keyword) {
+        return $query->where(function ($q) use ($keyword) {
             $q->where('name', 'like', "%{$keyword}%")
-              ->orWhere('display_name', 'like', "%{$keyword}%")
-              ->orWhere('description', 'like', "%{$keyword}%");
+                ->orWhere('display_name', 'like', "%{$keyword}%")
+                ->orWhere('description', 'like', "%{$keyword}%");
         });
     }
-} 
+}

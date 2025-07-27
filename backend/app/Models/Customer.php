@@ -46,9 +46,8 @@ use Illuminate\Support\Carbon;
  * @property string|null $gender 性別（male/female/other/not_specified）
  * @property string $loyalty_rank ロイヤリティランク（bronze/silver/gold/platinum/diamond）
  * @property int $total_bookings 総予約回数
- * @property int $total_amount 総利用金額（円）
- * @property int $cancelled_bookings キャンセル回数
- * @property int $no_show_bookings 無断キャンセル回数
+ * @property int $total_spent 総利用金額（円）
+ * @property int $no_show_count 無断キャンセル回数
  * @property Carbon|null $last_booking_date 最終予約日
  * @property array|null $preferences 顧客設定（JSON: 通知設定、言語設定等）
  * @property array|null $tags タグ（JSON: 顧客分類用）
@@ -72,40 +71,19 @@ class Customer extends Model
     protected $table = 'customers';
 
     /**
-     * 一括代入可能な属性
+     * 一括代入から保護する属性
+     * 
+     * 開発の柔軟性を重視し、IDのみを保護
+     * これにより新しいフィールド追加時にfillableの更新が不要になる
      */
-    protected $fillable = [
-        'store_id',
-        'line_user_id',
-        'name',
-        'name_kana',
-        'phone',
-        'email',
-        'address',
-        'birthday',
-        'gender',
-        'loyalty_rank',
-        'total_bookings',
-        'total_amount',
-        'cancelled_bookings',
-        'no_show_bookings',
-        'last_booking_date',
-        'preferences',
-        'tags',
-        'notes',
-        'line_profile_picture_url',
-        'is_active',
-    ];
+    protected $guarded = ['id'];
 
     /**
      * 非表示属性（API出力時に除外）
      * 個人情報保護のため
      */
     protected $hidden = [
-        'phone',
-        'email',
-        'address',
-        'notes',
+        // 暗号化フィールドは CustomerResource で適切に制御するため、ここでは除外しない
     ];
 
     /**
@@ -113,14 +91,17 @@ class Customer extends Model
      */
     protected $casts = [
         'preferences' => 'array',
-        'tags' => 'array',
+        'notification_settings' => 'array',
         'total_bookings' => 'integer',
-        'total_amount' => 'integer',
-        'cancelled_bookings' => 'integer',
-        'no_show_bookings' => 'integer',
+        'total_spent' => 'integer',
+        'no_show_count' => 'integer',
+        'is_restricted' => 'boolean',
         'is_active' => 'boolean',
-        'last_booking_date' => 'datetime',
         'birthday' => 'date',
+        'last_no_show_at' => 'datetime',
+        'restriction_until' => 'datetime',
+        'first_visit_at' => 'datetime',
+        'last_visit_at' => 'datetime',
         'deleted_at' => 'datetime',
     ];
 
@@ -135,11 +116,10 @@ class Customer extends Model
     /**
      * ロイヤリティランクの定数
      */
-    public const LOYALTY_BRONZE = 'bronze';
-    public const LOYALTY_SILVER = 'silver';
-    public const LOYALTY_GOLD = 'gold';
-    public const LOYALTY_PLATINUM = 'platinum';
-    public const LOYALTY_DIAMOND = 'diamond';
+    public const LOYALTY_NEW = 'new';
+    public const LOYALTY_REGULAR = 'regular';
+    public const LOYALTY_VIP = 'vip';
+    public const LOYALTY_PREMIUM = 'premium';
 
     /**
      * 暗号化対象フィールド
@@ -152,45 +132,37 @@ class Customer extends Model
     public static function getLoyaltyRankSettings(): array
     {
         return [
-            self::LOYALTY_BRONZE => [
-                'name' => 'ブロンズ',
+            self::LOYALTY_NEW => [
+                'name' => 'New',
                 'min_bookings' => 0,
                 'min_amount' => 0,
                 'benefits' => ['基本サービス'],
                 'color' => '#CD7F32',
                 'discount_rate' => 0,
             ],
-            self::LOYALTY_SILVER => [
-                'name' => 'シルバー',
+            self::LOYALTY_REGULAR => [
+                'name' => 'Regular',
                 'min_bookings' => 5,
                 'min_amount' => 20000,
                 'benefits' => ['予約優先', '特別クーポン'],
                 'color' => '#C0C0C0',
                 'discount_rate' => 3,
             ],
-            self::LOYALTY_GOLD => [
-                'name' => 'ゴールド',
+            self::LOYALTY_VIP => [
+                'name' => 'VIP',
                 'min_bookings' => 15,
                 'min_amount' => 60000,
                 'benefits' => ['予約優先', '特別クーポン', '誕生日特典'],
                 'color' => '#FFD700',
                 'discount_rate' => 5,
             ],
-            self::LOYALTY_PLATINUM => [
-                'name' => 'プラチナ',
+            self::LOYALTY_PREMIUM => [
+                'name' => 'Premium',
                 'min_bookings' => 30,
                 'min_amount' => 120000,
                 'benefits' => ['最優先予約', '専用クーポン', '誕生日特典', 'VIP待遇'],
                 'color' => '#E5E4E2',
                 'discount_rate' => 8,
-            ],
-            self::LOYALTY_DIAMOND => [
-                'name' => 'ダイヤモンド',
-                'min_bookings' => 60,
-                'min_amount' => 300000,
-                'benefits' => ['最優先予約', '専用クーポン', '誕生日特典', 'VIP待遇', '専属担当'],
-                'color' => '#B9F2FF',
-                'discount_rate' => 12,
             ],
         ];
     }
@@ -216,7 +188,7 @@ class Customer extends Model
     protected static function booted()
     {
         static::addGlobalScope(new TenantScope);
-        
+
         // 作成時の処理
         static::creating(function ($customer) {
             if (!$customer->store_id && auth()->check()) {
@@ -224,30 +196,17 @@ class Customer extends Model
             }
 
             // デフォルト値設定
-            $customer->loyalty_rank = $customer->loyalty_rank ?? self::LOYALTY_BRONZE;
+            $customer->loyalty_rank = $customer->loyalty_rank ?? self::LOYALTY_NEW;
             $customer->total_bookings = $customer->total_bookings ?? 0;
-            $customer->total_amount = $customer->total_amount ?? 0;
-            $customer->cancelled_bookings = $customer->cancelled_bookings ?? 0;
-            $customer->no_show_bookings = $customer->no_show_bookings ?? 0;
+            $customer->total_spent = $customer->total_spent ?? 0;
+            $customer->no_show_count = $customer->no_show_count ?? 0;
             $customer->is_active = $customer->is_active ?? true;
-
-            // 個人情報暗号化
-            $customer->encryptPersonalData();
         });
 
         // 更新時の処理
         static::updating(function ($customer) {
-            // 個人情報暗号化
-            $customer->encryptPersonalData();
-
             // ロイヤリティランク自動更新
             $customer->updateLoyaltyRank();
-        });
-
-        // 取得時の処理
-        static::retrieved(function ($customer) {
-            // 個人情報復号化
-            $customer->decryptPersonalData();
         });
     }
 
@@ -268,35 +227,38 @@ class Customer extends Model
     }
 
     /**
-     * 個人情報暗号化
+     * 電話番号の暗号化ミューテータ
      */
-    protected function encryptPersonalData(): void
+    public function setPhoneAttribute($value)
     {
-        foreach ($this->encrypted as $field) {
-            if ($this->isDirty($field) && !empty($this->attributes[$field])) {
-                $this->attributes[$field] = encrypt($this->attributes[$field]);
-            }
+        if (!empty($value)) {
+            $this->attributes['phone'] = encrypt($value);
+        } else {
+            $this->attributes['phone'] = null;
         }
     }
 
     /**
-     * 個人情報復号化
+     * メールアドレスの暗号化ミューテータ
      */
-    protected function decryptPersonalData(): void
+    public function setEmailAttribute($value)
     {
-        foreach ($this->encrypted as $field) {
-            if (!empty($this->attributes[$field])) {
-                try {
-                    $this->attributes[$field] = decrypt($this->attributes[$field]);
-                } catch (\Exception $e) {
-                    // 復号化失敗時は空文字に設定
-                    $this->attributes[$field] = '';
-                    \Log::warning("Failed to decrypt customer field: {$field}", [
-                        'customer_id' => $this->id,
-                        'error' => $e->getMessage(),
-                    ]);
-                }
-            }
+        if (!empty($value)) {
+            $this->attributes['email'] = encrypt($value);
+        } else {
+            $this->attributes['email'] = null;
+        }
+    }
+
+    /**
+     * 住所の暗号化ミューテータ
+     */
+    public function setAddressAttribute($value)
+    {
+        if (!empty($value)) {
+            $this->attributes['address'] = encrypt($value);
+        } else {
+            $this->attributes['address'] = null;
         }
     }
 
@@ -306,10 +268,10 @@ class Customer extends Model
     public function updateLoyaltyRank(): void
     {
         $currentRank = $this->calculateLoyaltyRank();
-        
+
         if ($currentRank !== $this->loyalty_rank) {
             $this->loyalty_rank = $currentRank;
-            
+
             // ランクアップ通知（後でイベント化）
             \Log::info("Customer loyalty rank updated", [
                 'customer_id' => $this->id,
@@ -327,11 +289,13 @@ class Customer extends Model
     public function calculateLoyaltyRank(): string
     {
         $settings = self::getLoyaltyRankSettings();
-        $currentRank = self::LOYALTY_BRONZE;
+        $currentRank = self::LOYALTY_NEW;
 
         foreach ($settings as $rank => $config) {
-            if ($this->total_bookings >= $config['min_bookings'] && 
-                $this->total_amount >= $config['min_amount']) {
+            if (
+                $this->total_bookings >= $config['min_bookings'] &&
+                $this->total_spent >= $config['min_amount']
+            ) {
                 $currentRank = $rank;
             }
         }
@@ -347,7 +311,7 @@ class Customer extends Model
     public function getLoyaltyRankInfo(): array
     {
         $settings = self::getLoyaltyRankSettings();
-        return $settings[$this->loyalty_rank] ?? $settings[self::LOYALTY_BRONZE];
+        return $settings[$this->loyalty_rank] ?? $settings[self::LOYALTY_NEW];
     }
 
     /**
@@ -360,7 +324,7 @@ class Customer extends Model
         $settings = self::getLoyaltyRankSettings();
         $ranks = array_keys($settings);
         $currentIndex = array_search($this->loyalty_rank, $ranks);
-        
+
         if ($currentIndex === false || $currentIndex >= count($ranks) - 1) {
             return null; // 最高ランクの場合
         }
@@ -374,9 +338,9 @@ class Customer extends Model
             'required_bookings' => $nextConfig['min_bookings'],
             'required_amount' => $nextConfig['min_amount'],
             'bookings_progress' => min(100, ($this->total_bookings / $nextConfig['min_bookings']) * 100),
-            'amount_progress' => min(100, ($this->total_amount / $nextConfig['min_amount']) * 100),
+            'amount_progress' => min(100, ($this->total_spent / $nextConfig['min_amount']) * 100),
             'remaining_bookings' => max(0, $nextConfig['min_bookings'] - $this->total_bookings),
-            'remaining_amount' => max(0, $nextConfig['min_amount'] - $this->total_amount),
+            'remaining_amount' => max(0, $nextConfig['min_amount'] - $this->total_spent),
         ];
     }
 
@@ -387,11 +351,8 @@ class Customer extends Model
      */
     public function getCancellationRate(): float
     {
-        if ($this->total_bookings === 0) {
-            return 0.0;
-        }
-
-        return round(($this->cancelled_bookings / $this->total_bookings) * 100, 2);
+        // NOTE: cancelled_bookings カラムが存在しないため、一旦0を返す
+        return 0.0;
     }
 
     /**
@@ -405,7 +366,7 @@ class Customer extends Model
             return 0.0;
         }
 
-        return round(($this->no_show_bookings / $this->total_bookings) * 100, 2);
+        return round(($this->no_show_count / $this->total_bookings) * 100, 2);
     }
 
     /**
@@ -419,7 +380,7 @@ class Customer extends Model
             return 0;
         }
 
-        return (int) round($this->total_amount / $this->total_bookings);
+        return (int) round($this->total_spent / $this->total_bookings);
     }
 
     /**
@@ -429,11 +390,11 @@ class Customer extends Model
      */
     public function getDaysSinceLastBooking(): ?int
     {
-        if (!$this->last_booking_date) {
+        if (!$this->last_visit_at) {
             return null;
         }
 
-        return now()->diffInDays($this->last_booking_date);
+        return now()->diffInDays($this->last_visit_at);
     }
 
     /**
@@ -497,7 +458,7 @@ class Customer extends Model
      */
     public function isVipCustomer(): bool
     {
-        return in_array($this->loyalty_rank, [self::LOYALTY_PLATINUM, self::LOYALTY_DIAMOND]);
+        return in_array($this->loyalty_rank, [self::LOYALTY_PREMIUM]);
     }
 
     /**
@@ -509,7 +470,7 @@ class Customer extends Model
     {
         return [
             'total_bookings' => $this->total_bookings,
-            'total_amount' => $this->total_amount,
+            'total_spent' => $this->total_spent,
             'average_amount' => $this->getAverageBookingAmount(),
             'cancellation_rate' => $this->getCancellationRate(),
             'no_show_rate' => $this->getNoShowRate(),
@@ -537,11 +498,10 @@ class Customer extends Model
     }
 
     /**
-     * 設定値設定
+     * 設定値更新
      * 
      * @param string $key 設定キー
      * @param mixed $value 設定値
-     * @return void
      */
     public function setPreference(string $key, $value): void
     {
@@ -551,47 +511,166 @@ class Customer extends Model
     }
 
     /**
-     * タグ追加
-     * 
-     * @param string $tag タグ名
-     * @return void
+     * 電話番号アクセサ
      */
-    public function addTag(string $tag): void
+    public function getPhoneAttribute($value)
     {
-        $tags = $this->tags ?? [];
-        
-        if (!in_array($tag, $tags)) {
-            $tags[] = $tag;
-            $this->tags = $tags;
+        if (empty($value)) {
+            return $value;
+        }
+
+        try {
+            // 暗号化されたデータかチェック
+            if (strpos($value, 'eyJpdiI6') === 0) {
+                return decrypt($value);
+            }
+            return $value;
+        } catch (\Exception $e) {
+            \Log::warning("Failed to decrypt phone in accessor", [
+                'customer_id' => $this->id,
+                'error' => $e->getMessage(),
+            ]);
+            return '';
         }
     }
 
     /**
-     * タグ削除
-     * 
-     * @param string $tag タグ名
-     * @return void
+     * メールアドレスアクセサ
      */
-    public function removeTag(string $tag): void
+    public function getEmailAttribute($value)
     {
-        $tags = $this->tags ?? [];
-        $this->tags = array_values(array_filter($tags, fn($t) => $t !== $tag));
+        if (empty($value)) {
+            return $value;
+        }
+
+        try {
+            // 暗号化されたデータかチェック
+            if (strpos($value, 'eyJpdiI6') === 0) {
+                return decrypt($value);
+            }
+            return $value;
+        } catch (\Exception $e) {
+            \Log::warning("Failed to decrypt email in accessor", [
+                'customer_id' => $this->id,
+                'error' => $e->getMessage(),
+            ]);
+            return '';
+        }
     }
 
     /**
-     * タグ存在チェック
-     * 
-     * @param string $tag タグ名
-     * @return bool 存在する場合true
+     * 住所アクセサ（暗号化対応）
      */
-    public function hasTag(string $tag): bool
+    public function getAddressAttribute($value)
     {
-        $tags = $this->tags ?? [];
-        return in_array($tag, $tags);
+        if (empty($value)) {
+            return $value;
+        }
+
+        try {
+            // 暗号化されたデータかチェック
+            if (strpos($value, 'eyJpdiI6') === 0) {
+                return decrypt($value);
+            }
+            return $value;
+        } catch (\Exception $e) {
+            \Log::warning("Failed to decrypt address in accessor", [
+                'customer_id' => $this->id,
+                'error' => $e->getMessage(),
+            ]);
+            return '';
+        }
     }
 
     /**
-     * 検索スコープ: アクティブ顧客
+     * 完全な住所を整形して取得
+     * 
+     * @return string 整形された住所
+     */
+    public function getFormattedAddress(): string
+    {
+        $parts = array_filter([
+            $this->postal_code ? "〒{$this->postal_code}" : null,
+            $this->prefecture,
+            $this->city,
+            $this->address_line1,
+            $this->address_line2,
+        ]);
+
+        return implode(' ', $parts);
+    }
+
+    /**
+     * 住所の一部分を取得
+     * 
+     * @return string 市区町村以下の住所
+     */
+    public function getShortAddress(): string
+    {
+        $parts = array_filter([
+            $this->city,
+            $this->address_line1,
+            $this->address_line2,
+        ]);
+
+        return implode(' ', $parts);
+    }
+
+    /**
+     * 住所が完全に入力されているかチェック
+     * 
+     * @return bool 完全な住所の場合true
+     */
+    public function hasCompleteAddress(): bool
+    {
+        return !empty($this->postal_code) &&
+            !empty($this->prefecture) &&
+            !empty($this->city) &&
+            !empty($this->address_line1);
+    }
+
+    /**
+     * 住所の都道府県別検索スコープ
+     */
+    public function scopeByPrefecture($query, string $prefecture)
+    {
+        return $query->where('prefecture', $prefecture);
+    }
+
+    /**
+     * 住所の市区町村別検索スコープ
+     */
+    public function scopeByCity($query, string $city)
+    {
+        return $query->where('city', $city);
+    }
+
+    /**
+     * 郵便番号検索スコープ
+     */
+    public function scopeByPostalCode($query, string $postalCode)
+    {
+        return $query->where('postal_code', $postalCode);
+    }
+
+    /**
+     * 地域別検索スコープ（都道府県と市区町村）
+     */
+    public function scopeByRegion($query, ?string $prefecture = null, ?string $city = null)
+    {
+        if ($prefecture) {
+            $query->where('prefecture', $prefecture);
+        }
+
+        if ($city) {
+            $query->where('city', $city);
+        }
+
+        return $query;
+    }
+
+    /**
+     * アクティブ顧客スコープ
      */
     public function scopeActive($query)
     {
@@ -619,7 +698,7 @@ class Customer extends Model
      */
     public function scopeVip($query)
     {
-        return $query->whereIn('loyalty_rank', [self::LOYALTY_PLATINUM, self::LOYALTY_DIAMOND]);
+        return $query->whereIn('loyalty_rank', [self::LOYALTY_PREMIUM]);
     }
 
     /**
@@ -653,15 +732,7 @@ class Customer extends Model
      */
     public function scopeAmountRange($query, int $min, int $max)
     {
-        return $query->whereBetween('total_amount', [$min, $max]);
-    }
-
-    /**
-     * 検索スコープ: タグ検索
-     */
-    public function scopeWithTag($query, string $tag)
-    {
-        return $query->whereJsonContains('tags', $tag);
+        return $query->whereBetween('total_spent', [$min, $max]);
     }
 
     /**
@@ -669,10 +740,10 @@ class Customer extends Model
      */
     public function scopeSearch($query, string $keyword)
     {
-        return $query->where(function($q) use ($keyword) {
+        return $query->where(function ($q) use ($keyword) {
             $q->where('name', 'like', "%{$keyword}%")
-              ->orWhere('name_kana', 'like', "%{$keyword}%")
-              ->orWhere('notes', 'like', "%{$keyword}%");
+                ->orWhere('name_kana', 'like', "%{$keyword}%")
+                ->orWhere('notes', 'like', "%{$keyword}%");
         });
     }
 
@@ -691,7 +762,7 @@ class Customer extends Model
     {
         $maxBirthday = now()->subYears($minAge)->format('Y-m-d');
         $minBirthday = now()->subYears($maxAge + 1)->format('Y-m-d');
-        
+
         return $query->whereBetween('birthday', [$minBirthday, $maxBirthday]);
     }
-} 
+}

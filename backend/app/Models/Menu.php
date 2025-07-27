@@ -63,40 +63,32 @@ class Menu extends Model
     protected $table = 'menus';
 
     /**
-     * 一括代入可能な属性
+     * 一括代入から保護する属性
+     * 
+     * 開発の柔軟性を重視し、IDのみを保護
+     * これにより新しいフィールド追加時にfillableの更新が不要になる
      */
-    protected $fillable = [
-        'store_id',
-        'name',
-        'display_name',
-        'category',
-        'description',
-        'base_price',
-        'base_duration',
-        'prep_duration',
-        'cleanup_duration',
-        'booking_constraints',
-        'resource_requirements',
-        'industry_settings',
-        'image_url',
-        'is_active',
-        'requires_approval',
-        'sort_order',
-    ];
+    protected $guarded = ['id'];
 
     /**
      * 属性のキャスト設定
      */
     protected $casts = [
-        'booking_constraints' => 'array',
-        'resource_requirements' => 'array',
-        'industry_settings' => 'array',
+        'booking_rules' => 'array',
+        'allowed_resource_types' => 'array',
+        'required_resources' => 'array',
+        'settings' => 'array',
+        'tags' => 'array',
+        'pricing_options' => 'array',
+        'time_based_pricing' => 'array',
+        'image_gallery' => 'array',
         'base_price' => 'integer',
         'base_duration' => 'integer',
         'prep_duration' => 'integer',
         'cleanup_duration' => 'integer',
+        'advance_booking_hours' => 'integer',
         'is_active' => 'boolean',
-        'requires_approval' => 'boolean',
+        'require_approval' => 'boolean',
         'sort_order' => 'integer',
         'deleted_at' => 'datetime',
     ];
@@ -193,7 +185,9 @@ class Menu extends Model
     protected static function booted()
     {
         static::addGlobalScope(new TenantScope);
-        
+
+        // 一時的にSeeder実行のためコメントアウト
+        /*
         // 作成時に自動でstore_id設定
         static::creating(function ($menu) {
             if (!$menu->store_id && auth()->check()) {
@@ -242,6 +236,7 @@ class Menu extends Model
                 $menu->display_name = $menu->name;
             }
         });
+        */
     }
 
     /**
@@ -338,9 +333,9 @@ class Menu extends Model
     {
         $industrySettings = $this->industry_settings ?? [];
         $industryType = $this->store->industry_type ?? 'beauty';
-        
+
         $industryDisplayName = $industrySettings[$industryType]['display_name'] ?? null;
-        
+
         return $industryDisplayName ?? $this->display_name ?? $this->name;
     }
 
@@ -360,7 +355,7 @@ class Menu extends Model
         if (isset($constraints['advance_booking_days'])) {
             $maxAdvanceDays = $constraints['advance_booking_days'];
             $maxAdvanceDate = (clone $now)->modify("+{$maxAdvanceDays} days");
-            
+
             if ($bookingDate > $maxAdvanceDate) {
                 $results['valid'] = false;
                 $results['errors'][] = "{$maxAdvanceDays}日以降の予約はできません";
@@ -379,7 +374,7 @@ class Menu extends Model
         if (isset($constraints['minimum_advance_hours'])) {
             $minAdvanceHours = $constraints['minimum_advance_hours'];
             $minAdvanceTime = (clone $now)->modify("+{$minAdvanceHours} hours");
-            
+
             if ($bookingDate < $minAdvanceTime) {
                 $results['valid'] = false;
                 $results['errors'][] = "{$minAdvanceHours}時間前までに予約してください";
@@ -407,7 +402,7 @@ class Menu extends Model
                 ->where('type', 'staff')
                 ->pluck('attributes.staff_type')
                 ->contains($requiredStaffType);
-            
+
             if (!$hasRequiredStaff) {
                 $results['valid'] = false;
                 $results['missing'][] = "必要なスタッフタイプ: {$requiredStaffType}";
@@ -417,7 +412,7 @@ class Menu extends Model
         // 部屋要件チェック
         if (isset($requirements['room_required']) && $requirements['room_required']) {
             $hasRoom = collect($availableResources)->where('type', 'room')->isNotEmpty();
-            
+
             if (!$hasRoom) {
                 $results['valid'] = false;
                 $results['missing'][] = '利用可能な部屋が必要です';
@@ -431,9 +426,9 @@ class Menu extends Model
                 ->where('type', 'equipment')
                 ->pluck('id')
                 ->toArray();
-                
+
             $missingEquipment = array_diff($requiredEquipment, $availableEquipment);
-            
+
             if (!empty($missingEquipment)) {
                 $results['valid'] = false;
                 $results['missing'][] = '必要な設備が不足しています';
@@ -473,7 +468,7 @@ class Menu extends Model
         $industryType = $this->store->industry_type ?? 'beauty';
         $industryDefaults = self::getIndustryDefaults();
         $categories = $industryDefaults[$industryType]['categories'] ?? [];
-        
+
         return [
             'current' => $this->category,
             'available' => $categories,
@@ -495,7 +490,7 @@ class Menu extends Model
 
         $industryType = $store->industry_type ?? 'beauty';
         $industryDefaults = self::getIndustryDefaults();
-        
+
         return $industryDefaults[$industryType] ?? [];
     }
 
@@ -584,11 +579,11 @@ class Menu extends Model
      */
     public function scopeSearch($query, string $keyword)
     {
-        return $query->where(function($q) use ($keyword) {
+        return $query->where(function ($q) use ($keyword) {
             $q->where('name', 'like', "%{$keyword}%")
-              ->orWhere('display_name', 'like', "%{$keyword}%")
-              ->orWhere('description', 'like', "%{$keyword}%")
-              ->orWhere('category', 'like', "%{$keyword}%");
+                ->orWhere('display_name', 'like', "%{$keyword}%")
+                ->orWhere('description', 'like', "%{$keyword}%")
+                ->orWhere('category', 'like', "%{$keyword}%");
         });
     }
-} 
+}
