@@ -1,5 +1,57 @@
 # tugical Development Progress
 
+## 2025-07-27 10:13:10 (tugiMacMini.local)
+
+### 📋 仕様書フォルダ整理 ✅ **完了**
+
+**docs/仕様書/フォルダ作成と仕様書整理:**
+
+#### 1. **フォルダ構成改善** ✅
+
+```
+問題: 仕様書が増えてきたため、docs/直下が散らかってきた
+解決: docs/仕様書/フォルダを作成して仕様書を整理
+```
+
+#### 2. **移動対象ファイル** ✅
+
+```
+移動した仕様書（10ファイル）:
+- tugical_system_specification_v2.0.md
+- tugical_database_design_v1.0.md
+- tugical_api_specification_v1.0.md
+- tugical_requirements_specification_v1.0.md
+- tugical_ui_design_system_v1.0.md
+- tugical_test_strategy_v1.0.md
+- tugical_deployment_guide_v1.0.md
+- tugical_project_overview.md
+- tugical_phone_booking_usecase_v1.0.md
+- tugical_shinkin_marp.md
+```
+
+#### 3. **設定更新** ✅
+
+```
+- .cursorrules更新: 仕様書パスをdocs/仕様書/に変更
+- README.md追加: 仕様書フォルダの概要と各仕様書の説明
+- フォルダ構成明確化: 仕様書とその他のドキュメントを分離
+```
+
+#### 4. **技術成果** ✅
+
+- ✅ **整理完了**: 10個の仕様書をdocs/仕様書/フォルダに移動
+- ✅ **設定同期**: .cursorrulesの仕様書パスを最新化
+- ✅ **ドキュメント追加**: 仕様書フォルダのREADME.md作成
+- ✅ **構造改善**: 後々の拡張性を考慮したフォルダ構成
+
+#### 5. **次のステップ** ✅
+
+- **開発継続**: 整理された仕様書での効率的な開発
+- **新仕様書追加**: 必要に応じてdocs/仕様書/フォルダに追加
+- **メンテナンス**: 仕様書更新時の適切なバージョン管理
+
+---
+
 ## 2025-07-27 10:11:05 (tugiMacMini.local)
 
 ### 📋 Git Pull & Merge Conflict Resolution ✅ **完了**
