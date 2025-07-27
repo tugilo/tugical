@@ -123,6 +123,26 @@ services:
     networks:
       - tugical-network
 
+  liff:
+    image: node:18-alpine
+    container_name: tugical_liff
+    working_dir: /app
+    volumes:
+      - ./liff:/app
+      - /app/node_modules
+    command: sh -c "npm install --silent && npm run dev -- --host 0.0.0.0 --port 3001"
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - VITE_LIFF_ID=your-liff-id-here
+      - VITE_API_BASE_URL=http://localhost/api/v1
+      - VITE_STORE_ID=1
+    networks:
+      - tugical-network
+    depends_on:
+      - nginx
+
   phpmyadmin:
     image: phpmyadmin:latest
     container_name: tugical_phpmyadmin

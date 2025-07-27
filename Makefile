@@ -17,11 +17,8 @@ up: ## Start all services
 	@echo "Services starting..."
 	@echo "API: http://localhost/health"
 	@echo "phpMyAdmin: http://localhost:8080"
-	@echo ""
-	@echo "Phase 3で実装予定:"
-	@echo "- Admin Panel: http://localhost/admin"
-	@echo "- Frontend: http://localhost:3000"
-	@echo "- LIFF: http://localhost:5173"
+	@echo "Admin Panel: http://localhost/admin"
+	@echo "LIFF App: http://localhost/liff"
 
 down: ## Stop all services
 	docker compose down
@@ -44,23 +41,35 @@ logs-db: ## Show database container logs
 logs-phpmyadmin: ## Show phpMyAdmin container logs
 	docker compose logs -f phpmyadmin
 
+logs-frontend: ## Show frontend container logs
+	docker compose logs -f frontend
+
+logs-liff: ## Show LIFF container logs
+	docker compose logs -f liff
+
 shell: ## Access app container shell
 	docker compose exec app sh
 
 shell-db: ## Access database shell
 	docker compose exec database mysql -u tugical_dev -pdev_password_123 tugical_dev
 
+shell-frontend: ## Access frontend container shell
+	docker compose exec frontend sh
+
+shell-liff: ## Access LIFF container shell
+	docker compose exec liff sh
+
 test: ## Run tests
 	docker compose exec app php artisan test
-	# Frontend/LIFF tests (Phase 3で実装予定)
-	# docker compose exec frontend npm test
-	# docker compose exec liff npm test
+	# Frontend/LIFF tests
+	docker compose exec frontend npm test
+	docker compose exec liff npm test
 
 install: ## Install dependencies
 	docker compose exec app composer install
-	# Frontend/LIFF npm install (Phase 3で実装予定)
-	# docker compose exec frontend npm install
-	# docker compose exec liff npm install
+	# Frontend/LIFF npm install
+	docker compose exec frontend npm install
+	docker compose exec liff npm install
 
 migrate: ## Run database migrations
 	docker compose exec app php artisan migrate
@@ -213,11 +222,13 @@ setup: ## Complete tugical development environment setup
 	@echo "🌐 利用可能なサービス:"
 	@echo "  • API Health Check: http://localhost/health"
 	@echo "  • phpMyAdmin:       http://localhost:8080"
+	@echo "  • Admin Panel:      http://localhost/admin"
+	@echo "  • LIFF App:         http://localhost/liff"
 	@echo ""
 	@echo "📝 次のステップ:"
 	@echo "  • ビジネスロジック実装: cd backend && php artisan make:service BookingService"
-	@echo "  • フロントエンド開発: Phase 3で実装予定"
-	@echo "  • LIFF開発:         Phase 3で実装予定"
+	@echo "  • フロントエンド開発: make npm-admin cmd=\"run dev\""
+	@echo "  • LIFF開発:         make npm-liff cmd=\"run dev\""
 	@echo ""
 
 # Production commands
@@ -242,6 +253,12 @@ npm-admin: ## Run npm command in admin frontend (use: make npm-admin cmd="instal
 
 npm-liff: ## Run npm command in LIFF app (use: make npm-liff cmd="install")
 	docker compose exec liff npm $(cmd)
+
+build-liff: ## Build LIFF application for production
+	docker compose exec liff npm run build
+
+dev-liff: ## Start LIFF development server
+	docker compose exec liff npm run dev
 
 backup-db: ## Backup database
 	@mkdir -p backups

@@ -1,5 +1,76 @@
 # tugical Development Progress
 
+## 2025-07-27 10:30:31 (tugiMacMini.local)
+
+### 🐳 Phase 26.2: Docker環境でのLIFF実行設定完了 ✅ **完了**
+
+**LIFFアプリケーションのDocker環境構築とnpm実行保証:**
+
+#### 1. **Docker Compose設定** ✅
+
+```
+- LIFFサービス追加: node:18-alpineベース
+- ボリュームマウント: ./liff:/app, /app/node_modules
+- ポート設定: 3001:3001
+- 環境変数: VITE_LIFF_ID, VITE_API_BASE_URL, VITE_STORE_ID
+- 依存関係: nginxサービス
+```
+
+#### 2. **Nginx設定更新** ✅
+
+```
+- LIFFプロキシ設定: /liff/ → tugical_liff:3001
+- WebSocket対応: Vite HMRサポート
+- ヘッダー設定: Host, X-Real-IP, X-Forwarded-For等
+- リゾルバー設定: 127.0.0.11 valid=30s
+```
+
+#### 3. **開発環境整備** ✅
+
+```
+- Dockerfile作成: プロダクションビルド対応
+- 環境変数サンプル: env.example作成
+- 開発スクリプト: scripts/dev.sh作成
+- README.md: Docker実行方法詳細説明
+```
+
+#### 4. **Makefile拡張** ✅
+
+```
+- LIFF関連コマンド追加: npm-liff, build-liff, dev-liff
+- ログコマンド: logs-liff
+- シェルコマンド: shell-liff
+- テスト・インストール: LIFF対応
+- ヘルプ更新: 利用可能サービス一覧
+```
+
+#### 5. **動作確認** ✅
+
+```
+- コンテナ起動: docker compose up liff -d
+- npm実行確認: 依存関係インストール成功
+- 開発サーバー: Vite dev server起動成功
+- アクセス確認: http://localhost:3001 (直接)
+- プロキシ確認: http://localhost/liff/ (nginx経由)
+```
+
+#### 6. **技術成果** ✅
+
+- ✅ **Docker統合**: LIFFアプリケーションの完全Docker化
+- ✅ **npm実行保証**: コンテナ起動時に自動npm install実行
+- ✅ **開発環境**: ホットリロード対応の開発サーバー
+- ✅ **プロキシ設定**: nginx経由でのアクセス
+- ✅ **Makefile統合**: 一貫した開発コマンド
+- ✅ **ドキュメント**: 詳細な実行方法説明
+
+#### 7. **次のステップ** ✅
+
+- Phase 26.3: 日時選択画面の完全実装
+- Phase 26.4: バックエンドLIFF API実装
+- Phase 26.5: LINE認証統合テスト
+
+---
+
 ## 2025-07-27 10:26:37 (tugiMacMini.local)
 
 ### 🚀 Phase 26.1: LIFF基盤構築完了 ✅ **完了**
