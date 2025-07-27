@@ -48,9 +48,7 @@ class LiffController extends Controller
     public function getStore(string $storeSlug): JsonResponse
     {
         try {
-            $store = Store::where('slug', $storeSlug)
-                ->with(['businessCalendar'])
-                ->first();
+            $store = Store::where('slug', $storeSlug)->first();
 
             if (!$store) {
                 return response()->json([
@@ -59,40 +57,10 @@ class LiffController extends Controller
                 ], 404);
             }
 
-            // 営業時間の取得
-            $businessHours = [];
-            if ($store->businessCalendar) {
-                $businessHours = [
-                    'monday' => [
-                        'start' => $store->businessCalendar->monday_start,
-                        'end' => $store->businessCalendar->monday_end
-                    ],
-                    'tuesday' => [
-                        'start' => $store->businessCalendar->tuesday_start,
-                        'end' => $store->businessCalendar->tuesday_end
-                    ],
-                    'wednesday' => [
-                        'start' => $store->businessCalendar->wednesday_start,
-                        'end' => $store->businessCalendar->wednesday_end
-                    ],
-                    'thursday' => [
-                        'start' => $store->businessCalendar->thursday_start,
-                        'end' => $store->businessCalendar->thursday_end
-                    ],
-                    'friday' => [
-                        'start' => $store->businessCalendar->friday_start,
-                        'end' => $store->businessCalendar->friday_end
-                    ],
-                    'saturday' => [
-                        'start' => $store->businessCalendar->saturday_start,
-                        'end' => $store->businessCalendar->saturday_end
-                    ],
-                    'sunday' => [
-                        'start' => $store->businessCalendar->sunday_start,
-                        'end' => $store->businessCalendar->sunday_end
-                    ]
-                ];
-            }
+            // 営業時間の取得（business_hours JSONカラムから）
+            $businessHours = is_string($store->business_hours) 
+                ? json_decode($store->business_hours, true) 
+                : ($store->business_hours ?? []);
 
             return response()->json([
                 'success' => true,

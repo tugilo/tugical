@@ -81,9 +81,9 @@ class Tenant extends Model
         'feature_flags' => 'array',
         'company_info' => 'array',
         'notification_settings' => 'array',
-        'contract_start_date' => 'date',
-        'contract_end_date' => 'date',
-        'last_login_at' => 'datetime',
+        'contract_starts_at' => 'date',
+        'contract_ends_at' => 'date',
+        'trial_ends_at' => 'date',
         'deleted_at' => 'datetime',
     ];
 
@@ -167,25 +167,25 @@ class Tenant extends Model
         // Tenantモデルは最上位のため、TenantScopeは適用しない
         // 代わりに作成時のデフォルト値設定
         static::creating(function ($tenant) {
-            // デフォルトのプラン制限設定
-            if (!$tenant->plan_limits) {
-                $tenant->plan_limits = self::getDefaultPlanLimits($tenant->plan_type);
-            }
+                    // デフォルトのプラン制限設定
+        if (!$tenant->plan_limits) {
+            $tenant->plan_limits = self::getDefaultPlanLimits($tenant->plan);
+        }
 
-            // デフォルトの機能フラグ設定
-            if (!$tenant->feature_flags) {
-                $tenant->feature_flags = self::getDefaultFeatureFlags($tenant->plan_type);
-            }
+        // デフォルトの機能フラグ設定
+        if (!$tenant->feature_flags) {
+            $tenant->feature_flags = self::getDefaultFeatureFlags($tenant->plan);
+        }
 
-            // 契約開始日のデフォルト設定
-            if (!$tenant->contract_start_date) {
-                $tenant->contract_start_date = now();
-            }
+        // 契約開始日のデフォルト設定
+        if (!$tenant->contract_starts_at) {
+            $tenant->contract_starts_at = now();
+        }
 
-            // ステータスのデフォルト設定
-            if (!$tenant->status) {
-                $tenant->status = self::STATUS_TRIAL;
-            }
+        // ステータスのデフォルト設定
+        if (!$tenant->status) {
+            $tenant->status = 'active';
+        }
         });
     }
 
@@ -254,11 +254,11 @@ class Tenant extends Model
      */
     public function isContractValid(): bool
     {
-        if (!$this->contract_end_date) {
+        if (!$this->contract_ends_at) {
             return true; // 無期限契約
         }
 
-        return $this->contract_end_date->isFuture();
+        return $this->contract_ends_at->isFuture();
     }
 
     /**
@@ -291,8 +291,8 @@ class Tenant extends Model
      */
     public function getNextBillingDate(): ?Carbon
     {
-        $billingCycle = $this->billing_info['cycle'] ?? 'monthly';
-        $lastBillingDate = $this->billing_info['last_billing_date'] ?? $this->contract_start_date;
+        $billingCycle = $this->billing_cycle ?? 'monthly';
+        $lastBillingDate = $this->contract_starts_at;
 
         if (!$lastBillingDate) {
             return null;
@@ -302,7 +302,7 @@ class Tenant extends Model
 
         return match ($billingCycle) {
             'monthly' => $lastBilling->addMonth(),
-            'yearly' => $lastBilling->addYear(),
+            'annual' => $lastBilling->addYear(),
             default => null,
         };
     }
@@ -355,7 +355,7 @@ class Tenant extends Model
      */
     public function scopeByPlan($query, string $planType)
     {
-        return $query->where('plan_type', $planType);
+        return $query->where('plan', $planType);
     }
 
     /**
@@ -366,10 +366,10 @@ class Tenant extends Model
      */
     public function scopeActive($query)
     {
-        return $query->where('status', self::STATUS_ACTIVE)
+        return $query->where('status', 'active')
             ->where(function ($q) {
-                $q->whereNull('contract_end_date')
-                    ->orWhere('contract_end_date', '>', now());
+                $q->whereNull('contract_ends_at')
+                    ->orWhere('contract_ends_at', '>', now());
             });
     }
 
@@ -381,7 +381,7 @@ class Tenant extends Model
      */
     public function scopeExpired($query)
     {
-        return $query->whereNotNull('contract_end_date')
-            ->where('contract_end_date', '<=', now());
+        return $query->whereNotNull('contract_ends_at')
+            ->where('contract_ends_at', '<=', now());
     }
 }

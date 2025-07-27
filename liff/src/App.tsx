@@ -14,6 +14,7 @@ import CustomerInfoPage from '@/pages/CustomerInfoPage'
 import BookingConfirmPage from '@/pages/BookingConfirmPage'
 import BookingCompletePage from '@/pages/BookingCompletePage'
 import BookingHistoryPage from '@/pages/BookingHistoryPage'
+import LiffTestPage from '@/pages/LiffTestPage'
 
 // 型定義
 
@@ -139,6 +140,21 @@ const App: React.FC = () => {
                 transition={{ duration: 0.3 }}
               >
                 <BookingHistoryPage />
+              </motion.div>
+            } 
+          />
+          
+          {/* LIFF認証統合テスト画面（開発用） */}
+          <Route 
+            path="/test" 
+            element={
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <LiffTestPage />
               </motion.div>
             } 
           />
