@@ -13,28 +13,28 @@
 ### 最新仕様書一覧
 **実装前には該当する仕様書を必ず確認してください：**
 
-1. **システム仕様書 v2.2** (`docs/tugical_system_specification_v2.0.md`)
+1. **システム仕様書 v2.2** (`docs/仕様書/tugical_system_specification_v2.0.md`)
    - 全体アーキテクチャ、複数メニュー組み合わせ、電話予約最適化
    - 業種別UI最適化、汎用時間スロット設定システム
 
-2. **データベース設計書 v1.2** (`docs/tugical_database_design_v1.0.md`)
+2. **データベース設計書 v1.2** (`docs/仕様書/tugical_database_design_v1.0.md`)
    - テーブル定義、booking_details設計、マルチテナント構造
    - 時間スロット設定、業種別属性、外部キー制約
 
-3. **API仕様書 v1.2** (`docs/tugical_api_specification_v1.0.md`)
+3. **API仕様書 v1.2** (`docs/仕様書/tugical_api_specification_v1.0.md`)
    - RESTful API仕様、複数メニュー予約API、電話予約最適化API
    - エラーハンドリング、認証、レスポンス形式
 
-4. **要件定義書 v1.1** (`docs/tugical_requirements_specification_v1.0.md`)
+4. **要件定義書 v1.1** (`docs/仕様書/tugical_requirements_specification_v1.0.md`)
    - ビジネス要件、機能要件、非機能要件
 
-5. **UI/UX設計書 v1.0** (`docs/tugical_ui_design_system_v1.0.md`)
+5. **UI/UX設計書 v1.0** (`docs/仕様書/tugical_ui_design_system_v1.0.md`)
    - デザインシステム、コンポーネント仕様、レスポンシブ対応
 
-6. **テスト戦略書 v1.0** (`docs/tugical_test_strategy_v1.0.md`)
+6. **テスト戦略書 v1.0** (`docs/仕様書/tugical_test_strategy_v1.0.md`)
    - テスト方針、カバレッジ要件、E2Eテスト
 
-7. **デプロイメント書 v1.0** (`docs/tugical_deployment_guide_v1.0.md`)
+7. **デプロイメント書 v1.0** (`docs/仕様書/tugical_deployment_guide_v1.0.md`)
    - VPS運用、環境構築、CI/CD
 
 ## 🔒 絶対遵守ルール（CRITICAL）
