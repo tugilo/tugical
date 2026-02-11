@@ -1,23 +1,42 @@
 # tugical Development Progress
 
-## 2025-10-22 18:07:02 - GitHub Actions自動デプロイ設定完了
+## 2025-02-11 - MVP 実装進捗（計画書準拠）
 
-### 🚀 **GitHub Actions自動デプロイ環境構築完了**
+### **完了タスク**
 
-**DNS伝播完了 + 自動デプロイ設定完了！**
+- **MVP-P3-06** リソース選択の LIFF 対応確認 … 時間枠選択＝担当表示で仕様充足、完了
+- **MVP-P4-02** 予約確定・変更時の LINE 通知送信 E2E … Store の LINE 判定を実カラム（line_channel_id / line_channel_secret）に合わせる。getLineAccessToken で line_access_token / env 対応。sendBookingUpdate 第2引数追加。手動テスト手順を計画書に追記
+- **MVP-P3-07** LIFF 単一メニュー完走 E2E 確認 … 確認手順・記録様式を計画書に整備。実機確認は環境準備後に実施し結果を「確認結果」に追記
+- **MVP-P4-03** 通知テンプレート・動的挿入の動作確認 … プレースホルダ一覧（{customer_name}, {booking_date}, {menu_name} 等）と置換ロジックを計画書に明文化。確認結果の記録様式を整備。実機で LINE 本文の動的挿入を Yes/No 確認すること
+
+### **参照**
+
+- 進捗の詳細: `backend/docs/MVP_IMPLEMENTATION_PLAN.md`
+- 現状サマリ: `backend/docs/STATUS.md`
+
+---
+
+## 2025-10-22 18:07:02 - GitHub Actions 自動デプロイ設定完了
+
+### 🚀 **GitHub Actions 自動デプロイ環境構築完了**
+
+**DNS 伝播完了 + 自動デプロイ設定完了！**
 
 #### **完了した作業** ✅
 
-**1. DNS設定完了**
-- `dev.tugical.com` → `160.16.197.140` 解決確認
-- DNS伝播完了（約2分で完了）
+**1. DNS 設定完了**
 
-**2. GitHub Actions設定完了**
+- `dev.tugical.com` → `160.16.197.140` 解決確認
+- DNS 伝播完了（約 2 分で完了）
+
+**2. GitHub Actions 設定完了**
+
 - `.github/workflows/deploy.yml` 作成
-- developブランチ → テスト環境自動デプロイ
-- mainブランチ → 本番環境自動デプロイ
+- develop ブランチ → テスト環境自動デプロイ
+- main ブランチ → 本番環境自動デプロイ
 
 **3. デプロイフロー設計**
+
 ```
 開発環境 (ローカル)
 ├── developブランチ → テスト環境 (dev.tugical.com)
@@ -27,12 +46,14 @@
 #### **設定されたデプロイスクリプト** ✅
 
 **テスト環境デプロイ**
+
 - ブランチ: develop
 - サーバー: dev.tugical.com
 - ディレクトリ: /var/www/laravel/tugical_dev
 - 処理: git pull, composer install, npm build, migrate
 
 **本番環境デプロイ**
+
 - ブランチ: main
 - サーバー: dev.tugical.com
 - ディレクトリ: /var/www/laravel/tugical_app
@@ -40,24 +61,28 @@
 
 #### **次のアクション** 📋
 
-**1. GitHub Secrets設定**
+**1. GitHub Secrets 設定**
+
 - `TEST_HOST`: dev.tugical.com
 - `TEST_USER`: tugi
-- `TEST_SSH_KEY`: ~/.ssh/deploy_keyの内容
+- `TEST_SSH_KEY`: ~/.ssh/deploy_key の内容
 - `PROD_HOST`: dev.tugical.com
 - `PROD_USER`: tugi
-- `PROD_SSH_KEY`: ~/.ssh/deploy_keyの内容
+- `PROD_SSH_KEY`: ~/.ssh/deploy_key の内容
 
 **2. サーバー側準備**
+
 - テスト環境: /var/www/laravel/tugical_dev の初期セットアップ
 - 本番環境: /var/www/laravel/tugical_app の初期セットアップ
-- SSH鍵設定の確認
+- SSH 鍵設定の確認
 
 **3. 動作テスト**
-- developブランチプッシュ → テスト環境デプロイ確認
-- mainブランチマージ → 本番環境デプロイ確認
+
+- develop ブランチプッシュ → テスト環境デプロイ確認
+- main ブランチマージ → 本番環境デプロイ確認
 
 **4. ドキュメント更新**
+
 - デプロイメント書の更新
 - 運用マニュアルの作成
 

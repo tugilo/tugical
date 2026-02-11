@@ -251,9 +251,10 @@ class NotificationService
 
         $success = $this->sendLineMessage($customer->line_user_id, $template['line_messages'], $store->id);
 
+        // 通知履歴は type=custom で記録（notifications.type の enum に status_changed がないため）
         $this->recordNotification(
             $store->id,
-            Notification::TYPE_STATUS_CHANGED,
+            'custom',
             'line',
             $customer->line_user_id,
             $success ? Notification::STATUS_SENT : Notification::STATUS_FAILED,
@@ -666,9 +667,8 @@ class NotificationService
 
     /**
      * LINEアクセストークン取得
-     * 
-     * 店舗別のLINE APIアクセストークンを取得
-     * 
+     * 店舗の line_access_token カラムまたは line_integration['access_token']、未設定時は env('LINE_ACCESS_TOKEN')
+     *
      * @param int $storeId 店舗ID
      * @return string|null アクセストークン
      */
@@ -678,9 +678,12 @@ class NotificationService
         if (!$store) {
             return null;
         }
-
+        if (!empty($store->line_access_token)) {
+            return $store->line_access_token;
+        }
         $lineSettings = $store->line_integration ?? [];
-        return $lineSettings['access_token'] ?? env('LINE_ACCESS_TOKEN');
+        $token = $lineSettings['access_token'] ?? null;
+        return $token ?: env('LINE_ACCESS_TOKEN');
     }
 
     /**

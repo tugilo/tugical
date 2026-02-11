@@ -109,18 +109,14 @@ Route::prefix('v1')->middleware(['auth:sanctum'])->name('api.v1.')->group(functi
 });
 
 // ===========================
-// LIFF API（LINE認証・顧客向け）
+// LIFF API（LINE認証・顧客向け・認証不要／store_id でマルチテナント）
 // ===========================
 Route::prefix('v1/liff')->name('liff.')->group(function () {
-    // TODO: Phase 4.3 LIFF実装時に追加
-    // Route::get('stores/{slug}', [LiffController::class, 'getStore'])->name('store');
-    // Route::get('stores/{slug}/menus', [LiffController::class, 'getMenus'])->name('menus');
-    // Route::get('stores/{slug}/resources', [LiffController::class, 'getResources'])->name('resources');
-    // Route::get('stores/{slug}/availability', [LiffController::class, 'getAvailability'])->name('availability');
-    // Route::post('stores/{slug}/hold-slots', [LiffController::class, 'createHoldSlot'])->name('hold-slots');
-    // Route::post('stores/{slug}/bookings', [LiffController::class, 'createBooking'])->name('bookings');
-    // Route::get('customers/profile', [LiffController::class, 'getCustomerProfile'])->name('customer.profile');
-    // Route::get('customers/bookings', [LiffController::class, 'getCustomerBookings'])->name('customer.bookings');
+    Route::get('stores/{storeId}/menus', [\App\Http\Controllers\Api\LiffController::class, 'getMenus'])->name('menus');
+    Route::get('availability', [\App\Http\Controllers\Api\LiffController::class, 'getAvailability'])->name('availability');
+    Route::post('customers/get-or-create', [\App\Http\Controllers\Api\LiffController::class, 'getOrCreateCustomer'])->name('customers.get-or-create');
+    Route::post('hold-slots', [\App\Http\Controllers\Api\LiffController::class, 'createHoldSlot'])->name('hold-slots');
+    Route::post('bookings', [\App\Http\Controllers\Api\LiffController::class, 'createBooking'])->name('bookings');
 });
 
 // ===========================

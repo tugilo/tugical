@@ -377,22 +377,24 @@ class Store extends Model
 
     /**
      * LINE連携チェック
+     * 実カラム（line_channel_id, line_channel_secret）または line_integration JSON を参照
      */
     public function hasLineIntegration(): bool
     {
+        if (!empty($this->line_channel_id) && !empty($this->line_channel_secret)) {
+            return true;
+        }
         $lineSettings = $this->line_integration ?? [];
-        return !empty($lineSettings['channel_id']) &&
-            !empty($lineSettings['channel_secret']);
+        return !empty($lineSettings['channel_id']) && !empty($lineSettings['channel_secret']);
     }
 
     /**
      * LIFF URL取得
+     * 実カラム line_liff_id または line_integration JSON を参照
      */
     public function getLiffUrl(): ?string
     {
-        $lineSettings = $this->line_integration ?? [];
-        $liffId = $lineSettings['liff_id'] ?? null;
-
+        $liffId = $this->line_liff_id ?? ($this->line_integration['liff_id'] ?? null);
         return $liffId ? "https://liff.line.me/{$liffId}" : null;
     }
 

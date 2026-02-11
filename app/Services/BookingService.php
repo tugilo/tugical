@@ -256,9 +256,9 @@ class BookingService
             // 基本データ更新
             $booking->update($updateData);
 
-            // 変更通知送信
+            // 変更通知送信（日付・時間変更時。第2引数は変更内容）
             if (isset($updateData['booking_date']) || isset($updateData['start_time'])) {
-                $this->notificationService->sendBookingUpdate($booking);
+                $this->notificationService->sendBookingUpdate($booking, $updateData);
             }
 
             Log::info('予約更新完了', [
@@ -504,8 +504,11 @@ class BookingService
         ]);
 
         try {
-            // HoldTokenServiceで検証
-            $tokenData = $this->holdTokenService->validateHoldToken($holdToken);
+            // HoldTokenServiceでトークンデータ取得（検証含む）
+            $tokenData = $this->holdTokenService->getHoldTokenData($holdToken);
+            if (!$tokenData) {
+                throw new \App\Exceptions\HoldTokenExpiredException('Hold Tokenが見つからないか期限切れです');
+            }
 
             // トークンデータと予約データの整合性チェック
             if ($tokenData['store_id'] !== $storeId) {
@@ -516,7 +519,7 @@ class BookingService
                 throw new \Exception('Hold Token: リソースIDが一致しません');
             }
 
-            if ($tokenData['date'] !== $date) {
+            if (($tokenData['booking_date'] ?? $tokenData['date'] ?? null) !== $date) {
                 throw new \Exception('Hold Token: 予約日が一致しません');
             }
 
