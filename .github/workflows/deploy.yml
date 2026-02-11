@@ -1,6 +1,12 @@
 # develop プッシュ → /var/www/laravel/tugical_dev へデプロイ
 # main プッシュ     → /var/www/laravel/tugical_app へデプロイ
 # 他プロジェクト（stamp / yamabuki / handa）の deploy.yml に準拠
+#
+# 必須 Secrets（リポジトリ設定 → Secrets and variables → Actions）:
+#   develop 用: TEST_HOST, TEST_USER, TEST_SSH_KEY
+#   main 用:   PROD_HOST, PROD_USER, PROD_SSH_KEY
+# ※ TEST_HOST / PROD_HOST は GitHub の runner から名前解決できること（公開 DNS の FQDN または IP 例: dev.tugical.com, 160.16.197.140）
+#   "dial tcp: lookup ***: no such host" が出る場合は HOST が未設定・誤字・非公開ホスト名の可能性
 
 name: Deploy to Server
 
