@@ -1,56 +1,70 @@
+# develop プッシュ → /var/www/laravel/tugical_dev へデプロイ
+# main プッシュ     → /var/www/laravel/tugical_app へデプロイ
+# 他プロジェクト（stamp / yamabuki / handa）の deploy.yml に準拠
+
 name: Deploy to Server
 
 on:
   push:
-    branches: [ develop, main ]
-  pull_request:
-    branches: [ main ]
+    branches:
+      - develop
+      - main
 
 jobs:
   deploy-test:
+    name: Deploy to tugical_dev (develop)
     if: github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
-    
     steps:
-    - name: Deploy to Test Server
-      uses: appleboy/ssh-action@v0.1.5
-      with:
-        host: ${{ secrets.TEST_HOST }}
-        username: ${{ secrets.TEST_USER }}
-        key: ${{ secrets.TEST_SSH_KEY }}
-        script: |
-          cd /var/www/laravel/tugical_dev
-          git fetch origin
-          git reset --hard origin/develop
-          composer install --no-dev --optimize-autoloader
-          php artisan config:cache
-          php artisan route:cache
-          php artisan view:cache
-          npm install
-          npm run build
-          php artisan migrate --force
-          sudo systemctl reload apache2
+      - name: Deploy to Test Server
+        uses: appleboy/ssh-action@v0.1.5
+        with:
+          host: ${{ secrets.TEST_HOST }}
+          username: ${{ secrets.TEST_USER }}
+          key: ${{ secrets.TEST_SSH_KEY }}
+          script: |
+            DEPLOY_PATH=/var/www/laravel/tugical_dev
+            echo "Deploying to $DEPLOY_PATH (develop)"
+            cd $DEPLOY_PATH
+            git fetch origin develop
+            git reset --hard origin/develop
+            git clean -fd
+            composer install --no-dev --optimize-autoloader
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+            npm install
+            npm run build
+            php artisan migrate --force
+            sudo chown -R www-data:www-data storage bootstrap/cache || true
+            sudo systemctl reload apache2 || true
+            echo "Deployment to tugical_dev completed."
 
   deploy-production:
+    name: Deploy to tugical_app (main)
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    
     steps:
-    - name: Deploy to Production Server
-      uses: appleboy/ssh-action@v0.1.5
-      with:
-        host: ${{ secrets.PROD_HOST }}
-        username: ${{ secrets.PROD_USER }}
-        key: ${{ secrets.PROD_SSH_KEY }}
-        script: |
-          cd /var/www/laravel/tugical_app
-          git fetch origin
-          git reset --hard origin/main
-          composer install --no-dev --optimize-autoloader
-          php artisan config:cache
-          php artisan route:cache
-          php artisan view:cache
-          npm install
-          npm run build
-          php artisan migrate --force
-          sudo systemctl reload apache2
+      - name: Deploy to Production Server
+        uses: appleboy/ssh-action@v0.1.5
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script: |
+            DEPLOY_PATH=/var/www/laravel/tugical_app
+            echo "Deploying to $DEPLOY_PATH (main)"
+            cd $DEPLOY_PATH
+            git fetch origin main
+            git reset --hard origin/main
+            git clean -fd
+            composer install --no-dev --optimize-autoloader
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+            npm install
+            npm run build
+            php artisan migrate --force
+            sudo chown -R www-data:www-data storage bootstrap/cache || true
+            sudo systemctl reload apache2 || true
+            echo "Deployment to tugical_app completed."
