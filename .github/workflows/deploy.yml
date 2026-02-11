@@ -42,8 +42,7 @@ jobs:
             npm install
             npm run build
             php artisan migrate --force
-            sudo chown -R www-data:www-data storage bootstrap/cache || true
-            sudo systemctl reload apache2 || true
+            # 権限・Apache リロードはデプロイユーザーに sudo なしでできない場合、サーバー側で sudoers 設定するか手動実行
             echo "Deployment to tugical_dev completed."
 
   deploy-production:
@@ -71,6 +70,5 @@ jobs:
             npm install
             npm run build
             php artisan migrate --force
-            sudo chown -R www-data:www-data storage bootstrap/cache || true
-            sudo systemctl reload apache2 || true
+            # 権限・Apache リロードはデプロイユーザーに sudo なしでできない場合、サーバー側で sudoers 設定するか手動実行
             echo "Deployment to tugical_app completed."
