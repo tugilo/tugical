@@ -1,5 +1,38 @@
 # tugical Development Progress
 
+## 2025-02-11 - 管理画面認証・ダッシュボード仕様・要件定義の整備
+
+### **実施内容**
+
+- **仕様書の整備**（admin_auth_and_role_dashboard_spec）
+  - v1.0: 認証・ロール・ダッシュボードの MVP 範囲を明文化
+  - v1.1: 「行動を促すダッシュボード」に改訂。必須 3 ブロック（今日の予約タイムライン・要対応アクション・直近の変更・キャンセル）と例外条件を定義
+  - v1.2: 「相棒」としてのひとことメッセージ仕様を追加（最上段・固定文+条件分岐・優先順位 A→B→C）
+  - v1.2.1: 心理設計の深掘りは後回し可能とする設計上の隔離を追記。MVP固定仕様（ここまで）・将来拡張スロット（FUTURE）セクションを追加
+- **要件定義の整備**
+  - `admin_auth_and_role_dashboard_requirements_v1.1.md` を新規作成。仕様 v1.2.1 に合わせて URL（/admin/login と /admin/dashboard のみ）、ダッシュボード構成（ひとことメッセージ + 必須 3 ブロック）、ロール別出し分け、MVP でやらないことを明文化
+  - `admin_auth_and_role_dashboard_requirements_v1.0.md` の冒頭に「最新は v1.1」の参照を追記
+  - `tugical_requirements_specification_v1.1.md` の「6. 機能要件 - 管理者側」に管理画面の認証・ロール・ダッシュボードの節を追加。要件定義 v1.1 と仕様書 v1.2.1 を正とする旨を記載
+
+### **変更・新規ファイル**
+
+- `backend/docs/admin_auth_and_role_dashboard_spec_v1.0.md`（新規・既存）
+- `backend/docs/admin_auth_and_role_dashboard_requirements_v1.0.md`（新規・既存）
+- `backend/docs/admin_auth_and_role_dashboard_spec_v1.1.md`（新規）
+- `backend/docs/admin_auth_and_role_dashboard_spec_v1.2.md`（新規）
+- `backend/docs/admin_auth_and_role_dashboard_spec_v1.2.1.md`（新規）
+- `backend/docs/admin_auth_and_role_dashboard_requirements_v1.1.md`（新規）
+- `backend/docs/admin_auth_and_role_dashboard_requirements_v1.0.md`（冒頭に v1.1 参照を追記）
+- `backend/docs/tugical_requirements_specification_v1.1.md`（管理者側に認証・ダッシュボード節を追加）
+
+### **参照**
+
+- 正とする仕様書: `backend/docs/admin_auth_and_role_dashboard_spec_v1.2.1.md`
+- 要件定義: `backend/docs/admin_auth_and_role_dashboard_requirements_v1.1.md`
+- 現状サマリ: `backend/docs/STATUS.md`
+
+---
+
 ## 2025-02-11 - ペルソナ整理・MVP実行ルール強化・トップリダイレクト
 
 ### **実施内容**
