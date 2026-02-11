@@ -13,8 +13,9 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+// トップは管理画面へリダイレクト（Laravel初期画面を表示しない）
 Route::get('/', function () {
-    return view('welcome');
+    return redirect('/admin');
 });
 
 // 管理者画面（SPA）

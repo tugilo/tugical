@@ -1,5 +1,34 @@
 # tugical Development Progress
 
+## 2025-02-11 - ペルソナ整理・MVP実行ルール強化・トップリダイレクト
+
+### **実施内容**
+
+- **ペルソナ・ユーザー概念整理**
+  - `docs/tugical_personas_and_users_v1.0.md` を新規作成。システム管理者 / テナント管理者（複数店舗） / 店舗管理者 / 利用者（LINE）の4層を定義
+  - `tugical_project_overview.md` にペルソナドキュメントへの参照を追加
+- **MVP 実行ルール強化**（`docs/MVP_EXECUTION_RULES.md`）
+  - Phase A（予約完走）のみ実装・Phase B は拡張余地のみと明記
+  - やってはいけないこと（売上最大化・複数店舗・本部画面・業種特化等）を追記
+  - 優先順位を「MVP_EXECUTION_RULES → MVP_IMPLEMENTATION_PLAN → CONCEPT_SPEC_FIT_GAP → requirements v1.1」に統一
+  - 作業ルール（1タスクずつ・⬜→🟡→✅・記録必須・ついでに禁止）と完了基準（全タスク✅＋β条件＝A完了）を追記
+- **トップページ**
+  - `routes/web.php`: `/` を Laravel 初期画面ではなく `/admin` へリダイレクトするよう変更（dev.tugica.com で管理画面に飛ぶように）
+
+### **変更ファイル**
+
+- `docs/tugical_personas_and_users_v1.0.md`（新規）
+- `docs/MVP_EXECUTION_RULES.md`（編集）
+- `docs/tugical_project_overview.md`（編集）
+- `routes/web.php`（編集）
+
+### **参照**
+
+- 進捗の詳細: `backend/docs/MVP_IMPLEMENTATION_PLAN.md`
+- 現状サマリ: `backend/docs/STATUS.md`
+
+---
+
 ## 2025-02-11 - MVP 実装進捗（計画書準拠）
 
 ### **完了タスク**
