@@ -3,7 +3,8 @@
 ## GitHub Actions CI/CD Pipeline
 
 **Version**: 1.2  
-**Date**: 2025 年 1 月 7 日  
+**作成日**: 2025-10-22 16:31  
+**更新日**: 2025-10-22 16:31  
 **Project**: tugical（ツギカル）  
 **Strategy**: 統合 Laravel アプリケーション → VPS 統一運用 → 段階的クラウド移行
 

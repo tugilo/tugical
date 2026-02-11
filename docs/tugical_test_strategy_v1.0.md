@@ -3,7 +3,8 @@
 
 **File**: tugical_test_strategy_v1.0.md  
 **Version**: 1.0  
-**Date**: 2025年6月28日  
+**作成日**: 2025-10-22 16:31  
+**更新日**: 2025-10-22 16:31  
 **Project**: tugical（ツギカル）  
 **Strategy**: 段階的テスト自動化 & 継続的品質改善
 

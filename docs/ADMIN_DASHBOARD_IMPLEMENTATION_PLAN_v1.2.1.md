@@ -1,7 +1,8 @@
 # 管理画面 認証・ロール・ダッシュボード 実装計画 v1.2.1
 
 **Version**: 1.1  
-**Date**: 2025-02-11  
+**作成日**: 2026-02-11 17:43  
+**更新日**: 2026-02-11 18:13  
 **基準**: admin_auth_and_role_dashboard_spec_v1.2.1.md, ADMIN_DASHBOARD_FIT_GAP_v1.2.1.md  
 **ルール**: MVP_EXECUTION_RULES.md に従う。未実装・不明の箇所のみタスク化。各ステップ終了時に Fit&Gap・STATUS・本計画書を更新する。
 

@@ -12,7 +12,8 @@ footer: "© tugilo inc. all rights reserved"
 ## LINE 連携型予約管理 SaaS
 
 **Version**: 1.1  
-**Date**: 2025 年 7 月 6 日  
+**作成日**: 2025-10-22 16:31  
+**更新日**: 2025-10-22 16:31  
 **Author**: tugilo inc.
 
 ---

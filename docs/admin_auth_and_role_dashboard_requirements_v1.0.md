@@ -1,7 +1,8 @@
 # 管理画面 認証・ロール別ダッシュボード 要件 v1.0
 
 **Version**: 1.0  
-**Date**: 2025-02-11  
+**作成日**: 2026-02-11 16:23  
+**更新日**: 2026-02-11 16:53  
 **Project**: tugical（ツギカル）  
 **参照**: tugical_personas_and_users_v1.0.md, UserResource (permissions_summary)
 

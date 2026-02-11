@@ -1,5 +1,26 @@
 # tugical Development Progress
 
+## 2026-02-11 18:34 - ドキュメント作成日・更新日の明記、進捗以外の全 doc に反映
+
+### **実施内容**
+
+- **日時表記ルールの追加**
+  - `.cursorrules` の進捗管理に「ドキュメント作成・編集時は日付に加えて時刻まで必ず明記する」を追記。
+  - `docs/MVP_EXECUTION_RULES.md` の Step 5（ドキュメント更新）に同様の日時表記ルールを追記。
+- **既存ドキュメントへの作成日・更新日の反映**
+  - 進捗ファイル（PROGRESS.md, PROGRESS_backup.md, PROGRESS_PHASE19.md, STATUS.md, CURRENT_FOCUS.md）を除く全 md について、ファイルの作成日・更新日を `stat` で取得し、先頭付近に **作成日**: YYYY-MM-DD HH:MM、**更新日**: YYYY-MM-DD HH:MM を追加または既存の Date を置換。
+
+### **変更ファイル**
+
+- docs 配下の仕様書・要件・Fit&Gap・計画書・tugical_* 等 28 ファイル（作成日・更新日を追加）。
+- 本ファイル（PROGRESS.md）に本エントリを追加。
+
+### **参照**
+
+- 日時表記ルール: `.cursorrules` 進捗管理、`docs/MVP_EXECUTION_RULES.md` Step 5。
+
+---
+
 ## 2025-02-11 - 管理画面 認証・ルートガード実装（Step 1・2）・CSS 修正・tugical+ 境界線
 
 ### **実施内容**

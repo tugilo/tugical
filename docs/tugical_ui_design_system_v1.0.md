@@ -11,7 +11,8 @@ footer: "© tugilo inc. all rights reserved"
 ## React Component Specification（完全版）
 
 **Version**: 1.1  
-**Date**: 2025年6月29日  
+**作成日**: 2025-10-22 16:31  
+**更新日**: 2025-10-22 16:31  
 **Project**: tugical（ツギカル）  
 **Framework**: React + TypeScript + Tailwind CSS + Framer Motion
 
