@@ -24,10 +24,10 @@ import {
   ArrowTrendingUpIcon,
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
-import { useUIStore } from '../../stores/uiStore';
-import Card from '../../components/ui/Card';
-import Button from '../../components/ui/Button';
-import { formatPrice, formatDate, formatTime, getBookingStatusLabel, getBookingStatusClass } from '../../utils';
+import { useUIStore } from '../../../stores/uiStore';
+import Card from '../../../components/admin/ui/Card';
+import Button from '../../../components/admin/ui/Button';
+import { formatPrice, formatDate, formatTime, getBookingStatusLabel, getBookingStatusClass } from '../../../index';
 
 // ダミーデータ（後でAPIから取得）
 const mockStats = {

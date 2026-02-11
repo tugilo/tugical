@@ -58,6 +58,8 @@
 
 ### 2.4 管理画面（React）
 
+- **SPA Router**: /admin/login と /admin/dashboard を定義（BrowserRouter basename=/admin）。Step 1 完了（2025-02-11）。
+- **ルートガード**: 未認証で /admin/dashboard アクセス時は /admin/login へリダイレクト（ProtectedRoute）。Step 2 完了（2025-02-11）。
 - 認証: ログイン（store_id 選択含む）
 - ダッシュボード
 - **予約管理**: 一覧・タイムライン（FullCalendar）、予約作成（単一・**複数メニュー組み合わせ**）、編集、移動（ドラッグ）、ステータス変更
@@ -126,6 +128,8 @@
 | **現状の全体像・次の一手（再スタート用）** | **backend/docs/STATUS.md**（本ファイル） ← ここだけ読めば再開できる |
 | 時系列の開発ログ（参照任意） | backend/docs/PROGRESS.md ※再開時に読む必要はありません |
 | セッションごとのメモ・焦点 | backend/docs/CURRENT_FOCUS.md（古い記述も含む） |
+| **管理画面 認証・ロール・ダッシュボード** | backend/docs/admin_auth_and_role_dashboard_spec_v1.2.1.md（仕様書）、admin_auth_and_role_dashboard_requirements_v1.1.md（要件定義） |
+| **tugical / tugical+ 境界** | backend/docs/TUGICAL_PLUS_BOUNDARY_v1.0.md（単店舗＝tugical、多店舗・横断＝tugical+ 将来） |
 | 仕様の参照 | backend/docs/tugical_*.md（システム・DB・API・要件・UI・テスト・デプロイ） |
 | 開発ルール | ルート `.cursorrules` |
 
@@ -143,6 +147,15 @@ make health
 
 # API
 # http://localhost/api/v1/
+```
+
+**Docker 運用時**: React（`resources/js`）を修正した場合は **必ずビルド** する。未ビルドのままではブラウザに反映されない。
+
+```bash
+# コンテナ内でビルド（例: app コンテナ名の場合）
+docker compose exec app npm run build
+# または ルートで make がある場合
+# make build など
 ```
 
 ---
@@ -163,6 +176,12 @@ make health
 - 決済連携
 - WebSocket によるリアルタイム更新
 - 細かな権限分岐（RBAC）
+
+---
+
+## 8. 方針メモ（スコープ・将来拡張）
+
+tugical は単店舗の相棒をコアとし、多店舗・本部・横断機能は tugical+（上位プラン/オプション）として将来追加する。境界の定義は `backend/docs/TUGICAL_PLUS_BOUNDARY_v1.0.md` を参照。MVP では多店舗・テナント機能を実装しない。
 
 ---
 

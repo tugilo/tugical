@@ -14,7 +14,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { customerApi } from '../../services/api';
 import type { Customer, PaginatedResponse, FilterOptions } from '../../types';
-import { cn } from '../../utils';
+import { cn } from '../../../index';
 import Card from '../../components/ui/Card';
 import LoadingScreen from '../../components/ui/LoadingScreen';
 import CustomerCard from '../../components/customers/CustomerCard';

@@ -7,7 +7,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { cn } from '../../utils';
+import { cn } from '../../../utils';
 import {
   CalendarIcon,
   ClockIcon,

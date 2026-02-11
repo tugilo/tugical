@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { XMarkIcon } from '@heroicons/react/24/outline';
-import { cn } from '../../utils';
+import { cn } from '../../../utils';
 
 interface ModalProps {
   /** モーダルの開閉状態 */

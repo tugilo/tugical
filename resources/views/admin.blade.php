@@ -12,10 +12,7 @@
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- Vite -->
+    <!-- Vite（app.css に Tailwind を含む） -->
     @vite(['resources/css/app.css', 'resources/js/pages/admin/index.tsx'])
 </head>
 

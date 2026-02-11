@@ -1,5 +1,32 @@
 # tugical Development Progress
 
+## 2025-02-11 - 管理画面 認証・ルートガード実装（Step 1・2）・CSS 修正・tugical+ 境界線
+
+### **実施内容**
+
+- **ADMIN_DASHBOARD_IMPLEMENTATION_PLAN に沿った実装**
+  - Step 1: SPA に React Router を導入。BrowserRouter basename=/admin、Route /login→LoginPage、/dashboard→DashboardPage、/→Navigate /login。App.tsx を変更。
+  - Step 2: ProtectedRoute を新規作成。authStore の isAuthenticated/token で判定し、未認証時は Navigate to=/login state.from。App の /dashboard を ProtectedRoute でラップ。
+- **ビルド・CSS 修正**
+  - resources/css/app.css に @tailwind を追加（従来は空で Tailwind がビルドされていなかった）。tailwind.config.js の content を resources/views と resources/js に変更。bg-gradient-tugical を theme に追加。admin.blade.php から Tailwind CDN を削除し Vite ビルドの CSS のみ使用。
+  - 管理画面・LIFF の import パス修正（../../ → ../../../ 等）。utils.ts を新規作成し index を re-export。ビルドが通るように各種コンポーネントのパスを修正。
+- **ドキュメント**
+  - tugical/tugical+ 境界線を固定する TUGICAL_PLUS_BOUNDARY_v1.0.md を新規作成。既存ドキュメント（project_overview、requirements、admin_spec、MVP_EXECUTION_RULES、STATUS）に分離方針を追記。
+  - ADMIN_DASHBOARD_FIT_GAP_v1.2.1.md、ADMIN_DASHBOARD_IMPLEMENTATION_PLAN_v1.2.1.md を新規作成。Step 1・2 完了に伴い Fit&Gap・STATUS・計画書の実施ログを更新。
+  - STATUS.md に「Docker 運用時は React 修正後に必ずビルド」を追記。
+
+### **変更・新規ファイル**
+
+- 新規: docs/TUGICAL_PLUS_BOUNDARY_v1.0.md, docs/ADMIN_DASHBOARD_FIT_GAP_v1.2.1.md, docs/ADMIN_DASHBOARD_IMPLEMENTATION_PLAN_v1.2.1.md, resources/js/pages/admin/ProtectedRoute.tsx, resources/js/utils.ts
+- 編集: resources/js/pages/admin/App.tsx, docs/ADMIN_DASHBOARD_FIT_GAP_v1.2.1.md, docs/STATUS.md, docs/MVP_EXECUTION_RULES.md, docs/admin_auth_and_role_dashboard_spec_v1.2.1.md, docs/tugical_project_overview.md, docs/tugical_requirements_specification_v1.1.md, resources/css/app.css, tailwind.config.js, resources/views/admin.blade.php, 各種 JS の import パス（LoginPage, DashboardPage, Button, Card, DatePicker, Modal, DashboardLayout, CustomerCard, BookingCard, BookingTimelineView, CustomersPage 等）
+
+### **参照**
+
+- 実装計画: docs/ADMIN_DASHBOARD_IMPLEMENTATION_PLAN_v1.2.1.md（Step 3 以降が未実施）
+- 境界線: docs/TUGICAL_PLUS_BOUNDARY_v1.0.md
+
+---
+
 ## 2025-02-11 - 管理画面認証・ダッシュボード仕様・要件定義の整備
 
 ### **実施内容**

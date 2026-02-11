@@ -1,8 +1,8 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
+    "./resources/views/**/*.blade.php",
+    "./resources/js/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {
@@ -75,6 +75,9 @@ export default {
       },
       backdropBlur: {
         xs: '2px',
+      },
+      backgroundImage: {
+        'gradient-tugical': 'linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 50%, #99f6e4 100%)',
       },
     },
   },

@@ -17,12 +17,12 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
-import { useAuthStore } from '../../stores/authStore';
-import { toast } from '../../stores/uiStore';
-import Button from '../../components/ui/Button';
-import Card from '../../components/ui/Card';
-import { cn, isValidEmail } from '../../utils';
-import type { LoginRequest } from '../../types';
+import { useAuthStore } from '../../../stores/authStore';
+import { toast } from '../../../stores/uiStore';
+import Button from '../../../components/admin/ui/Button';
+import Card from '../../../components/admin/ui/Card';
+import { cn, isValidEmail } from '../../../index';
+import type { LoginRequest } from '../../../types';
 
 interface FormData {
   email: string;

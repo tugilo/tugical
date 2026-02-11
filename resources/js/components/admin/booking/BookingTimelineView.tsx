@@ -10,9 +10,9 @@ import {
   TimelineSlotClickInfo,
   BookingCreationContext,
   AvailabilitySlot,
-} from '../../types';
-import { resourceApi, storeApi } from '../../services/api';
-import { useUIStore } from '../../stores/uiStore';
+} from '../../../types';
+import { resourceApi, storeApi } from '../../../services/api';
+import { useUIStore } from '../../../stores/uiStore';
 import {
   convertToFullCalendarEvents,
   convertToFullCalendarResources,
@@ -21,7 +21,7 @@ import {
   generateAvailableTimeSlots,
   convertAvailableSlotsToEvents,
   mergeBookingAndAvailableEvents,
-} from '../../utils/fullcalendarHelpers';
+} from '../../../fullcalendarHelpers';
 
 interface BookingTimelineViewProps {
   date: Date;

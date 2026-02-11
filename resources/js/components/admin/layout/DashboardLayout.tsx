@@ -31,7 +31,7 @@ import {
 import { useAuthStore } from '../../stores/authStore';
 import { useUIStore } from '../../stores/uiStore';
 import { toast } from '../../stores/uiStore';
-import { getUserRoleLabel } from '../../utils';
+import { getUserRoleLabel } from '../../../utils';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
