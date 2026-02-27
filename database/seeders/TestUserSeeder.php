@@ -1,0 +1,218 @@
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\Store;
+use App\Models\User;
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
+
+/**
+ * TestUserSeeder
+ * 
+ * tugical API統合テスト用ユーザーデータ作成
+ * 
+ * 作成データ:
+ * - 4つの役割（owner, manager, staff, reception）のテストユーザー
+ * - 2つのテスト店舗（美容院、整体院）
+ * - 各ユーザーの基本設定・プロフィール
+ * 
+ * 使用目的:
+ * - Postman API統合テスト
+ * - 認証フロー検証
+ * - 権限ベースアクセス制御テスト
+ * 
+ * @package Database\Seeders
+ * @author tugical Development Team
+ * @version 1.0
+ * @since 2025-07-02
+ */
+class TestUserSeeder extends Seeder
+{
+    /**
+     * テストデータ作成実行
+     */
+    public function run(): void
+    {
+        // 外部キー制約を一時的に無効化
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+
+        try {
+            // テナントと店舗を直接作成
+            DB::table('tenants')->insertOrIgnore([
+                'id' => 1,
+                'name' => 'テストテナント',
+                'email' => 'test@tugical.test',
+                'plan' => 'standard',
+                'status' => 'active',
+                'max_stores' => 5,
+                'max_bookings_per_month' => 2000,
+                'max_staff_per_store' => 10,
+                'billing_cycle' => 'monthly',
+                'monthly_fee' => 19800,
+                'is_test_account' => true,
+                'settings' => json_encode([
+                    'features' => ['booking', 'customer', 'notification', 'analytics'],
+                ]),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            DB::table('stores')->insertOrIgnore([
+                'id' => 1,
+                'tenant_id' => 1,
+                'name' => 'テスト店舗',
+                'slug' => 'test-store',
+                'industry_type' => 'beauty',
+                'industry_settings' => json_encode([
+                    'template_name' => '美容・ネイル',
+                    'features' => ['staff_assignment', 'skill_level', 'gender_preference'],
+                    'labels' => [
+                        'resource' => 'スタッフ',
+                        'customer' => 'お客様',
+                        'booking' => 'ご予約',
+                    ],
+                ]),
+                'business_hours' => json_encode([
+                    'monday' => ['open' => '09:00', 'close' => '19:00'],
+                    'tuesday' => ['open' => '09:00', 'close' => '19:00'],
+                    'wednesday' => ['open' => '09:00', 'close' => '19:00'],
+                    'thursday' => ['open' => '09:00', 'close' => '19:00'],
+                    'friday' => ['open' => '09:00', 'close' => '19:00'],
+                    'saturday' => ['open' => '09:00', 'close' => '18:00'],
+                    'sunday' => ['open' => '10:00', 'close' => '17:00'],
+                ]),
+                'time_slot_interval' => 30,
+                'advance_booking_days' => 30,
+                'accept_same_day_booking' => true,
+                'booking_mode' => 'auto',
+                'booking_limit_per_day' => 50,
+                'hold_minutes' => 10,
+                'require_customer_info' => false,
+                'notification_settings' => json_encode([
+                    'booking_confirmation' => true,
+                    'booking_reminder' => true,
+                    'booking_reminder_hours' => 24,
+                ]),
+                'send_booking_notifications' => true,
+                'send_reminder_notifications' => true,
+                'reminder_hours_before' => 24,
+                'line_integration_active' => false,
+                'theme_color' => '#10b981',
+                'is_active' => true,
+                'is_public' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            // 認証テスト用ユーザー作成
+            $storeId = 1;
+            $this->createTestUsers($storeId);
+
+            $this->command->info('✅ テストユーザーデータ作成完了');
+            $this->command->info('');
+            $this->command->info('=== API統合テスト用ログイン情報 ===');
+            $this->command->info('');
+            $this->command->info('🏪 店舗（store_id: ' . $storeId . '）');
+            $this->command->info('  👑 オーナー: owner@tugical.test / password123');
+            $this->command->info('  👔 マネージャー: manager@tugical.test / password123');
+            $this->command->info('  👨‍💼 スタッフ: staff@tugical.test / password123');
+            $this->command->info('  📞 受付: reception@tugical.test / password123');
+            $this->command->info('');
+            $this->command->info('📋 Postmanテスト用エンドポイント:');
+            $this->command->info('  POST /api/v1/auth/login');
+            $this->command->info('  GET  /api/v1/auth/user');
+            $this->command->info('  POST /api/v1/auth/logout');
+            $this->command->info('');
+            $this->command->info('🔗 テスト用リクエスト例:');
+            $this->command->info('  curl -X POST http://localhost/api/v1/auth/login \\');
+            $this->command->info('    -H "Content-Type: application/json" \\');
+            $this->command->info('    -d \'{"email":"owner@tugical.test","password":"password123","store_id":' . $storeId . '}\'');
+
+        } finally {
+            // 外部キー制約を再有効化
+            DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        }
+    }
+
+    /**
+     * テストユーザー作成
+     * 
+     * @param int $storeId 店舗ID
+     * @param array $roles 作成する役割（デフォルト: 全役割）
+     * @return void
+     */
+    private function createTestUsers(int $storeId, array $roles = ['owner', 'manager', 'staff', 'reception']): void
+    {
+        foreach ($roles as $role) {
+            $userData = $this->getUserData($role, $storeId);
+            User::create($userData);
+        }
+    }
+
+    /**
+     * 役割別ユーザーデータ取得
+     * 
+     * @param string $role 役割
+     * @param int $storeId 店舗ID
+     * @return array ユーザーデータ
+     */
+    private function getUserData(string $role, int $storeId): array
+    {
+        $roleNames = [
+            'owner' => 'オーナー',
+            'manager' => 'マネージャー',
+            'staff' => 'スタッフ',
+            'reception' => '受付',
+        ];
+
+        $displayName = $roleNames[$role] ?? $role;
+
+        return [
+            'store_id' => $storeId,
+            'name' => "テスト{$displayName}",
+            'email' => "{$role}@tugical.test",
+            'password' => Hash::make('password123'),
+            'role' => $role,
+            'is_active' => true,
+            'email_verified_at' => now(),
+            'profile' => [
+                'display_name' => "テスト{$displayName}",
+                'phone' => $this->generateTestPhone($role),
+                'timezone' => 'Asia/Tokyo',
+                'language' => 'ja',
+            ],
+            'preferences' => [
+                'notifications' => true,
+                'email_notifications' => $role === 'owner',
+                'dashboard_layout' => $role === 'owner' ? 'advanced' : 'simple',
+                'date_format' => 'Y-m-d',
+                'time_format' => 'H:i',
+                'theme' => 'light',
+                'language' => 'ja',
+            ],
+            'created_at' => now(),
+            'updated_at' => now(),
+        ];
+    }
+
+    /**
+     * テスト用電話番号生成
+     * 
+     * @param string $role 役割
+     * @return string 電話番号
+     */
+    private function generateTestPhone(string $role): string
+    {
+        $phoneMap = [
+            'owner' => '090-1111-1111',
+            'manager' => '090-2222-2222',
+            'staff' => '090-3333-3333',
+            'reception' => '090-4444-4444',
+        ];
+
+        return $phoneMap[$role] ?? '090-0000-0000';
+    }
+}

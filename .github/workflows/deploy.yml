@@ -1,0 +1,151 @@
+# develop プッシュ → /var/www/laravel/tugical_dev へデプロイ
+# main プッシュ     → /var/www/laravel/tugical_app へデプロイ
+# protectlabo の deploy.yml を参考にキャッシュ・条件付き依存更新・migrate を整理
+#
+# 必須 Secrets（リポジトリ設定 → Secrets and variables → Actions）:
+#   develop 用: TEST_HOST, TEST_USER, TEST_SSH_KEY
+#   main 用:   PROD_HOST, PROD_USER, PROD_SSH_KEY
+
+name: Deploy to Server
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy-test:
+    name: Deploy to tugical_dev (develop)
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Test Server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.TEST_HOST }}
+          username: ${{ secrets.TEST_USER }}
+          key: ${{ secrets.TEST_SSH_KEY }}
+          script: |
+            cd /var/www/laravel/tugical_dev
+
+            echo "🚀 Deploying to DEVELOPMENT environment"
+            echo "Current branch: $(git branch --show-current)"
+
+            git fetch origin
+            git reset --hard origin/develop
+            git clean -fd
+
+            if [ ! -d "vendor" ] || [ "composer.lock" -nt "vendor/autoload.php" ]; then
+              composer install --no-dev --optimize-autoloader --no-interaction
+              echo "✅ Composer依存関係を更新完了"
+            else
+              echo "✅ Composer依存関係は最新です"
+            fi
+
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            nvm use 20 2>/dev/null || true
+            if [ ! -d "node_modules" ] || [ "package-lock.json" -nt "node_modules/.package-lock.json" ]; then
+              npm ci --prefer-offline --no-audit --no-fund
+              echo "✅ NPM依存関係を更新完了"
+            else
+              echo "✅ NPM依存関係は最新です"
+            fi
+
+            NODE_OPTIONS="--max-old-space-size=4096" npm run build
+
+            php artisan config:clear
+            php artisan cache:clear
+            php artisan route:clear
+            php artisan view:clear
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+
+            if php artisan migrate:status | grep -q "Pending"; then
+              php artisan migrate --force
+              echo "✅ マイグレーション実行完了"
+            else
+              echo "✅ マイグレーションは最新です"
+            fi
+
+            php artisan storage:link 2>/dev/null || echo "✅ ストレージリンクは既に存在します"
+
+            if [ -w storage ] && [ -w bootstrap/cache ]; then
+              chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
+              chmod -R 775 storage bootstrap/cache 2>/dev/null || true
+              echo "✅ 権限設定完了"
+            else
+              echo "⚠️  権限設定をスキップ（権限不足）"
+            fi
+
+            echo "✅ Development deployment completed successfully!"
+
+  deploy-production:
+    name: Deploy to tugical_app (main)
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Production Server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script: |
+            cd /var/www/laravel/tugical_app
+
+            echo "🚀 Deploying to PRODUCTION environment"
+            echo "Current branch: $(git branch --show-current)"
+
+            git fetch origin
+            git reset --hard origin/main
+            git clean -fd
+
+            if [ ! -d "vendor" ] || [ "composer.lock" -nt "vendor/autoload.php" ]; then
+              composer install --no-dev --optimize-autoloader --no-interaction
+              echo "✅ Composer依存関係を更新完了"
+            else
+              echo "✅ Composer依存関係は最新です"
+            fi
+
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            nvm use 20 2>/dev/null || true
+            if [ ! -d "node_modules" ] || [ "package-lock.json" -nt "node_modules/.package-lock.json" ]; then
+              npm ci --prefer-offline --no-audit --no-fund
+              echo "✅ NPM依存関係を更新完了"
+            else
+              echo "✅ NPM依存関係は最新です"
+            fi
+
+            NODE_OPTIONS="--max-old-space-size=4096" npm run build
+
+            php artisan config:clear
+            php artisan cache:clear
+            php artisan route:clear
+            php artisan view:clear
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+
+            if php artisan migrate:status | grep -q "Pending"; then
+              php artisan migrate --force
+              echo "✅ マイグレーション実行完了"
+            else
+              echo "✅ マイグレーションは最新です"
+            fi
+
+            php artisan storage:link 2>/dev/null || echo "✅ ストレージリンクは既に存在します"
+
+            if [ -w storage ] && [ -w bootstrap/cache ]; then
+              chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
+              chmod -R 775 storage bootstrap/cache 2>/dev/null || true
+              echo "✅ 権限設定完了"
+            else
+              echo "⚠️  権限設定をスキップ（権限不足）"
+            fi
+
+            echo "✅ Production deployment completed successfully!"

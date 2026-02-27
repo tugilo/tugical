@@ -340,6 +340,349 @@
 
 ---
 
+## 2026-02-11 18:34 - ドキュメント作成日・更新日の明記、進捗以外の全 doc に反映
+
+### **実施内容**
+
+- **日時表記ルールの追加**
+  - `.cursorrules` の進捗管理に「ドキュメント作成・編集時は日付に加えて時刻まで必ず明記する」を追記。
+  - `docs/MVP_EXECUTION_RULES.md` の Step 5（ドキュメント更新）に同様の日時表記ルールを追記。
+- **既存ドキュメントへの作成日・更新日の反映**
+  - 進捗ファイル（PROGRESS.md, PROGRESS_backup.md, PROGRESS_PHASE19.md, STATUS.md, CURRENT_FOCUS.md）を除く全 md について、ファイルの作成日・更新日を `stat` で取得し、先頭付近に **作成日**: YYYY-MM-DD HH:MM、**更新日**: YYYY-MM-DD HH:MM を追加または既存の Date を置換。
+
+### **変更ファイル**
+
+- docs 配下の仕様書・要件・Fit&Gap・計画書・tugical_* 等 28 ファイル（作成日・更新日を追加）。
+- 本ファイル（PROGRESS.md）に本エントリを追加。
+
+### **参照**
+
+- 日時表記ルール: `.cursorrules` 進捗管理、`docs/MVP_EXECUTION_RULES.md` Step 5。
+
+---
+
+## 2025-02-11 - 管理画面 認証・ルートガード実装（Step 1・2）・CSS 修正・tugical+ 境界線
+
+### **実施内容**
+
+- **ADMIN_DASHBOARD_IMPLEMENTATION_PLAN に沿った実装**
+  - Step 1: SPA に React Router を導入。BrowserRouter basename=/admin、Route /login→LoginPage、/dashboard→DashboardPage、/→Navigate /login。App.tsx を変更。
+  - Step 2: ProtectedRoute を新規作成。authStore の isAuthenticated/token で判定し、未認証時は Navigate to=/login state.from。App の /dashboard を ProtectedRoute でラップ。
+- **ビルド・CSS 修正**
+  - resources/css/app.css に @tailwind を追加（従来は空で Tailwind がビルドされていなかった）。tailwind.config.js の content を resources/views と resources/js に変更。bg-gradient-tugical を theme に追加。admin.blade.php から Tailwind CDN を削除し Vite ビルドの CSS のみ使用。
+  - 管理画面・LIFF の import パス修正（../../ → ../../../ 等）。utils.ts を新規作成し index を re-export。ビルドが通るように各種コンポーネントのパスを修正。
+- **ドキュメント**
+  - tugical/tugical+ 境界線を固定する TUGICAL_PLUS_BOUNDARY_v1.0.md を新規作成。既存ドキュメント（project_overview、requirements、admin_spec、MVP_EXECUTION_RULES、STATUS）に分離方針を追記。
+  - ADMIN_DASHBOARD_FIT_GAP_v1.2.1.md、ADMIN_DASHBOARD_IMPLEMENTATION_PLAN_v1.2.1.md を新規作成。Step 1・2 完了に伴い Fit&Gap・STATUS・計画書の実施ログを更新。
+  - STATUS.md に「Docker 運用時は React 修正後に必ずビルド」を追記。
+
+### **変更・新規ファイル**
+
+- 新規: docs/TUGICAL_PLUS_BOUNDARY_v1.0.md, docs/ADMIN_DASHBOARD_FIT_GAP_v1.2.1.md, docs/ADMIN_DASHBOARD_IMPLEMENTATION_PLAN_v1.2.1.md, resources/js/pages/admin/ProtectedRoute.tsx, resources/js/utils.ts
+- 編集: resources/js/pages/admin/App.tsx, docs/ADMIN_DASHBOARD_FIT_GAP_v1.2.1.md, docs/STATUS.md, docs/MVP_EXECUTION_RULES.md, docs/admin_auth_and_role_dashboard_spec_v1.2.1.md, docs/tugical_project_overview.md, docs/tugical_requirements_specification_v1.1.md, resources/css/app.css, tailwind.config.js, resources/views/admin.blade.php, 各種 JS の import パス（LoginPage, DashboardPage, Button, Card, DatePicker, Modal, DashboardLayout, CustomerCard, BookingCard, BookingTimelineView, CustomersPage 等）
+
+### **参照**
+
+- 実装計画: docs/ADMIN_DASHBOARD_IMPLEMENTATION_PLAN_v1.2.1.md（Step 3 以降が未実施）
+- 境界線: docs/TUGICAL_PLUS_BOUNDARY_v1.0.md
+
+---
+
+## 2025-02-11 - 管理画面認証・ダッシュボード仕様・要件定義の整備
+
+### **実施内容**
+
+- **仕様書の整備**（admin_auth_and_role_dashboard_spec）
+  - v1.0: 認証・ロール・ダッシュボードの MVP 範囲を明文化
+  - v1.1: 「行動を促すダッシュボード」に改訂。必須 3 ブロック（今日の予約タイムライン・要対応アクション・直近の変更・キャンセル）と例外条件を定義
+  - v1.2: 「相棒」としてのひとことメッセージ仕様を追加（最上段・固定文+条件分岐・優先順位 A→B→C）
+  - v1.2.1: 心理設計の深掘りは後回し可能とする設計上の隔離を追記。MVP固定仕様（ここまで）・将来拡張スロット（FUTURE）セクションを追加
+- **要件定義の整備**
+  - `admin_auth_and_role_dashboard_requirements_v1.1.md` を新規作成。仕様 v1.2.1 に合わせて URL（/admin/login と /admin/dashboard のみ）、ダッシュボード構成（ひとことメッセージ + 必須 3 ブロック）、ロール別出し分け、MVP でやらないことを明文化
+  - `admin_auth_and_role_dashboard_requirements_v1.0.md` の冒頭に「最新は v1.1」の参照を追記
+  - `tugical_requirements_specification_v1.1.md` の「6. 機能要件 - 管理者側」に管理画面の認証・ロール・ダッシュボードの節を追加。要件定義 v1.1 と仕様書 v1.2.1 を正とする旨を記載
+
+### **変更・新規ファイル**
+
+- `backend/docs/admin_auth_and_role_dashboard_spec_v1.0.md`（新規・既存）
+- `backend/docs/admin_auth_and_role_dashboard_requirements_v1.0.md`（新規・既存）
+- `backend/docs/admin_auth_and_role_dashboard_spec_v1.1.md`（新規）
+- `backend/docs/admin_auth_and_role_dashboard_spec_v1.2.md`（新規）
+- `backend/docs/admin_auth_and_role_dashboard_spec_v1.2.1.md`（新規）
+- `backend/docs/admin_auth_and_role_dashboard_requirements_v1.1.md`（新規）
+- `backend/docs/admin_auth_and_role_dashboard_requirements_v1.0.md`（冒頭に v1.1 参照を追記）
+- `backend/docs/tugical_requirements_specification_v1.1.md`（管理者側に認証・ダッシュボード節を追加）
+
+### **参照**
+
+- 正とする仕様書: `backend/docs/admin_auth_and_role_dashboard_spec_v1.2.1.md`
+- 要件定義: `backend/docs/admin_auth_and_role_dashboard_requirements_v1.1.md`
+- 現状サマリ: `backend/docs/STATUS.md`
+
+---
+
+## 2025-02-11 - ペルソナ整理・MVP実行ルール強化・トップリダイレクト
+
+### **実施内容**
+
+- **ペルソナ・ユーザー概念整理**
+  - `docs/tugical_personas_and_users_v1.0.md` を新規作成。システム管理者 / テナント管理者（複数店舗） / 店舗管理者 / 利用者（LINE）の4層を定義
+  - `tugical_project_overview.md` にペルソナドキュメントへの参照を追加
+- **MVP 実行ルール強化**（`docs/MVP_EXECUTION_RULES.md`）
+  - Phase A（予約完走）のみ実装・Phase B は拡張余地のみと明記
+  - やってはいけないこと（売上最大化・複数店舗・本部画面・業種特化等）を追記
+  - 優先順位を「MVP_EXECUTION_RULES → MVP_IMPLEMENTATION_PLAN → CONCEPT_SPEC_FIT_GAP → requirements v1.1」に統一
+  - 作業ルール（1タスクずつ・⬜→🟡→✅・記録必須・ついでに禁止）と完了基準（全タスク✅＋β条件＝A完了）を追記
+- **トップページ**
+  - `routes/web.php`: `/` を Laravel 初期画面ではなく `/admin` へリダイレクトするよう変更（dev.tugica.com で管理画面に飛ぶように）
+
+### **変更ファイル**
+
+- `docs/tugical_personas_and_users_v1.0.md`（新規）
+- `docs/MVP_EXECUTION_RULES.md`（編集）
+- `docs/tugical_project_overview.md`（編集）
+- `routes/web.php`（編集）
+
+### **参照**
+
+- 進捗の詳細: `backend/docs/MVP_IMPLEMENTATION_PLAN.md`
+- 現状サマリ: `backend/docs/STATUS.md`
+
+---
+
+## 2025-02-11 - MVP 実装進捗（計画書準拠）
+
+### **完了タスク**
+
+- **MVP-P3-06** リソース選択の LIFF 対応確認 … 時間枠選択＝担当表示で仕様充足、完了
+- **MVP-P4-02** 予約確定・変更時の LINE 通知送信 E2E … Store の LINE 判定を実カラム（line_channel_id / line_channel_secret）に合わせる。getLineAccessToken で line_access_token / env 対応。sendBookingUpdate 第2引数追加。手動テスト手順を計画書に追記
+- **MVP-P3-07** LIFF 単一メニュー完走 E2E 確認 … 確認手順・記録様式を計画書に整備。実機確認は環境準備後に実施し結果を「確認結果」に追記
+- **MVP-P4-03** 通知テンプレート・動的挿入の動作確認 … プレースホルダ一覧（{customer_name}, {booking_date}, {menu_name} 等）と置換ロジックを計画書に明文化。確認結果の記録様式を整備。実機で LINE 本文の動的挿入を Yes/No 確認すること
+
+### **参照**
+
+- 進捗の詳細: `backend/docs/MVP_IMPLEMENTATION_PLAN.md`
+- 現状サマリ: `backend/docs/STATUS.md`
+
+---
+
+## 2025-10-22 18:07:02 - GitHub Actions 自動デプロイ設定完了
+
+### 🚀 **GitHub Actions 自動デプロイ環境構築完了**
+
+**DNS 伝播完了 + 自動デプロイ設定完了！**
+
+#### **完了した作業** ✅
+
+**1. DNS 設定完了**
+
+- `dev.tugical.com` → `160.16.197.140` 解決確認
+- DNS 伝播完了（約 2 分で完了）
+
+**2. GitHub Actions 設定完了**
+
+- `.github/workflows/deploy.yml` 作成
+- develop ブランチ → テスト環境自動デプロイ
+- main ブランチ → 本番環境自動デプロイ
+
+**3. デプロイフロー設計**
+
+```
+開発環境 (ローカル)
+├── developブランチ → テスト環境 (dev.tugical.com)
+└── mainブランチ → 本番環境 (dev.tugical.com)
+```
+
+#### **設定されたデプロイスクリプト** ✅
+
+**テスト環境デプロイ**
+
+- ブランチ: develop
+- サーバー: dev.tugical.com
+- ディレクトリ: /var/www/laravel/tugical_dev
+- 処理: git pull, composer install, npm build, migrate
+
+**本番環境デプロイ**
+
+- ブランチ: main
+- サーバー: dev.tugical.com
+- ディレクトリ: /var/www/laravel/tugical_app
+- 処理: git pull, composer install, npm build, migrate
+
+#### **次のアクション** 📋
+
+**1. GitHub Secrets 設定**
+
+- `TEST_HOST`: dev.tugical.com
+- `TEST_USER`: tugi
+- `TEST_SSH_KEY`: ~/.ssh/deploy_key の内容
+- `PROD_HOST`: dev.tugical.com
+- `PROD_USER`: tugi
+- `PROD_SSH_KEY`: ~/.ssh/deploy_key の内容
+
+**2. サーバー側準備**
+
+- テスト環境: /var/www/laravel/tugical_dev の初期セットアップ
+- 本番環境: /var/www/laravel/tugical_app の初期セットアップ
+- SSH 鍵設定の確認
+
+**3. 動作テスト**
+
+- develop ブランチプッシュ → テスト環境デプロイ確認
+- main ブランチマージ → 本番環境デプロイ確認
+
+**4. ドキュメント更新**
+
+- デプロイメント書の更新
+- 運用マニュアルの作成
+
+---
+
+## 2025-10-22 17:42:48 - Docker 構成最適化完了
+
+### 🐳 **Docker 構成の大幅改善**
+
+**リポジトリ再構築後の Docker 環境最適化が完了！**
+
+#### **Docker 構成の改善** ✅
+
+**1. docker-compose.yml の最適化**
+
+- ネットワーク分離: `tugical-network`でコンテナ間通信を管理
+- ボリューム管理: データベースと Redis のデータ永続化
+- 環境変数: `.env`ファイルの適切な読み込み
+- 依存関係: 適切なサービス間依存関係の設定
+
+**2. Nginx 設定の強化**
+
+- セキュリティヘッダー: XSS 保護、フレームオプション等
+- パフォーマンス: Gzip 圧縮、キャッシュ設定
+- レート制限: ログイン・API 用のレート制限
+- CORS 設定: 開発環境での適切な CORS 設定
+
+**3. 開発環境の改善**
+
+- phpMyAdmin 追加: データベース管理用（ポート 8080）
+- SSL 対応: SSL 証明書の準備
+- ヘルスチェック: `/health`エンドポイント
+
+#### **動作確認** ✅
+
+```
+✅ 全コンテナ正常起動: app, nginx, database, redis, phpmyadmin
+✅ ネットワーク接続: tugical-networkでコンテナ間通信
+✅ ヘルスチェック: /healthエンドポイント正常応答
+✅ Laravel環境: Laravel 10.48.29が正常動作
+```
+
+#### **アクセス情報**
+
+- メインアプリ: http://localhost
+- 管理画面: http://localhost/admin/
+- LIFF アプリ: http://localhost/liff/
+- phpMyAdmin: http://localhost:8080
+- API: http://localhost/api/
+
+#### **次のアクション**
+
+- 既存機能の動作確認
+- 新機能開発の準備
+- テスト環境の整備
+
+---
+
+## 2025-01-07 統合完了 (tugiMacAir.local)
+
+### 🎉 **統合完了: frontend + backend + liff → 単一 Laravel アプリケーション**
+
+**tugical が真の統合 Laravel アプリケーションとして完成！**
+
+#### **統合の成果** ✅
+
+```
+統合前:
+├── frontend/ (別サーバー)
+├── liff/ (別サーバー)
+├── backend/ (Laravel)
+└── docs/ (ルート)
+
+統合後:
+└── backend/ (統合Laravelアプリケーション)
+    ├── docs/ (仕様書・ドキュメント)
+    ├── resources/js/
+    │   ├── components/
+    │   │   ├── admin/ (管理者機能)
+    │   │   └── liff/ (LIFF機能)
+    │   ├── pages/
+    │   │   ├── admin/ (管理者画面)
+    │   │   └── liff/ (LIFF画面)
+    │   ├── stores/ (状態管理)
+    │   ├── services/ (API)
+    │   └── utils/ (ユーティリティ)
+    ├── package.json (統合依存関係)
+    └── vite.config.js (統合ビルド設定)
+```
+
+#### **技術的統合** ✅
+
+**1. アーキテクチャ統合**
+
+- frontend ディレクトリ → Laravel resources/js/ に統合
+- liff ディレクトリ → Laravel resources/js/ に統合
+- docs ディレクトリ → Laravel backend/docs/ に移動
+- 別々の Docker サービス → 単一 Laravel アプリケーションに統合
+
+**2. ビルドシステム統合**
+
+- 複数のビルドプロセス → 単一 Vite ビルド
+- 複数の package.json → 単一 package.json
+- 複数の依存関係管理 → 統合依存関係管理
+
+**3. Docker 設定最適化**
+
+- frontend 別サーバー削除: docker-compose.yml から削除
+- Nginx 設定更新: 統合された Laravel アプリケーションにルーティング
+- 単一コンテナ運用: 管理・運用の簡素化
+
+#### **統合のメリット** ✅
+
+**開発効率向上**
+
+- 単一リポジトリ: コード管理の簡素化
+- 統合ビルド: 1 つのコマンドで全体ビルド
+- 依存関係統一: バージョン管理の簡素化
+
+**運用効率向上**
+
+- 単一コンテナ: デプロイ・監視の簡素化
+- 統合ログ: デバッグ・監視の効率化
+- リソース最適化: メモリ・CPU 使用量削減
+
+**保守性向上**
+
+- コード共有: 共通コンポーネント・ユーティリティ
+- 型安全性: TypeScript 統合
+- テスト統合: 単一テストスイート
+
+#### **動作確認済み** ✅
+
+- ✅ 管理者画面: `http://localhost/admin/` 正常表示
+- ✅ LIFF 画面: `http://localhost/liff/` 正常表示
+- ✅ ビルド成功: 1.39 秒で 440 モジュール変換
+- ✅ Docker 統合: 単一コンテナ運用
+- ✅ Nginx 統合: 統合ルーティング
+
+#### **次のステップ**
+
+統合が完了したので、以下が可能になりました：
+
+1. **管理者機能の詳細実装**
+2. **LIFF 機能の詳細実装**
+3. **統合テストの実行**
+4. **本番デプロイの準備**
+
+---
+
 ## 2025-07-08 08:55:00 (tugiMacAir.local)
 
 ### 📋 Phase 25.23: 複数メニュー組み合わせ予約の担当者設定修正 ✅ **完了**

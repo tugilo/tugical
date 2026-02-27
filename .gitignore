@@ -74,6 +74,7 @@ coverage/
 # IDE & Editor
 .vscode/
 .idea/
+.fleet
 *.swp
 *.swo
 *~
@@ -131,4 +132,7 @@ yarn.lock
 *.orig
 
 # Monitoring & Performance
-newrelic.log 
+newrelic.log
+
+# Auth (Composer)
+auth.json
