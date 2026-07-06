@@ -1,0 +1,173 @@
+services:
+  app:
+    build: 
+      context: ./docker/php
+      dockerfile: Dockerfile
+    container_name: tugical_app
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ./backend:/var/www/html
+      - ./docker/php/php.ini:/usr/local/etc/php/php.ini
+    environment:
+      - APP_ENV=local
+      - CONTAINER_ROLE=app
+    depends_on:
+      - database
+      - redis
+    networks:
+      - tugical-network
+
+  nginx:
+    image: nginx:1.24-alpine
+    container_name: tugical_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./docker/nginx/sites:/etc/nginx/sites-available
+      - ./backend/public:/var/www/html/backend/public
+      - ./frontend/dist:/var/www/html/frontend
+      - ./liff/dist:/var/www/html/liff
+      - ./docker/ssl:/etc/nginx/ssl
+    depends_on:
+      - app
+      - frontend
+    networks:
+      - tugical-network
+
+  database:
+    image: mariadb:10.11
+    container_name: tugical_db
+    env_file:
+      - ./backend/.env
+    environment:
+      MYSQL_ROOT_PASSWORD: dev_password_123
+      MYSQL_DATABASE: tugical_dev
+      MYSQL_USER: tugical_dev
+      MYSQL_PASSWORD: dev_password_123
+    volumes:
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d
+      - ./docker/mysql/my.cnf:/etc/mysql/conf.d/custom.cnf
+      - db_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - tugical-network
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: tugical_redis
+    env_file:
+      - ./backend/.env
+    command: redis-server /usr/local/etc/redis/redis.conf
+    volumes:
+      - redis_data:/data
+      - ./docker/redis/redis.conf:/usr/local/etc/redis/redis.conf
+    ports:
+      - "6379:6379"
+    networks:
+      - tugical-network
+
+  queue:
+    build: 
+      context: ./docker/php
+      dockerfile: Dockerfile
+    container_name: tugical_queue
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ./backend:/var/www/html
+    environment:
+      - APP_ENV=local
+      - CONTAINER_ROLE=queue
+    command: php artisan queue:work --sleep=3 --tries=3 --max-time=3600
+    depends_on:
+      - database
+      - redis
+    networks:
+      - tugical-network
+
+  scheduler:
+    build: 
+      context: ./docker/php
+      dockerfile: Dockerfile
+    container_name: tugical_scheduler
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ./backend:/var/www/html
+    environment:
+      - APP_ENV=local
+      - CONTAINER_ROLE=scheduler
+    command: supercronic /var/www/html/docker/cron/crontab
+    depends_on:
+      - database
+      - redis
+    networks:
+      - tugical-network
+
+  frontend:
+    image: node:18-alpine
+    container_name: tugical_frontend
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: sh -c "npm install --legacy-peer-deps --silent && npm run dev -- --host --port 3000"
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+    networks:
+      - tugical-network
+
+  liff:
+    image: node:18-alpine
+    container_name: tugical_liff
+    working_dir: /app
+    volumes:
+      - ./liff:/app
+      - /app/node_modules
+    command: sh -c "npm install --silent && npm run dev -- --host 0.0.0.0 --port 3001"
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - VITE_LIFF_ID=your-liff-id-here
+      - VITE_API_BASE_URL=http://localhost/api/v1
+      - VITE_STORE_ID=1
+    networks:
+      - tugical-network
+    depends_on:
+      - nginx
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: tugical_phpmyadmin
+    env_file:
+      - ./backend/.env
+    environment:
+      PMA_HOST: database
+      PMA_PORT: 3306
+      PMA_USER: tugical_dev
+      PMA_PASSWORD: dev_password_123
+      MYSQL_ROOT_PASSWORD: dev_password_123
+      PMA_ARBITRARY: 1
+    ports:
+      - "8080:80"
+    depends_on:
+      - database
+    networks:
+      - tugical-network
+
+volumes:
+  db_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  tugical-network:
+    driver: bridge 

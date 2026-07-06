@@ -1,0 +1,167 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* tugical デザインシステム - ベーススタイル */
+@layer base {
+  html {
+    font-family: 'Nunito', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  body {
+    @apply bg-gray-50 text-gray-900;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* LIFF環境でのスクロールバー調整 */
+  ::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-gray-100;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400;
+  }
+}
+
+/* tugical デザインシステム - コンポーネントスタイル */
+@layer components {
+
+  /* ボタンコンポーネント */
+  .btn {
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply btn bg-primary-500 text-white hover:bg-primary-600 focus:ring-primary-500;
+  }
+
+  .btn-secondary {
+    @apply btn bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-500;
+  }
+
+  .btn-outline {
+    @apply btn border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-primary-500;
+  }
+
+  /* カードコンポーネント */
+  .card {
+    @apply bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden;
+  }
+
+  .card-header {
+    @apply px-4 py-3 border-b border-gray-200 bg-gray-50;
+  }
+
+  .card-body {
+    @apply p-4;
+  }
+
+  .card-footer {
+    @apply px-4 py-3 border-t border-gray-200 bg-gray-50;
+  }
+
+  /* フォームコンポーネント */
+  .form-input {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors;
+  }
+
+  .form-label {
+    @apply block text-sm font-medium text-gray-700 mb-1;
+  }
+
+  .form-error {
+    @apply text-sm text-error mt-1;
+  }
+
+  /* ステップインジケーター */
+  .step-indicator {
+    @apply flex items-center justify-between w-full;
+  }
+
+  .step-item {
+    @apply flex items-center;
+  }
+
+  .step-circle {
+    @apply w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium border-2 transition-colors;
+  }
+
+  .step-circle-active {
+    @apply bg-primary-500 border-primary-500 text-white;
+  }
+
+  .step-circle-completed {
+    @apply bg-primary-100 border-primary-500 text-primary-700;
+  }
+
+  .step-circle-pending {
+    @apply bg-gray-100 border-gray-300 text-gray-500;
+  }
+
+  /* 時間スロット */
+  .time-slot {
+    @apply p-3 rounded-lg border text-center transition-all duration-200 cursor-pointer;
+  }
+
+  .time-slot-available {
+    @apply border-gray-200 bg-white hover:border-primary-500 hover:bg-primary-50;
+  }
+
+  .time-slot-selected {
+    @apply border-primary-500 bg-primary-100 text-primary-700;
+  }
+
+  .time-slot-unavailable {
+    @apply border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed;
+  }
+
+  /* メニューカード */
+  .menu-card {
+    @apply card cursor-pointer transition-all duration-200 hover:shadow-md;
+  }
+
+  .menu-card-selected {
+    @apply ring-2 ring-primary-500 bg-primary-50;
+  }
+}
+
+/* tugical デザインシステム - ユーティリティスタイル */
+@layer utilities {
+
+  /* アニメーション */
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.2s ease-out;
+  }
+
+  /* LIFF環境での安全エリア */
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* タッチターゲット（44px以上） */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
