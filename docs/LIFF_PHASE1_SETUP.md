@@ -1,9 +1,13 @@
 # LIFF 予約フロー フェーズ1 セットアップ
 
 **作成日**: 2026-02-11 15:43  
-**更新日**: 2026-02-11 15:43  
+**更新日**: 2026-07-06 16:50:15  
 
 **目的**: βリリース最低条件のうち「LIFFから単一メニュー予約が完走する」を満たすための最小手順。
+
+**実行順序上の位置**: **#2 MVP-P3-07**（実機 E2E 記録）。店舗別 LIFF ID 動的化は **#11 MVP-P6-03**（本ドキュメントの `VITE_LIFF_ID` は暫定）。
+
+**関連**: `DOCS_INDEX.md`、`REMAINING_TASKS_PLAN_v1.0.md`、`LINE_STORE_INTEGRATION_REQUIREMENTS_v1.0.md`
 
 ## 前提
 
@@ -16,6 +20,7 @@
 
 ```env
 # LIFF アプリ ID（LINE Developers で作成）
+# ※ MVP 現状: ビルド時グローバル。店舗別は stores.line_liff_id（#11 完了後）
 VITE_LIFF_ID=1234567890-xxxxxxxxxx
 ```
 
@@ -36,16 +41,23 @@ VITE_LIFF_ID=1234567890-xxxxxxxxxx
 4. **確認** … 内容表示 → 「予約確定」で `POST /api/v1/liff/bookings`
 5. **完了** … 予約番号表示。LINE 通知は `NotificationService::sendBookingConfirmation` で送信（店舗の LINE 連携・顧客の `line_user_id` が設定されている場合）
 
-## 4. 完了条件チェックリスト
+## 4. 完了条件チェックリスト（#2 実機 E2E 用）
 
 - [ ] LIFF から予約完了画面まで到達できる
 - [ ] 10分仮押さえ → 確定が動作する
-- [ ] LINE に予約完了通知が届く（店舗LINE連携＋顧客 line_user_id 設定時）
+- [ ] LINE に予約完了通知が届く（**#1** と共通: 店舗 LINE 連携＋顧客 `line_user_id`）
 - [ ] 管理画面で予約を確認・編集できる（既存機能）
+- [ ] 結果を `MVP_IMPLEMENTATION_PLAN.md` MVP-P3-07 に記録
+
+**LINE 通知の事前チェック**: `php artisan tugical:verify-line-e2e --store=1`（`LINE_NOTIFICATION_E2E_GUIDE_v1.0.md`）
 
 ## 5. 今回スコープ外
 
-- 複数メニュー予約（booking_details）
+- 複数メニュー予約（**#10** MVP-P3-08 / booking_details）
+- 店舗別 LIFF ID 動的ロード（**#11** MVP-P6-03）
 - 決済・RBAC・WebSocket・UI の美調整
 
-詳細は `backend/docs/STATUS.md` の「βリリース最低条件」「今回やらないこと」を参照。
+## 6. 参照
+
+- 実装: `backend/resources/js/pages/liff/`、`LiffController`
+- API: `/api/v1/liff/*`

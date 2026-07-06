@@ -9,12 +9,12 @@ import {
   Save,
   Trash2,
 } from 'lucide-react';
-import { Customer, UpdateCustomerRequest } from '../../types';
+import { Customer, UpdateCustomerRequest } from '../../../types';
 import Button from '../ui/Button';
 import Modal from '../modal/Modal';
 import ConfirmDialog from '../ui/ConfirmDialog';
-import { apiClient } from '../../services/api';
-import { usePostalCodeSearch } from '../../hooks/usePostalCodeSearch';
+import { apiClient } from '../../../services/api';
+import { usePostalCodeSearch } from '../../../usePostalCodeSearch';
 
 interface CustomerDetailModalProps {
   isOpen: boolean;

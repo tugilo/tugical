@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Booking, Resource } from '../../types';
-import { resourceApi } from '../../services/api';
+import { Booking, Resource } from '../../../types';
+import { resourceApi } from '../../../services/api';
 
 interface SimpleTimelineViewProps {
   date: Date;

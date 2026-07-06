@@ -14,16 +14,16 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { useUIStore, useToast } from '../../stores/uiStore';
-import { resourceApi } from '../../services/api';
-import { Resource, FilterOptions } from '../../types';
-import Card from '../../components/ui/Card';
-import Button from '../../components/ui/Button';
-import LoadingScreen from '../../components/ui/LoadingScreen';
-import ConfirmDialog from '../../components/ui/ConfirmDialog';
-import ResourceCard from '../../components/resources/ResourceCard';
-import ResourceCreateModal from '../../components/resources/ResourceCreateModal';
-import ResourceEditModal from '../../components/resources/ResourceEditModal';
+import { useUIStore, useToast } from '../../../stores/uiStore';
+import { resourceApi } from '../../../services/api';
+import { Resource, FilterOptions } from '../../../types';
+import Card from '../../../components/admin/ui/Card';
+import { AppButton } from '../../../components/admin';
+import LoadingScreen from '../../../components/admin/ui/LoadingScreen';
+import ConfirmDialog from '../../../components/admin/ui/ConfirmDialog';
+import ResourceCard from '../../../components/admin/resources/ResourceCard';
+import ResourceCreateModal from '../../../components/admin/resources/ResourceCreateModal';
+import ResourceEditModal from '../../../components/admin/resources/ResourceEditModal';
 import {
   PlusIcon,
   MagnifyingGlassIcon,
@@ -318,21 +318,21 @@ const ResourcesPage: React.FC = () => {
           </p>
         </div>
         <div className='flex gap-3'>
-          <Button
+          <AppButton
             variant='outline'
             leftIcon={<ArrowPathIcon className='w-4 h-4' />}
             onClick={handleRefresh}
             loading={isRefreshing}
           >
             更新
-          </Button>
-          <Button
+          </AppButton>
+          <AppButton
             variant='primary'
             leftIcon={<PlusIcon className='w-4 h-4' />}
             onClick={handleCreateResource}
           >
             新規リソース
-          </Button>
+          </AppButton>
         </div>
       </div>
 
@@ -414,7 +414,7 @@ const ResourcesPage: React.FC = () => {
             </select>
 
             {/* フィルタークリア */}
-            <Button
+            <AppButton
               variant='ghost'
               leftIcon={<FunnelIcon className='w-4 h-4' />}
               onClick={() => {
@@ -427,7 +427,7 @@ const ResourcesPage: React.FC = () => {
               }
             >
               フィルターをクリア
-            </Button>
+            </AppButton>
           </div>
         </Card.Body>
       </Card>

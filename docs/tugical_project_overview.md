@@ -12,7 +12,7 @@ footer: "© tugilo inc. all rights reserved"
 次の時間が、もっと自由になる。
 
 **作成日**: 2026-02-11 16:11  
-**更新日**: 2026-02-11 18:02  
+**更新日**: 2026-02-11 20:14  
 **統合 Laravel アプリケーション版 v2.3**
 
 ---
@@ -131,14 +131,14 @@ tugical は **業務改善ツールではなく“売上設計ツール”** と
 
 ## 技術構成（MVP 時点）
 
-| 要素           | 技術                             |
-| -------------- | -------------------------------- |
-| バックエンド   | Laravel + MariaDB                |
-| フロントエンド | React + Next.js                  |
-| UI/UX          | Tailwind CSS + Framer Motion     |
-| 外部連携       | LINE Messaging API + LIFF        |
-| 開発支援       | AI 駆動開発（GitHub Copilot 等） |
-| ホスティング   | さくらクラウド／GitHub Actions   |
+| 要素           | 技術                                             |
+| -------------- | ------------------------------------------------- |
+| バックエンド   | Laravel + MariaDB                                |
+| フロントエンド | 管理画面: React + MUI / LIFF: React + Tailwind   |
+| UI/UX          | 管理画面: Material UI / LIFF: Tailwind + Framer Motion |
+| 外部連携       | LINE Messaging API + LIFF                        |
+| 開発支援       | AI 駆動開発（GitHub Copilot 等）                 |
+| ホスティング   | さくらクラウド／GitHub Actions                   |
 
 ---
 

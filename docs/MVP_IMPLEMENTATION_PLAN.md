@@ -1,7 +1,12 @@
 # tugical [MVP] 実装タスク分解・進捗管理計画書
 
 **作成日**: 2026-02-11 15:43  
-**更新日**: 2026-02-11 15:43  
+**更新日**: 2026-07-06 17:11:19  
+
+**LINE 店舗別連携（追補）**: `LINE_STORE_INTEGRATION_REQUIREMENTS_v1.0.md` / `LINE_STORE_INTEGRATION_FIT_GAP_v1.0.md`  
+**セキュリティ Fit&Gap**: `SECURITY_FIT_GAP_v1.0.md`  
+**実行順序の正**: `REMAINING_TASKS_PLAN_v1.0.md` §4（**#1〜18**）。フェーズ ID 順 ≠ 着手順。  
+**索引**: `DOCS_INDEX.md`
 
 **目的**: [MVP] のみを対象に、仕様書 × Fit&Gap を判断装置として固定し、進捗が見える計画書で脱線せず完走させる。
 
@@ -32,13 +37,14 @@
 | P2 | 管理者機能（予約・設定・マスタ） | 12 | 11 | 1 | 🟡 ほぼ完了 |
 | P3 | LIFF 顧客予約フロー | 8 | 8 | 0 | ✅ 完了 |
 | P4 | LINE 連携・通知 | 3 | 2 | 1 | 🟡 進行中 |
-| P5 | テスト・確認 | 4 | 0 | 4 | ⬜ 未着手 |
-| **合計** | | **33** | **27** | **6** | |
+| P5 | テスト・確認 | 5 | 0 | 5 | ⬜ 未着手 |
+| P6 | LINE 店舗別連携（複数公式アカウント） | 6 | 0 | 6 | ⬜ 未着手 |
+| **合計** | | **40** | **27** | **13** | |
 
 **βリリース条件（STATUS.md 準拠）**:
 - [x] LIFF 予約（単一メニュー）完走
 - [x] 仮押さえ（10分）→ 確定予約
-- [ ] LINE 通知（予約完了／変更）が顧客に届く
+- [ ] LINE 通知（予約完了／変更）が顧客に届く … **実機未確認**（結合テスト 3 passed / 2026-07-06）
 - [x] 管理画面で予約確認・編集
 
 ---
@@ -98,10 +104,24 @@
 
 | タスクID | 概要 | ステータス | 関連要件 |
 |----------|------|------------|----------|
+| MVP-SEC-01 | ログ機密除去（SEC-R01/R03 最小） | ⬜ 未着手 | SECURITY_FIT_GAP §4 |
 | MVP-P5-01 | 予約 API Feature テスト（作成・更新・move・複数メニュー） | ⬜ 未着手 | テスト戦略・STATUS |
 | MVP-P5-02 | LIFF API Feature テスト（menus, availability, hold, booking） | ⬜ 未着手 | テスト戦略 |
 | MVP-P5-03 | 空き時間・hold 整合性のテスト | ⬜ 未着手 | 予約整合性 |
-| MVP-P5-04 | パフォーマンス・セキュリティの最低限確認（LIFF 2 秒・HTTPS） | ⬜ 未着手 | 非機能 [MVP] |
+| MVP-P5-04 | セキュリティ・非機能確認（#1 以外の残項目） | ⬜ 未着手 | SECURITY_FIT_GAP §8 |
+
+### フェーズ P6: LINE 店舗別連携（複数公式アカウント）
+
+> 要件: `LINE_STORE_INTEGRATION_REQUIREMENTS_v1.0.md` / Fit&Gap: `LINE_STORE_INTEGRATION_FIT_GAP_v1.0.md`
+
+| タスクID | 概要 | ステータス | 関連要件 |
+|----------|------|------------|----------|
+| MVP-P6-01 | Store LINE 認証情報暗号化・hasLineIntegration 強化・DB index | ⬜ 未着手 | LINE_STORE REQ §3.5, §4 |
+| MVP-P6-02 | LINE 設定 API + 管理画面 UI（Settings LINE ブロック） | ⬜ 未着手 | REQ §3.1 |
+| MVP-P6-03 | LIFF 動的 liff_id（config API + フロント store 別 init） | ⬜ 未着手 | REQ §3.2 |
+| MVP-P6-04 | 通知 store 別 token 完全化（本番 env フォールバック禁止） | ⬜ 未着手 | REQ §3.3 |
+| MVP-P6-05 | Webhook destination → store ルーティング + 署名検証 | ⬜ 未着手（**#6 MVP-P4-01 に吸収**。単独着手しない） | REQ §3.4 |
+| MVP-P6-06 | 多店舗 LINE E2E（2 store 以上で独立 Push/LIFF 確認） | ⬜ 未着手 | REQ §3 受け入れ条件 |
 
 ---
 
@@ -172,8 +192,11 @@
 - **完了条件**: メニュー一覧・CRUD・カテゴリ・オプションが扱える
 
 #### MVP-P2-08 顧客管理 API・UI
-- **ステータス**: ✅ 完了
+- **ステータス**: ✅ 完了（**残ギャップ 1 件** → #4 P6-02 で解消）
 - **完了条件**: 顧客一覧・詳細・作成・編集・履歴表示ができる
+- **残ギャップ（2026-07-06 監査）**: `CustomerDetailModal` で `line_user_id` が表示のみ。API（`UpdateCustomerRequest`）は更新可。**ADMIN-G1** → MVP-P6-02 DoD に含める
+- **セキュリティ**: phone/email/address は Eloquent mutator で暗号化。構造化住所・氏名は平文（**SEC-G03/G04** → P5-04 でスコープ明文化）
+- **Fit&Gap**: `LINE_STORE_INTEGRATION_FIT_GAP_v1.0.md` §4.4 / `SECURITY_FIT_GAP_v1.0.md` §2
 
 #### MVP-P2-09 営業時間・定休日の利用確認
 - **ステータス**: ✅ 完了
@@ -250,11 +273,12 @@
 
 ### フェーズ P4
 
-#### MVP-P4-01 LINE Webhook 受信
+#### MVP-P4-01 LINE Webhook 受信（※ MVP-P6-05 店舗別 routing 含む）
 - **ステータス**: ⬜ 未着手
-- **内容**: Route::post('v1/line/webhook')、署名検証、イベント種別ごとのハンドラ（メッセージ・フォロー等）。仕様書・LINE ドキュメント参照。
-- **分解**: (1) Webhook コントローラ・ルート (2) 署名検証 (3) 最低限のイベント処理（例: フォロー時メッセージ）
-- **完了条件**: LINE から送信したイベントが Webhook URL で受信され、200 で応答する
+- **実行順序**: `REMAINING_TASKS_PLAN` **#7**（P1。事前に #4〜6 推奨）
+- **内容**: Route::post('v1/line/webhook')、**destination → store 解決**、店舗別署名検証、イベントハンドラ（follow/message 等）
+- **分解**: (1) LineWebhookController・ルート (2) destination で Store 特定 (3) 店舗 secret で署名検証 (4) 最低限 follow 処理
+- **完了条件**: 店舗 A の Webhook が店舗 B に混ざらず 200 応答。P6-05 DoD も満たす
 
 #### MVP-P4-02 予約確定・変更時の LINE 通知送信 E2E
 - **ステータス**: ✅ 完了
@@ -273,6 +297,13 @@
   6. 判定: 該当顧客の LINE に「予約変更」のメッセージが届いたか → **Yes / No**
 - **実施サマリー**: Store::hasLineIntegration() を実カラム line_channel_id / line_channel_secret を優先して判定するよう変更。NotificationService::getLineAccessToken() で store->line_access_token および env('LINE_ACCESS_TOKEN') を参照。BookingService::updateBooking から sendBookingUpdate($booking, $updateData) に第2引数を追加。予約変更通知の記録は type='custom' で保存（enum 互換）。手動テスト手順を計画書に追記。E2E で通知が届くには店舗の line_channel_id / line_channel_secret 設定と .env の LINE_ACCESS_TOKEN が必要。
 - **残課題**: 実機での LINE 受信確認は環境（LINE チャネル・トークン）準備後に実施。notifications テーブルの type に status_changed を追加する場合は別タスクで対応可。
+- **確認結果（2026-07-06 16:33:39）**:
+  - **結合テスト（Http::fake）**: Yes — `LineBookingNotificationTest` 3 passed（予約確定 Push / 予約変更 Push / 未連携時スキップ）
+  - **recordNotification DB 整合性修正**: 実施済（`channel` / `notification_template_id` に合わせて保存）
+  - **事前チェックコマンド**: `php artisan tugical:verify-line-e2e --store=1` 追加
+  - **LINE 通知が実際に届く（実機）**: **No（ブロック中）** — store LINE 未設定・`LINE_ACCESS_TOKEN` 空・`line_user_id` 付き顧客 0 件
+  - **予約変更通知が届く（実機）**: 未実施
+  - **手順書**: `LINE_NOTIFICATION_E2E_GUIDE_v1.0.md`
 
 #### MVP-P4-03 通知テンプレート・動的挿入の動作確認
 - **ステータス**: ✅ 完了
@@ -313,10 +344,73 @@
 - **内容**: 仮押さえ中は他に取れない・期限切れで解放される等
 - **完了条件**: 空き時間と hold の整合性に関するテストが通る
 
-#### MVP-P5-04 パフォーマンス・セキュリティの最低限確認
+#### MVP-SEC-01 ログ機密除去（SEC-R01/R03 最小）
+- **実行順序**: `REMAINING_TASKS_PLAN` **#1**（P0.5）
 - **ステータス**: ⬜ 未着手
-- **内容**: LIFF 初回ロード 2 秒以内の目安確認、HTTPS・認証の確認
-- **完了条件**: チェックリストで確認済み（自動化は任意）
+- **Fit&Gap**: `SECURITY_FIT_GAP_v1.0.md` SEC-R01, SEC-R02, SEC-R03
+- **内容**: AuthController ログイン Log から credentials/password 除外。CustomerController 等の PII ログ削減。
+- **完了条件**: `REMAINING_TASKS_PLAN` P0.5 #1 DoD 全項目
+
+#### MVP-P5-04 セキュリティ・非機能確認（残項目）
+- **実行順序**: `REMAINING_TASKS_PLAN` **#15**（P2）
+- **ステータス**: ⬜ 未着手
+- **Fit&Gap**: `SECURITY_FIT_GAP_v1.0.md` SEC-G03/G04, SEC-L03, SEC-L04, S-04
+- **内容**: #1 で未吸収のセキュリティチェック（PII スコープ明文化、dev-user、HTTPS、health）
+- **完了条件**: `REMAINING_TASKS_PLAN` P2-15 DoD 全項目
+
+---
+
+### フェーズ P6
+
+#### MVP-P6-01 Store LINE 認証情報暗号化・hasLineIntegration 強化
+- **実行順序**: `REMAINING_TASKS_PLAN` **#4**（P1）
+- **ステータス**: ⬜ 未着手
+- **Fit&Gap**: `SECURITY_FIT_GAP_v1.0.md` SEC-G01/G02/G05, S-01
+- **内容**: line_channel_secret / line_access_token の encrypted cast。hasLineIntegration に token + line_integration_active 追加。line_channel_id UNIQUE index。
+- **完了条件**:
+  - [ ] Eloquent 経由で平文 DB 保存されない（round-trip テスト）
+  - [ ] 既存平文データの移行方針を実施記録に記載
+  - [ ] integration 判定が REQ N-04 を満たす
+
+#### MVP-P6-02 LINE 設定 API + 管理画面 UI
+- **実行順序**: `REMAINING_TASKS_PLAN` **#5**（P1）
+- **ステータス**: ⬜ 未着手
+- **Fit&Gap**: `LINE_STORE_INTEGRATION_FIT_GAP_v1.0.md` §4.4（ADMIN-G1〜G3, G5）
+- **内容**:
+  - API: `GET/PUT /api/v1/store/line-settings`、`POST .../test-push`
+  - UI: `SettingsPage`「LINE 連携」ブロック（Channel ID / Secret / Token / LIFF ID / 有効フラグ、Webhook・LIFF URL コピー、マスク入力、接続テスト）
+  - UI: `CustomerDetailModal` で `line_user_id` 編集可能化（ADMIN-G1）
+- **完了条件**:
+  - [ ] 店舗管理者が自店舗 LINE 設定を CRUD できる（他店舗不可）
+  - [ ] Secret / Token はマスク表示。保存後に test-push が成功 or 理由表示
+  - [ ] 顧客詳細から `line_user_id` を更新できる
+  - [ ] #2 E2E が SQL / `.env` 直書きなしで実施可能（LIFF init 動的化は #8）
+
+#### MVP-P6-03 LIFF 動的 liff_id
+- **実行順序**: `REMAINING_TASKS_PLAN` **#8**（P1）
+- **ステータス**: ⬜ 未着手
+- **Fit&Gap**: `SECURITY_FIT_GAP_v1.0.md` SEC-L01
+- **内容**: `GET /api/v1/liff/stores/{id}/line-config`。liff/index.tsx が store_id → liff_id 取得後 init。VITE_LIFF_ID は local のみ fallback。**LIFF ID token 検証で line_user_id を確定**（なりすまし防止）。
+- **完了条件**:
+  - [ ] 店舗 A/B で異なる LIFF ID で init できる
+  - [ ] get-or-create が ID token 検証済み userId のみ受け付ける（SEC-L01）
+
+#### MVP-P6-04 通知 store 別 token 完全化
+- **実行順序**: `REMAINING_TASKS_PLAN` **#6**（P1）
+- **ステータス**: ⬜ 未着手
+- **内容**: production/staging で env('LINE_ACCESS_TOKEN') フォールバック禁止。token 未設定時は skip + log。
+- **完了条件**: 2 店舗が異なる token で Push 送信。env なしで動作。
+
+#### MVP-P6-05 Webhook destination → store ルーティング
+- **ステータス**: ⬜ 未着手（**#7 MVP-P4-01 に吸収**。単独着手しない）
+- **内容**: MVP-P4-01 の DoD を参照
+- **完了条件**: MVP-P4-01 完了時に同時 ✅
+
+#### MVP-P6-06 多店舗 LINE E2E
+- **実行順序**: `REMAINING_TASKS_PLAN` **#13**（P2）
+- **ステータス**: ⬜ 未着手
+- **内容**: store 2 件以上で LIFF 完走 + Push + Webhook follow を実機確認。
+- **完了条件**: REQ §3 各受け入れ条件を 2 店舗以上で Yes。
 
 ---
 
@@ -334,20 +428,24 @@
 
 ### 6.1 次に着手すべきタスクの判断ルール
 
-1. **全体進捗サマリー**の「未着手」が残っているフェーズのうち、**番号が若いタスク**から着手する。
-2. **依存関係**: P4（LINE 連携）は P3 の LIFF が完了していると進めやすい。P5（テスト）は P1〜P4 の対象が固まってからでよい。
-3. **βリリースを最優先する場合**:  
-   **MVP-P4-02（予約確定・変更時の LINE 通知 E2E）** を最優先する。次に MVP-P3-07（LIFF E2E 確認）、必要なら MVP-P4-01（Webhook）。
-4. **「次は何をやる？」の答え**:
-   - 未着手が複数ある場合: **MVP-P2-10（キャンセル期限・料金）** または **MVP-P4-01 / MVP-P4-02** のいずれか。
-   - β 条件を満たすため: **MVP-P4-02** → **MVP-P3-07** の順を推奨。
+> **実行順序の詳細**: `REMAINING_TASKS_PLAN_v1.0.md` §4（**#1〜18**）を正とする。フェーズ P1→P6 の ID 順で着手しない。
+
+1. **統合優先順位表**で `#` が最小の未完了タスクから着手する。
+2. **依存関係**: P0.5（#1）→ P0（#2〜3）→ P1（#4〜10）→ P2（#11〜15）。P3（#16〜18）は P0 と並行可。
+3. **最優先**: **#1 MVP-SEC-01** → **#2 MVP-P4-02** → **#3 MVP-P3-07**
+4. **「次は何をやる？」** — 統合順位:
+   - **#1** P0.5: ログ機密除去
+   - **#2〜3** P0: LINE E2E → LIFF E2E
+   - **#4〜8** P1: P6-01 → P6-02 → P6-04 → P4-01 → P6-03
+   - **#9〜10** P1: P5-01 → P5-03
+   - **#11〜15** P2: P2-10 → P3-08 → P6-06 → P5-02 → P5-04
+   - **#16〜18** P3: UI（並行可）
 
 ### 6.2 途中再開時の読み方
 
-1. **本ファイルの「2. 全体進捗サマリー」** で、どのフェーズまで完了しているかを確認する。
-2. **「3. フェーズ別タスク一覧」** で、⬜ 未着手 のタスクを探す。同じフェーズ内は ID の若い順に着手する。
-3. **「4. 各タスク詳細」** で、該当タスクの「内容」「分解」「完了条件」を読み、実装または確認を行う。
-4. 作業後、該当タスクのステータスを 🟡→✅ に更新し、必要なら「2. 全体進捗サマリー」の数字を更新する。
+1. **`REMAINING_TASKS_PLAN_v1.0.md` §4** で `#1〜18` の未完了を確認（**ここが着手順**）
+2. 本ファイル **§4 各タスク詳細** で DoD を読む
+3. 完了後、両ファイルのステータス・数字を更新
 
 ### 6.3 仕様と衝突した場合の判断基準（Fit & Gap を正とする）
 

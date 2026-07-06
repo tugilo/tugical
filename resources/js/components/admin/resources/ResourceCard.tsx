@@ -13,9 +13,9 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Resource } from '../../types';
+import { Resource } from '../../../types';
 import Card from '../ui/Card';
-import Button from '../ui/Button';
+import AppButton from '../ui/AppButton';
 import {
   UserIcon,
   BuildingOfficeIcon,
@@ -120,17 +120,16 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
 
           {/* アクション */}
           <div className='flex gap-2 pt-3 border-t border-gray-100'>
-            <Button variant='outline' size='sm' onClick={() => onEdit()}>
+            <AppButton variant='outline' size='sm' onClick={() => onEdit()}>
               編集
-            </Button>
-            <Button
-              variant='ghost'
+            </AppButton>
+            <AppButton
+              variant='danger'
               size='sm'
               onClick={() => onDelete()}
-              className='text-red-600 hover:text-red-700 hover:bg-red-50'
             >
               削除
-            </Button>
+            </AppButton>
           </div>
         </Card.Body>
       </Card>

@@ -28,9 +28,9 @@ import {
   ArrowRightOnRectangleIcon,
   UserCircleIcon,
 } from '@heroicons/react/24/outline';
-import { useAuthStore } from '../../stores/authStore';
-import { useUIStore } from '../../stores/uiStore';
-import { toast } from '../../stores/uiStore';
+import { useAuthStore } from '../../../stores/authStore';
+import { useUIStore } from '../../../stores/uiStore';
+import { toast } from '../../../stores/uiStore';
 import { getUserRoleLabel } from '../../../utils';
 
 interface DashboardLayoutProps {

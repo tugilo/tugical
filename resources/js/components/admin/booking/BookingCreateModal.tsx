@@ -19,8 +19,8 @@ import {
   customerApi,
   menuApi,
   resourceApi,
-} from '../../services/api';
-import { useUIStore } from '../../stores/uiStore';
+} from '../../../services/api';
+import { useUIStore } from '../../../stores/uiStore';
 import type {
   Booking,
   Customer,
@@ -28,7 +28,7 @@ import type {
   MenuOption,
   Resource,
   CreateBookingRequest,
-} from '../../types';
+} from '../../../types';
 
 interface BookingCreateModalProps {
   /** モーダルの開閉状態 */

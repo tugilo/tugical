@@ -12,16 +12,16 @@ import {
   PlusIcon,
   UserGroupIcon,
 } from '@heroicons/react/24/outline';
-import { customerApi } from '../../services/api';
-import type { Customer, PaginatedResponse, FilterOptions } from '../../types';
+import { customerApi } from '../../../services/api';
+import type { Customer, PaginatedResponse, FilterOptions } from '../../../types';
 import { cn } from '../../../index';
-import Card from '../../components/ui/Card';
-import LoadingScreen from '../../components/ui/LoadingScreen';
-import CustomerCard from '../../components/customers/CustomerCard';
-import { useUIStore } from '../../stores/uiStore';
-import Button from '../../components/ui/Button';
-import { CustomerDetailModal } from '../../components/customers/CustomerDetailModal';
-import { CustomerCreateModal } from '../../components/customers/CustomerCreateModal';
+import Card from '../../../components/admin/ui/Card';
+import LoadingScreen from '../../../components/admin/ui/LoadingScreen';
+import CustomerCard from '../../../components/admin/customers/CustomerCard';
+import { useUIStore } from '../../../stores/uiStore';
+import Button from '../../../components/admin/ui/Button';
+import { CustomerDetailModal } from '../../../components/admin/customers/CustomerDetailModal';
+import { CustomerCreateModal } from '../../../components/admin/customers/CustomerCreateModal';
 
 const CustomersPage: React.FC = () => {
   const { setPageTitle } = useUIStore();

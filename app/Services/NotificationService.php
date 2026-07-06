@@ -114,7 +114,10 @@ class NotificationService
             $success ? Notification::STATUS_SENT : Notification::STATUS_FAILED,
             [
                 'booking_id' => $booking->id,
+                'customer_id' => $customer->id,
                 'template_id' => $template['template_id'] ?? null,
+                'title' => $template['subject'] ?? '',
+                'message' => $template['body'] ?? '',
             ]
         );
 
@@ -526,22 +529,25 @@ class NotificationService
         string $status,
         array $metadata = []
     ): Notification {
-        return Notification::create(array_merge([
-            'store_id'     => $storeId,
-            'type'         => $notificationType,
-            'recipient_type' => $channel === 'line' ? Notification::RECIPIENT_TYPE_CUSTOMER : Notification::RECIPIENT_TYPE_BROADCAST,
+        return Notification::withoutGlobalScopes()->create([
+            'store_id' => $storeId,
+            'type' => $notificationType,
+            'channel' => $channel,
             'recipient_id' => $recipient,
-            'title'        => $metadata['title'] ?? '',
-            'message'      => $metadata['message'] ?? '',
-            'status'       => $status,
-            'template_id'  => $metadata['template_id'] ?? null,
-            'booking_id'   => $metadata['booking_id'] ?? null,
+            'title' => $metadata['title'] ?? '',
+            'message' => $metadata['message'] ?? ($metadata['body'] ?? '（通知）'),
+            'status' => $status,
+            'notification_template_id' => $metadata['template_id'] ?? null,
+            'booking_id' => $metadata['booking_id'] ?? null,
+            'customer_id' => $metadata['customer_id'] ?? null,
             'template_variables' => $metadata['variables'] ?? null,
-            'line_payload' => $metadata['line_payload'] ?? null,
-            'delivery_info'=> $metadata['delivery_info'] ?? null,
-        ], [
+            'metadata' => array_filter([
+                'line_payload' => $metadata['line_payload'] ?? null,
+                'delivery_info' => $metadata['delivery_info'] ?? null,
+            ]) ?: null,
             'max_retries' => self::MAX_RETRY_COUNT,
-        ]));
+            'sent_at' => $status === Notification::STATUS_SENT ? now() : null,
+        ]);
     }
 
     /**

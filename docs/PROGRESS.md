@@ -1,5 +1,154 @@
 # tugical Development Progress
 
+## 2026-07-06 17:13:11 - 優先順位 v1.7 再整理・全ドキュメント同期
+
+### 実施内容
+
+- **REMAINING_TASKS_PLAN v1.7**: #1〜18。P0.5 MVP-SEC-01 追加。P6-03 を #8（P1）に繰上
+- **同期**: STATUS、DOCS_INDEX、CURRENT_FOCUS、MVP_EXECUTION_RULES、MVP_IMPLEMENTATION_PLAN §6、SECURITY_FIT_GAP §8
+
+### 判断根拠
+
+- password ログ（SEC-R01）は外部テスト前に即修正（#1）
+- LIFF なりすまし（SEC-L01）は外部 LIFF 前に必須（#8 P1）
+- β E2E（#2〜3）は #1 直後。社内限定なら #2〜3 先行可だが #1 は必須
+
+### 次に着手: **#1 MVP-SEC-01**
+
+## 2026-07-06 17:08:52 - セキュリティ Fit&Gap 監査・PLAN 反映
+
+### 実施内容
+
+- **新規**: `SECURITY_FIT_GAP_v1.0.md` … 暗号化・PII・ログ・LIFF・PLAN マッピング（SEC-G/R/L/A/F）
+- **更新**: `LINE_STORE_INTEGRATION_FIT_GAP` §5、`REMAINING_TASKS_PLAN` v1.6 §4.6
+- **更新**: `#3/#11/#14` DoD 拡充、`MVP_IMPLEMENTATION_PLAN` P6-01/P6-03/P5-04/P2-08
+- **更新**: LINE 要件 §3.5.1、DOCS_INDEX、STATUS
+
+### 監査結論
+
+- LINE secret/token: **未暗号化**（SEC-G01/G02）
+- 顧客 PII: **部分暗号化**（phone/email/address のみ）
+- ログ password 露出リスク（SEC-R01）、LIFF なりすまし（SEC-L01）
+
+### 次に着手: **#1 MVP-P4-02**
+
+## 2026-07-06 17:05:25 - 管理画面 Fit&Gap 監査・PLAN 反映
+
+### 実施内容
+
+- **更新**: `LINE_STORE_INTEGRATION_FIT_GAP_v1.0.md` v1.3 … §4.4 管理画面詳細（ADMIN-G1〜G7）、#1 暫定回避表
+- **更新**: `REMAINING_TASKS_PLAN_v1.0.md` v1.5 … §4.5 サマリ、#4 P6-02 DoD 拡充
+- **更新**: `MVP_IMPLEMENTATION_PLAN.md` … P2-08 残ギャップ、P6-02 DoD 詳細化
+- **更新**: `CONCEPT_SPEC_FIT_GAP.md` §10、`STATUS.md` §3.2
+
+### 監査結論
+
+- 顧客 CRUD: ✅ / 店舗 LINE・LIFF 設定 UI: ❌ / 顧客 line_user_id 詳細編集: 🟡
+
+### 次に着手: **#1 MVP-P4-02**（暫定: SQL + `.env`）
+
+## 2026-07-06 16:50:15 - 関連ドキュメント全面同期
+
+### 実施内容
+
+- **新規**: `DOCS_INDEX.md` … 司令塔・LINE・MUI・進捗の 1 ページ索引
+- **刷新**: `CURRENT_FOCUS.md` … STATUS / PLAN への短縮版（2025 年記述を整理）
+- **更新**: `STATUS.md` §1/3/5/7/まとめ、MVP 69%、β 3/4、LINE 状態表
+- **更新**: `MVP_EXECUTION_RULES.md` … REMAINING_TASKS_PLAN を Step 1 の正に
+- **更新**: `LIFF_PHASE1_SETUP.md`、`LINE_NOTIFICATION_E2E_GUIDE_v1.0.md`（#1 表記）
+- **更新**: `CONCEPT_SPEC_FIT_GAP.md` §10 LINE 店舗別、`CONCEPT_REQUIREMENTS_FIT_GAP.md`
+- **更新**: `ADMIN_MUI_MIGRATION_PLAN_v1.0.md` v1.8、`ADMIN_MENUS_IMPLEMENTATION_AUDIT_v1.0.md` v1.1
+- **更新**: `ADMIN_LIST_UI_DATAGRID_EVALUATION_v1.0.md`、`REMAINING_TASKS_PLAN_v1.0.md` v1.4
+- **更新**: LINE 店舗別要件・Fit&Gap、`MVP_IMPLEMENTATION_PLAN.md`、`.cursorrules`
+
+### 次に着手: **#1 MVP-P4-02**（P0）
+
+## 2026-07-06 16:47:00 - 優先順位統合（P6 → P0〜P3、#1〜17）
+
+### 実施内容
+
+- **REMAINING_TASKS_PLAN v1.3**: P1.5 / Wave 2.5 廃止。P6 タスクを P1/P2 に統合した #1〜17 一本表
+- **MVP-P6-05** を **#6 MVP-P4-01** に吸収（単独着手しない）
+- **STATUS / MVP_PLAN / LINE 要件・Fit&Gap** を同一順序に同期
+
+### 次に着手: **#1 MVP-P4-02**（P0）
+
+## 2026-07-06 16:41:56 - 店舗別 LINE 公式アカウント連携 要件・Fit&Gap・MVP P6 追加
+
+### 実施内容
+
+- **新規**: `LINE_STORE_INTEGRATION_REQUIREMENTS_v1.0.md` … 複数公式アカウント・DB 管理の機能要件（要件 v1.2 追補）
+- **新規**: `LINE_STORE_INTEGRATION_FIT_GAP_v1.0.md` … DB/API/実装 Gap、Webhook ルーティング設計
+- **更新**: `MVP_IMPLEMENTATION_PLAN.md` … フェーズ P6（6 タスク）追加
+- **更新**: `REMAINING_TASKS_PLAN_v1.0.md` … P1.5 / Wave 2.5 追加
+- **更新**: `STATUS.md` … ドキュメント索引
+
+### 次に着手すべきタスク（P6 開始時）
+
+- **MVP-P6-01**: Store LINE 暗号化 + hasLineIntegration 強化
+
+### 変更ファイル
+
+- backend/docs/LINE_STORE_INTEGRATION_REQUIREMENTS_v1.0.md（新規）
+- backend/docs/LINE_STORE_INTEGRATION_FIT_GAP_v1.0.md（新規）
+- backend/docs/MVP_IMPLEMENTATION_PLAN.md
+- backend/docs/REMAINING_TASKS_PLAN_v1.0.md
+- backend/docs/STATUS.md
+- backend/docs/PROGRESS.md
+
+## 2026-07-06 16:33:39 - P0-1 LINE 通知 E2E（結合テスト・verify コマンド）
+
+### 実施内容
+
+- **結合テスト**: `tests/Feature/LineBookingNotificationTest.php` 追加（3 passed）
+- **コマンド**: `php artisan tugical:verify-line-e2e` — 事前チェックと `--send` テスト Push
+- **バグ修正**: `NotificationService::recordNotification` — DB カラム（`channel`, `notification_template_id`）整合
+- **手順書**: `LINE_NOTIFICATION_E2E_GUIDE_v1.0.md`
+- **ドキュメント更新**: MVP_IMPLEMENTATION_PLAN, REMAINING_TASKS_PLAN, STATUS, LINE ガイド
+
+### 結果
+
+- 結合テスト（Http::fake）: **Yes**
+- 実機 LINE 受信: **No（ブロック）** — LINE チャネル・トークン・line_user_id 未設定
+
+### 次の一手
+
+1. LINE Developers で Channel access token 取得
+2. `backend/.env` に `LINE_ACCESS_TOKEN` 設定
+3. store_id=1 に line_channel_id / line_channel_secret 設定
+4. LIFF で顧客取得 or line_user_id 手動設定
+5. `php artisan tugical:verify-line-e2e --store=1 --send` → 実機確認
+
+### 変更ファイル
+
+- backend/app/Console/Commands/VerifyLineNotificationE2eCommand.php（新規）
+- backend/tests/Feature/LineBookingNotificationTest.php（新規）
+- backend/app/Services/NotificationService.php
+- backend/docs/LINE_NOTIFICATION_E2E_GUIDE_v1.0.md（新規）
+- backend/docs/MVP_IMPLEMENTATION_PLAN.md
+- backend/docs/REMAINING_TASKS_PLAN_v1.0.md
+- backend/docs/STATUS.md
+- backend/docs/PROGRESS.md
+
+## 2026-07-06 16:29:20 - 残タスク優先順位・実行計画書 v1.0 作成
+
+### 実施内容
+
+- **新規**: `backend/docs/REMAINING_TASKS_PLAN_v1.0.md` … 残 6 MVP タスク + UI 改善 3 タスクを P0〜P3 で優先順位付け。実行ウェーブ（Wave 0〜3）・DoD・マイルストーン M0〜M4 を定義。
+- **更新**: `STATUS.md` … §4「次にやること」を P0/P1/P2/P3 構造に刷新、§5 に PLAN 参照を追加。
+- **更新**: `MVP_IMPLEMENTATION_PLAN.md` §6.1 … 次タスク判断ルールを PLAN 準拠に更新。
+
+### 次に着手すべきタスク
+
+- **P0-1**: MVP-P4-02 LINE 通知 E2E 実機確認（β ブロッカー）
+
+### 変更ファイル
+
+- backend/docs/REMAINING_TASKS_PLAN_v1.0.md（新規）
+- backend/docs/STATUS.md
+- backend/docs/MVP_IMPLEMENTATION_PLAN.md
+- backend/docs/PROGRESS.md
+
 ## 2026-02-11 18:34 - ドキュメント作成日・更新日の明記、進捗以外の全 doc に反映
 
 ### **実施内容**

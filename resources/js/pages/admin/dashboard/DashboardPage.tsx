@@ -1,348 +1,555 @@
 /**
  * tugical Admin Dashboard ダッシュボードページ
- * 
- * 機能:
- * - 今日の予約一覧
- * - 売上サマリー
- * - 最近のアクティビティ
- * - 統計情報
- * - 通知一覧
- * 
- * @author tugical Development Team
- * @version 1.0
- * @since 2025-07-02
+ *
+ * 必須3ブロック（Step 7）＋ API一元化（Step 8）
+ * - 今日の予約タイムライン
+ * - 要対応アクション
+ * - 直近の変更・キャンセル
+ *
+ * 初回マウントで1回のみ予約API（date_from / date_to で7日間）を取得し、
+ * 同一データを3ブロックへマッピングして表示する。
  */
 
-import React, { useEffect } from 'react';
-import { motion } from 'framer-motion';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
-  CalendarDaysIcon,
-  CurrencyYenIcon,
-  UsersIcon,
-  BuildingOfficeIcon,
-  ClockIcon,
-  ArrowTrendingUpIcon,
-  ExclamationTriangleIcon,
-} from '@heroicons/react/24/outline';
+  Container,
+  Grid,
+  Card,
+  CardHeader,
+  CardContent,
+  CardActions,
+  Typography,
+  List,
+  ListItem,
+  ListItemText,
+  Alert,
+  Skeleton,
+  Chip,
+  Box,
+} from '@mui/material';
+import { AppButton } from '../../../components/admin';
 import { useUIStore } from '../../../stores/uiStore';
-import Card from '../../../components/admin/ui/Card';
-import Button from '../../../components/admin/ui/Button';
-import { formatPrice, formatDate, formatTime, getBookingStatusLabel, getBookingStatusClass } from '../../../index';
+import { bookingApi } from '../../../services/api';
 
-// ダミーデータ（後でAPIから取得）
-const mockStats = {
-  today_bookings: {
-    total: 12,
-    confirmed: 8,
-    pending: 3,
-    completed: 1,
-  },
-  revenue: {
-    today: 45000,
-    this_week: 280000,
-    this_month: 1200000,
-    growth_rate: 15.5,
-  },
-  customers: {
-    total: 156,
-    new_this_month: 23,
-    returning_rate: 78.5,
-  },
-  resources: {
-    total: 4,
-    active: 3,
-    utilization_rate: 85.2,
-  },
-};
+// ----- 表示用型（API レスポンスからマッピング） -----
 
-const mockTodayBookings = [
-  {
-    id: 1,
-    booking_number: 'TG20250702001',
-    booking_date: '2025-07-02',
-    start_time: '10:00',
-    end_time: '11:30',
-    status: 'confirmed' as const,
-    customer: { id: 1, name: '田中花子', phone: '090-1234-5678' },
-    menu: { id: 1, name: 'カット＋カラー', duration: 90, price: 8000 },
-    resource: { id: 1, name: '佐藤美容師', type: 'staff' as const },
-    total_price: 8000,
-  },
-  {
-    id: 2,
-    booking_number: 'TG20250702002',
-    booking_date: '2025-07-02',
-    start_time: '14:00',
-    end_time: '15:00',
-    status: 'pending' as const,
-    customer: { id: 2, name: '山田太郎', phone: '090-2345-6789' },
-    menu: { id: 2, name: 'カット', duration: 60, price: 4500 },
-    resource: { id: 2, name: '田中美容師', type: 'staff' as const },
-    total_price: 4500,
-  },
-  {
-    id: 3,
-    booking_number: 'TG20250702003',
-    booking_date: '2025-07-02',
-    start_time: '16:30',
-    end_time: '18:00',
-    status: 'confirmed' as const,
-    customer: { id: 3, name: '鈴木美香', phone: '090-3456-7890' },
-    menu: { id: 3, name: 'パーマ', duration: 90, price: 12000 },
-    resource: { id: 1, name: '佐藤美容師', type: 'staff' as const },
-    total_price: 12000,
-  },
-];
+/** 今日の予約1件 */
+export interface TodayBookingItem {
+  id: number;
+  booking_number?: string;
+  start_time: string;
+  end_time: string;
+  status: string;
+  customer: { name: string };
+  menu: { name: string };
+  resource?: { name: string };
+}
 
-const mockRecentActivity = [
-  {
-    id: '1',
-    type: 'booking_created' as const,
-    title: '新しい予約が作成されました',
-    description: '田中花子様のカット＋カラーの予約',
-    timestamp: '2025-07-02T09:30:00+09:00',
-    user: '受付スタッフ',
-  },
-  {
-    id: '2',
-    type: 'customer_registered' as const,
-    title: '新規顧客が登録されました',
-    description: '山田太郎様がLINEから新規登録',
-    timestamp: '2025-07-02T08:45:00+09:00',
-    user: 'システム',
-  },
-  {
-    id: '3',
-    type: 'booking_updated' as const,
-    title: '予約が変更されました',
-    description: '鈴木美香様の予約時間が変更',
-    timestamp: '2025-07-01T17:20:00+09:00',
-    user: '佐藤美容師',
-  },
-];
+/** 要対応アクションの種別（将来拡張用） */
+export type ActionItemType = 'pending_today';
+
+/** 要対応アクションの重要度 */
+export type ActionItemSeverity = 'info' | 'warning' | 'error';
+
+/** 要対応アクション1件（拡張可能） */
+export interface ActionItem {
+  id: number;
+  booking_id: number;
+  /** 種別（現状は pending_today 固定） */
+  type: ActionItemType;
+  /** 重要度（表示・色分け用） */
+  severity: ActionItemSeverity;
+  /** 導線先（例: /bookings） */
+  link: string;
+  reason?: string;
+  booking_number: string;
+  customer_name: string;
+  start_time: string;
+}
+
+/** 直近の変更・キャンセル1件 */
+export interface RecentChangeItem {
+  id: number;
+  booking_id: number;
+  type: 'cancelled' | 'changed';
+  booking_number: string;
+  customer_name: string;
+  updated_at: string;
+  /** 予約日（表示強化用） */
+  booking_date?: string;
+}
+
+/** API 1回取得で得る予約1件の最小形（BookingResource 相当） */
+interface BookingRow {
+  id: number;
+  booking_number?: string;
+  booking_date: string;
+  start_time: string;
+  end_time: string;
+  status: string;
+  updated_at?: string;
+  customer?: { name: string };
+  menu?: { name: string };
+  resource?: { name: string };
+}
+
+/** 今日の日付 Y-m-d */
+function todayStr(): string {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+/** 今日を含む前後3日（計7日間）の date_from / date_to */
+function getDateRange(): { date_from: string; date_to: string } {
+  const d = new Date();
+  const from = new Date(d);
+  from.setDate(from.getDate() - 3);
+  const to = new Date(d);
+  to.setDate(to.getDate() + 3);
+  const fmt = (x: Date) =>
+    x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0');
+  return { date_from: fmt(from), date_to: fmt(to) };
+}
+
+/** 時刻表示（HH:mm） */
+function formatTime(s: string): string {
+  if (!s) return '';
+  const [h, m] = s.split(':');
+  return `${h}:${m || '00'}`;
+}
+
+/** HH:mm を分（0〜24*60-1）に変換 */
+function timeToMinutes(s: string): number {
+  if (!s) return 0;
+  const [h, m] = s.split(':').map(Number);
+  return (h ?? 0) * 60 + (m ?? 0);
+}
 
 /**
- * 統計カードコンポーネント
+ * 今日の予約のうち「次の予約」を決定する。
+ * 基準: 開始時刻が現在時刻以降のもののうち、最も早い1件。すべて過去なら null。
+ * @param now 基準とする現在時刻（未指定時は new Date()。表示を定期更新する場合は呼び出し元で state を渡す）
  */
-const StatCard: React.FC<{
-  title: string;
-  value: string | number;
-  change?: string;
-  icon: React.ComponentType<any>;
-  color: 'primary' | 'green' | 'blue' | 'purple';
-}> = ({ title, value, change, icon: Icon, color }) => {
-  const colorClasses = {
-    primary: 'bg-primary-500 text-white',
-    green: 'bg-green-500 text-white',
-    blue: 'bg-blue-500 text-white',
-    purple: 'bg-purple-500 text-white',
+function getNextBookingId(bookings: TodayBookingItem[], now: Date = new Date()): number | null {
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  const future = bookings
+    .filter((b) => timeToMinutes(b.start_time) >= nowMinutes)
+    .sort((a, b) => timeToMinutes(a.start_time) - timeToMinutes(b.start_time));
+  return future.length > 0 ? future[0].id : null;
+}
+
+/**
+ * 今日の予約を表示用に並べ替える。次の予約（nextId）があれば先頭に持ってくる。
+ */
+function orderTodayBookingsWithNextFirst(
+  bookings: TodayBookingItem[],
+  nextId: number | null
+): TodayBookingItem[] {
+  if (bookings.length === 0 || nextId === null) {
+    return [...bookings].sort((a, b) => timeToMinutes(a.start_time) - timeToMinutes(b.start_time));
+  }
+  const sorted = [...bookings].sort((a, b) => timeToMinutes(a.start_time) - timeToMinutes(b.start_time));
+  const nextIndex = sorted.findIndex((b) => b.id === nextId);
+  if (nextIndex <= 0) return sorted;
+  const [nextItem] = sorted.splice(nextIndex, 1);
+  return [nextItem, ...sorted];
+}
+
+/** API 取得データ → 今日の予約 */
+function mapToTodayBookings(bookings: BookingRow[], today: string): TodayBookingItem[] {
+  return bookings
+    .filter((b) => b.booking_date === today)
+    .map((b) => ({
+      id: b.id,
+      booking_number: b.booking_number,
+      start_time: b.start_time,
+      end_time: b.end_time,
+      status: b.status,
+      customer: b.customer ? { name: b.customer.name } : { name: '' },
+      menu: b.menu ? { name: b.menu.name } : { name: '' },
+      resource: b.resource ? { name: (b.resource as { name?: string }).name } : undefined,
+    }));
+}
+
+/** 予約管理への導線（既存ルーティングに合わせる） */
+const BOOKINGS_LINK = '/bookings';
+
+/** 要対応: 仕様 5.5 の「本日予約が未確定のまま」。型を拡張し link/type/severity を付与。 */
+function mapToActionItems(bookings: BookingRow[], today: string): ActionItem[] {
+  return bookings
+    .filter((b) => b.booking_date === today && b.status === 'pending')
+    .map((b) => ({
+      id: b.id,
+      booking_id: b.id,
+      type: 'pending_today' as const,
+      severity: 'warning' as const,
+      link: BOOKINGS_LINK,
+      reason: '本日予約が未確定のまま',
+      booking_number: b.booking_number || '',
+      customer_name: b.customer?.name || '',
+      start_time: b.start_time,
+    }));
+}
+
+/** 直近の変更・キャンセル: status が cancelled。changed は DB にないため cancelled のみ */
+function mapToRecentChanges(bookings: BookingRow[]): RecentChangeItem[] {
+  return bookings
+    .filter((b) => b.status === 'cancelled')
+    .sort((a, b) => (b.updated_at || '').localeCompare(a.updated_at || ''))
+    .slice(0, 10)
+    .map((b) => ({
+      id: b.id,
+      booking_id: b.id,
+      type: 'cancelled' as const,
+      booking_number: b.booking_number || '',
+      customer_name: b.customer?.name || '',
+      updated_at: b.updated_at || '',
+      booking_date: b.booking_date,
+    }));
+}
+
+/** 更新日時を YYYY-MM-DD HH:mm で表示 */
+function formatUpdatedAt(iso: string): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const h = String(d.getHours()).padStart(2, '0');
+  const min = String(d.getMinutes()).padStart(2, '0');
+  return `${y}-${m}-${day} ${h}:${min}`;
+}
+
+/** 相対表示（例: 3時間前）。24時間以内のみ。now を渡すと表示の定期更新に使える。 */
+function formatRelativeShort(iso: string, now: Date = new Date()): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const diffMs = now.getTime() - d.getTime();
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  if (diffMins < 1) return 'たった今';
+  if (diffMins < 60) return `${diffMins}分前`;
+  if (diffHours < 24) return `${diffHours}時間前`;
+  return '';
+}
+
+/** ひとことメッセージの severity */
+export type OneLineSeverity = 'success' | 'info' | 'warning' | 'error';
+
+/**
+ * ひとことメッセージを生成する。
+ * 優先順位: 要対応あり → 今日0件 → 次の予約あり → それ以外
+ */
+function getOneLineMessage(
+  todayBookings: TodayBookingItem[],
+  actionItems: ActionItem[],
+  nextBookingId: number | null
+): { severity: OneLineSeverity; message: string } {
+  if (actionItems.length > 0) {
+    return {
+      severity: 'warning',
+      message: `今日は ${actionItems.length} 件、確認が必要です。`,
+    };
+  }
+  if (todayBookings.length === 0) {
+    return {
+      severity: 'info',
+      message: '今日は予約がありません。落ち着いて準備できそうです。',
+    };
+  }
+  if (nextBookingId !== null) {
+    const nextBooking = todayBookings.find((b) => b.id === nextBookingId);
+    const timeStr = nextBooking ? formatTime(nextBooking.start_time) : '';
+    return {
+      severity: 'info',
+      message: timeStr ? `次の予約は ${timeStr} です。` : '今日もよろしくお願いします。',
+    };
+  }
+  return {
+    severity: 'success',
+    message: '今日もよろしくお願いします。',
   };
-
-  return (
-    <Card hoverable>
-      <Card.Body>
-        <div className="flex items-center">
-          <div className={`p-3 rounded-lg ${colorClasses[color]}`}>
-            <Icon className="h-6 w-6" />
-          </div>
-          <div className="ml-4 flex-1">
-            <p className="text-sm font-medium text-gray-600">{title}</p>
-            <p className="text-2xl font-bold text-gray-900">{value}</p>
-            {change && (
-              <p className="text-sm text-green-600 flex items-center">
-                <ArrowTrendingUpIcon className="h-4 w-4 mr-1" />
-                {change}
-              </p>
-            )}
-          </div>
-        </div>
-      </Card.Body>
-    </Card>
-  );
-};
+}
 
 /**
- * 今日の予約カードコンポーネント
+ * ダッシュボードページ（必須3ブロック・API一元化）
  */
-const TodayBookingCard: React.FC<{ booking: typeof mockTodayBookings[0] }> = ({ booking }) => {
-  return (
-    <motion.div
-      className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow"
-      whileHover={{ scale: 1.01 }}
-    >
-      <div className="flex items-center justify-between mb-2">
-        <span className={`badge ${getBookingStatusClass(booking.status)}`}>
-          {getBookingStatusLabel(booking.status)}
-        </span>
-        <span className="text-sm text-gray-500 font-mono">
-          {booking.booking_number}
-        </span>
-      </div>
+/** 現在時刻を HH:mm で表示（表示の定期更新用） */
+function formatNowHHmm(d: Date): string {
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
 
-      <div className="mb-2">
-        <h4 className="font-medium text-gray-900">{booking.customer.name}</h4>
-        <p className="text-sm text-gray-600">{booking.customer.phone}</p>
-      </div>
-
-      <div className="mb-2">
-        <p className="text-sm font-medium text-gray-900">{booking.menu.name}</p>
-        <div className="flex items-center text-sm text-gray-600">
-          <ClockIcon className="h-4 w-4 mr-1" />
-          <span>{formatTime(booking.start_time)} - {formatTime(booking.end_time)}</span>
-          {booking.resource && (
-            <>
-              <span className="mx-2">•</span>
-              <span>{booking.resource.name}</span>
-            </>
-          )}
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between">
-        <span className="text-primary-600 font-semibold">
-          {formatPrice(booking.total_price)}
-        </span>
-        <div className="flex space-x-2">
-          {booking.status === 'pending' && (
-            <>
-              <Button variant="outline" size="xs">承認</Button>
-              <Button variant="ghost" size="xs">詳細</Button>
-            </>
-          )}
-          {booking.status === 'confirmed' && (
-            <Button variant="ghost" size="xs">詳細</Button>
-          )}
-        </div>
-      </div>
-    </motion.div>
-  );
-};
-
-/**
- * ダッシュボードページ
- */
 const DashboardPage: React.FC = () => {
   const { setPageTitle } = useUIStore();
+  const navigate = useNavigate();
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [todayBookings, setTodayBookings] = useState<TodayBookingItem[]>([]);
+  const [actionItems, setActionItems] = useState<ActionItem[]>([]);
+  const [recentChanges, setRecentChanges] = useState<RecentChangeItem[]>([]);
+  /** 表示用の現在時刻。1分ごとに更新し「次の予約」「○分前」を正しく反映する */
+  const [now, setNow] = useState(() => new Date());
+
+  const fetchDashboard = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    const today = todayStr();
+    const { date_from, date_to } = getDateRange();
+    try {
+      const response = await bookingApi.getList({
+        date_from,
+        date_to,
+        per_page: 100,
+      } as Parameters<typeof bookingApi.getList>[0]);
+      const bookings = (response.bookings || []) as BookingRow[];
+      setTodayBookings(mapToTodayBookings(bookings, today));
+      setActionItems(mapToActionItems(bookings, today));
+      setRecentChanges(mapToRecentChanges(bookings));
+    } catch (e: unknown) {
+      const message = e && typeof e === 'object' && 'message' in e ? String((e as { message: string }).message) : '取得に失敗しました';
+      setError(message);
+      setTodayBookings([]);
+      setActionItems([]);
+      setRecentChanges([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     setPageTitle('ダッシュボード');
   }, [setPageTitle]);
 
+  useEffect(() => {
+    fetchDashboard();
+  }, [fetchDashboard]);
+
+  /** 1分ごとに現在時刻を更新し、「次の予約」と相対時刻表示を反映する */
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60 * 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const nextBookingId = useMemo(() => getNextBookingId(todayBookings, now), [todayBookings, now]);
+  const orderedTodayBookings = useMemo(
+    () => orderTodayBookingsWithNextFirst(todayBookings, nextBookingId),
+    [todayBookings, nextBookingId]
+  );
+
+  const oneLine = useMemo(
+    () => getOneLineMessage(todayBookings, actionItems, nextBookingId),
+    [todayBookings, actionItems, nextBookingId]
+  );
+
   return (
-    <div className="space-y-6">
-      {/* ページヘッダー */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">ダッシュボード</h1>
-          <p className="text-gray-600 mt-1">
-            {formatDate(new Date(), 'yyyy年M月d日(E)')} の概要
-          </p>
-        </div>
-        <Button variant="primary">新規予約</Button>
-      </div>
+    <Container maxWidth="lg" sx={{ py: 3 }}>
+      {!loading && !error && (
+        <Alert severity={oneLine.severity} sx={{ mb: 2 }} variant="outlined">
+          {oneLine.message}
+        </Alert>
+      )}
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1, mb: 3 }}>
+        <Typography component="h1" variant="h5" sx={{ fontWeight: 600 }}>
+          ダッシュボード
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          現在 {formatNowHHmm(now)}
+        </Typography>
+      </Box>
 
-      {/* 統計カード */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
-          title="今日の予約"
-          value={`${mockStats.today_bookings.total}件`}
-          change={`確定 ${mockStats.today_bookings.confirmed}件`}
-          icon={CalendarDaysIcon}
-          color="primary"
-        />
-        <StatCard
-          title="今日の売上"
-          value={formatPrice(mockStats.revenue.today, false)}
-          change={`前日比 +${mockStats.revenue.growth_rate}%`}
-          icon={CurrencyYenIcon}
-          color="green"
-        />
-        <StatCard
-          title="総顧客数"
-          value={`${mockStats.customers.total}人`}
-          change={`今月 +${mockStats.customers.new_this_month}人`}
-          icon={UsersIcon}
-          color="blue"
-        />
-        <StatCard
-          title="リソース稼働率"
-          value={`${mockStats.resources.utilization_rate}%`}
-          change={`稼働中 ${mockStats.resources.active}/${mockStats.resources.total}`}
-          icon={BuildingOfficeIcon}
-          color="purple"
-        />
-      </div>
+      {error && (
+        <Alert severity="warning" sx={{ mb: 2 }} onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* 今日の予約 */}
-        <div className="lg:col-span-2">
-          <Card>
-            <Card.Header>
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-gray-900">今日の予約</h2>
-                <Button variant="outline" size="sm">すべて表示</Button>
-              </div>
-            </Card.Header>
-            <Card.Body padding="sm">
-              <div className="space-y-3">
-                {mockTodayBookings.map((booking) => (
-                  <TodayBookingCard key={booking.id} booking={booking} />
-                ))}
-              </div>
-            </Card.Body>
-          </Card>
-        </div>
+      {loading ? (
+        <Grid container spacing={3}>
+          {[1, 2, 3].map((i) => (
+            <Grid item xs={12} md={4} key={i}>
+              <Card variant="outlined" sx={{ height: '100%' }}>
+                <CardHeader title={<Skeleton width="60%" />} subheader={<Skeleton width={40} />} />
+                <CardContent>
+                  <Skeleton variant="text" />
+                  <Skeleton variant="text" />
+                  <Skeleton variant="text" />
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      ) : (
+        <Grid container spacing={3}>
+          {/* ブロック1: 今日の予約タイムライン */}
+          <Grid item xs={12} md={4}>
+            <Card variant="outlined" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+              <CardHeader
+                title="今日の予約"
+                subheader={`${todayBookings.length}件`}
+                titleTypographyProps={{ variant: 'h6' }}
+              />
+              <CardContent sx={{ flex: 1, pt: 0 }}>
+                {orderedTodayBookings.length === 0 ? (
+                  <Typography variant="body2" color="text.secondary">
+                    本日の予約はありません。
+                  </Typography>
+                ) : (
+                  <List dense disablePadding>
+                    {orderedTodayBookings.map((b) => {
+                      const isNext = b.id === nextBookingId;
+                      return (
+                        <ListItem
+                          key={b.id}
+                          divider
+                          sx={{
+                            flexDirection: 'column',
+                            alignItems: 'stretch',
+                            ...(isNext && {
+                              bgcolor: 'action.selected',
+                              borderRadius: 1,
+                              borderLeft: 3,
+                              borderColor: 'primary.main',
+                            }),
+                          }}
+                        >
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                            {isNext && (
+                              <Chip label="次" size="small" color="primary" sx={{ flexShrink: 0 }} />
+                            )}
+                            <ListItemText
+                              primary={`${formatTime(b.start_time)} - ${b.customer.name}`}
+                              secondary={`${b.menu.name}${b.resource ? ` · ${b.resource.name}` : ''}`}
+                              primaryTypographyProps={{
+                                variant: 'body2',
+                                fontWeight: isNext ? 600 : 500,
+                              }}
+                              secondaryTypographyProps={{ variant: 'caption' }}
+                            />
+                          </Box>
+                        </ListItem>
+                      );
+                    })}
+                  </List>
+                )}
+              </CardContent>
+              {orderedTodayBookings.length > 0 && (
+                <CardActions sx={{ justifyContent: 'flex-end', px: 2, pb: 1 }}>
+                  <AppButton size="sm" onClick={() => navigate('/bookings')}>
+                    すべて表示
+                  </AppButton>
+                </CardActions>
+              )}
+            </Card>
+          </Grid>
 
-        {/* 最近のアクティビティ */}
-        <div>
-          <Card>
-            <Card.Header>
-              <h2 className="text-lg font-semibold text-gray-900">最近のアクティビティ</h2>
-            </Card.Header>
-            <Card.Body padding="sm">
-              <div className="space-y-4">
-                {mockRecentActivity.map((activity) => (
-                  <div key={activity.id} className="flex">
-                    <div className="flex-shrink-0">
-                      <div className="w-2 h-2 bg-primary-500 rounded-full mt-2"></div>
-                    </div>
-                    <div className="ml-3 flex-1">
-                      <p className="text-sm font-medium text-gray-900">
-                        {activity.title}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        {activity.description}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {new Date(activity.timestamp).toLocaleString('ja-JP')} - {activity.user}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card.Body>
-          </Card>
+          {/* ブロック2: 要対応アクション */}
+          <Grid item xs={12} md={4}>
+            <Card variant="outlined" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+              <CardHeader
+                title="要対応アクション"
+                subheader={actionItems.length > 0 ? `${actionItems.length}件` : undefined}
+                titleTypographyProps={{ variant: 'h6' }}
+              />
+              <CardContent sx={{ flex: 1, pt: 0 }}>
+                {actionItems.length === 0 ? (
+                  <Alert severity="success" variant="outlined" sx={{ py: 0 }}>
+                    要対応はありません
+                  </Alert>
+                ) : (
+                  <List dense disablePadding>
+                    {actionItems.map((a) => (
+                      <ListItem key={a.id} divider sx={{ flexDirection: 'column', alignItems: 'stretch' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mb: 0.25 }}>
+                          <Typography component="span" variant="body2" fontWeight={500}>
+                            {a.customer_name}
+                          </Typography>
+                          {a.type === 'pending_today' && (
+                            <Chip label="未確定" size="small" color="warning" variant="outlined" sx={{ flexShrink: 0 }} />
+                          )}
+                        </Box>
+                        <ListItemText
+                          secondary={a.reason || `${a.booking_number} · ${formatTime(a.start_time)}`}
+                          secondaryTypographyProps={{ variant: 'caption' }}
+                          sx={{ mt: 0 }}
+                        />
+                      </ListItem>
+                    ))}
+                  </List>
+                )}
+              </CardContent>
+              {actionItems.length > 0 && (
+                <CardActions sx={{ justifyContent: 'flex-end', px: 2, pb: 1 }}>
+                  <AppButton size="sm" onClick={() => navigate(actionItems[0]?.link ?? BOOKINGS_LINK)}>
+                    予約管理へ
+                  </AppButton>
+                </CardActions>
+              )}
+            </Card>
+          </Grid>
 
-          {/* 注意事項 */}
-          <Card className="mt-6">
-            <Card.Header>
-              <div className="flex items-center">
-                <ExclamationTriangleIcon className="h-5 w-5 text-yellow-500 mr-2" />
-                <h3 className="text-lg font-semibold text-gray-900">注意事項</h3>
-              </div>
-            </Card.Header>
-            <Card.Body>
-              <div className="space-y-2 text-sm text-gray-600">
-                <p>• 本日 {mockStats.today_bookings.pending}件の予約が承認待ちです</p>
-                <p>• 今週の売上目標まで残り {formatPrice(320000 - mockStats.revenue.this_week, false)}</p>
-                <p>• リピート率が {mockStats.customers.returning_rate}% で目標を上回っています</p>
-              </div>
-            </Card.Body>
-          </Card>
-        </div>
-      </div>
-    </div>
+          {/* ブロック3: 直近の変更・キャンセル */}
+          <Grid item xs={12} md={4}>
+            <Card variant="outlined" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+              <CardHeader
+                title="直近の変更・キャンセル"
+                subheader={`${recentChanges.length}件`}
+                titleTypographyProps={{ variant: 'h6' }}
+              />
+              <CardContent sx={{ flex: 1, pt: 0 }}>
+                {recentChanges.length === 0 ? (
+                  <Typography variant="body2" color="text.secondary">
+                    直近の変更はありません。
+                  </Typography>
+                ) : (
+                  <List dense disablePadding>
+                    {recentChanges.map((r) => {
+                      const updatedStr = formatUpdatedAt(r.updated_at);
+                      const relativeStr = formatRelativeShort(r.updated_at, now);
+                      const secondaryParts = [
+                        updatedStr,
+                        relativeStr ? `（${relativeStr}）` : '',
+                        r.booking_date ? ` · 予約日 ${r.booking_date}` : '',
+                      ].filter(Boolean);
+                      return (
+                        <ListItem key={r.id} divider sx={{ flexDirection: 'column', alignItems: 'stretch' }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mb: 0.25 }}>
+                            <Typography component="span" variant="body2" fontWeight={500}>
+                              {r.customer_name}
+                            </Typography>
+                            <Chip
+                              label={r.type === 'cancelled' ? 'キャンセル' : '変更'}
+                              size="small"
+                              color={r.type === 'cancelled' ? 'error' : 'default'}
+                              variant="outlined"
+                              sx={{ flexShrink: 0 }}
+                            />
+                          </Box>
+                          <ListItemText
+                            secondary={secondaryParts.join('')}
+                            secondaryTypographyProps={{ variant: 'caption' }}
+                            sx={{ mt: 0 }}
+                          />
+                        </ListItem>
+                      );
+                    })}
+                  </List>
+                )}
+              </CardContent>
+              {recentChanges.length > 0 && (
+                <CardActions sx={{ justifyContent: 'flex-end', px: 2, pb: 1 }}>
+                  <AppButton size="sm" onClick={() => navigate('/bookings')}>
+                    予約一覧へ
+                  </AppButton>
+                </CardActions>
+              )}
+            </Card>
+          </Grid>
+        </Grid>
+      )}
+    </Container>
   );
 };
 
-export default DashboardPage; 
+export default DashboardPage;

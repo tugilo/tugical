@@ -1,6 +1,6 @@
 import React from 'react';
 import { User, Phone, Mail, MessageCircle } from 'lucide-react';
-import { Customer } from '../../types';
+import { Customer } from '../../../types';
 import { cn } from '../../../utils';
 
 interface CustomerCardProps {

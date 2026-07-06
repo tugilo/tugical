@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../modal/Modal';
 import Button from '../ui/Button';
-import { Menu } from '../../types';
-import { menuApi } from '../../services/api';
-import { useUIStore } from '../../stores/uiStore';
+import { Menu } from '../../../types';
+import { menuApi } from '../../../services/api';
+import { useUIStore } from '../../../stores/uiStore';
 
 interface MenuDetailModalProps {
   isOpen: boolean;

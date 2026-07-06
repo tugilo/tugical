@@ -87,6 +87,12 @@ class BookingController extends Controller
                 $filters['date'] = $request->get('date');
             }
 
+            // ダッシュボード用: 日付範囲（今日含む前後3日＝計7日間）
+            if ($request->has('date_from') && $request->has('date_to')) {
+                $filters['date_from'] = $request->get('date_from');
+                $filters['date_to'] = $request->get('date_to');
+            }
+
             if ($request->has('status')) {
                 $filters['status'] = $request->get('status');
             }

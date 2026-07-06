@@ -20,16 +20,16 @@ import {
   CurrencyYenIcon,
   ClockIcon
 } from '@heroicons/react/24/outline';
-import { useUIStore } from '../../stores/uiStore';
-import Card from '../../components/ui/Card';
-import Button from '../../components/ui/Button';
-import LoadingScreen from '../../components/ui/LoadingScreen';
-import MenuCreateModal from '../../components/menus/MenuCreateModal';
-import MenuEditModal from '../../components/menus/MenuEditModal';
-import MenuDetailModal from '../../components/menus/MenuDetailModal';
-import { menuApi } from '../../services/api';
-import type { Menu, FilterOptions, MenuCategoriesResponse, PaginationData } from '../../types';
-import ConfirmDialog from '../../components/ui/ConfirmDialog';
+import { useUIStore } from '../../../stores/uiStore';
+import Card from '../../../components/admin/ui/Card';
+import Button from '../../../components/admin/ui/Button';
+import LoadingScreen from '../../../components/admin/ui/LoadingScreen';
+import MenuCreateModal from '../../../components/admin/menus/MenuCreateModal';
+import MenuEditModal from '../../../components/admin/menus/MenuEditModal';
+import MenuDetailModal from '../../../components/admin/menus/MenuDetailModal';
+import { menuApi } from '../../../services/api';
+import type { Menu, FilterOptions, MenuCategoriesResponse, PaginationData } from '../../../types';
+import ConfirmDialog from '../../../components/admin/ui/ConfirmDialog';
 
 const MenusPage: React.FC = () => {
   const { setPageTitle, addNotification } = useUIStore();

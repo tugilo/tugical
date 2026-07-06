@@ -1,12 +1,22 @@
+/**
+ * tugical 管理画面用 確認ダイアログ（MUI Dialog 実装）
+ * Phase 2: 自作 Modal 依存をやめ、MUI Dialog に置換。方針A: 背景クリックで閉じる → onClose（キャンセル相当）へ集約。
+ */
 import React from 'react';
-import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
-import Modal from '../modal/Modal';
-import Button from './Button';
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+} from '@mui/material';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import DangerousIcon from '@mui/icons-material/Dangerous';
 
-interface ConfirmDialogProps {
+export interface ConfirmDialogProps {
   /** ダイアログの開閉状態 */
   isOpen: boolean;
-  /** ダイアログを閉じる関数 */
+  /** ダイアログを閉じる関数（キャンセル・背景クリック・Esc 時） */
   onClose: () => void;
   /** 確認時のコールバック */
   onConfirm: () => void;
@@ -20,15 +30,14 @@ interface ConfirmDialogProps {
   cancelText?: string;
   /** 危険な操作かどうか */
   isDanger?: boolean;
-  /** ローディング状態 */
+  /** ローディング状態（二重送信防止） */
   isLoading?: boolean;
 }
 
 /**
- * 確認ダイアログコンポーネント
- * - モダンなデザインの確認ダイアログ
- * - アニメーション付き
- * - カスタマイズ可能
+ * 確認ダイアログ（MUI Dialog）
+ * - 背景クリック・Esc で閉じた場合は onClose（キャンセル相当）を呼ぶ
+ * - OK → onConfirm、Cancel → onClose
  */
 const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   isOpen,
@@ -41,62 +50,59 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   isDanger = false,
   isLoading = false,
 }) => {
+  const handleClose = (_event: object, reason: string) => {
+    if (reason === 'backdropClick' && isLoading) return;
+    onClose();
+  };
+
   const handleConfirm = () => {
-    if (!isLoading) {
-      onConfirm();
-    }
+    if (!isLoading) onConfirm();
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title=""
-      size="sm"
-      closeOnOverlayClick={!isLoading}
+    <Dialog
+      open={isOpen}
+      onClose={handleClose}
+      maxWidth="xs"
+      fullWidth
+      PaperProps={{ sx: { borderRadius: 2 } }}
     >
-      <div className="text-center">
-        {/* アイコン */}
-        <div className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full ${
-          isDanger ? 'bg-red-100' : 'bg-yellow-100'
-        }`}>
-          <ExclamationTriangleIcon className={`h-6 w-6 ${
-            isDanger ? 'text-red-600' : 'text-yellow-600'
-          }`} />
+      <DialogTitle id="confirm-dialog-title" component="div" sx={{ pt: 3 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+          {isDanger ? (
+            <DangerousIcon sx={{ color: 'error.main', fontSize: 28 }} />
+          ) : (
+            <WarningAmberIcon sx={{ color: 'warning.main', fontSize: 28 }} />
+          )}
+          <span style={{ fontSize: '1.125rem', fontWeight: 600 }}>{title}</span>
         </div>
-
-        {/* タイトル */}
-        <h3 className="mt-4 text-lg font-semibold text-gray-900">
-          {title}
-        </h3>
-
-        {/* メッセージ */}
-        <p className="mt-2 text-sm text-gray-600">
+      </DialogTitle>
+      <DialogContent>
+        <p style={{ margin: 0, fontSize: '0.875rem', color: 'text.secondary' }}>
           {message}
         </p>
-
-        {/* ボタン */}
-        <div className="mt-6 flex justify-center gap-3">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onClose}
-            disabled={isLoading}
-          >
-            {cancelText}
-          </Button>
-          <Button
-            variant={isDanger ? 'danger' : 'primary'}
-            size="sm"
-            onClick={handleConfirm}
-            loading={isLoading}
-          >
-            {confirmText}
-          </Button>
-        </div>
-      </div>
-    </Modal>
+      </DialogContent>
+      <DialogActions sx={{ px: 3, pb: 2, justifyContent: 'center', gap: 1 }}>
+        <Button
+          variant="outlined"
+          size="small"
+          onClick={onClose}
+          disabled={isLoading}
+        >
+          {cancelText}
+        </Button>
+        <Button
+          variant="contained"
+          color={isDanger ? 'error' : 'primary'}
+          size="small"
+          onClick={handleConfirm}
+          disabled={isLoading}
+        >
+          {isLoading ? '処理中...' : confirmText}
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 };
 
-export default ConfirmDialog; 
+export default ConfirmDialog;

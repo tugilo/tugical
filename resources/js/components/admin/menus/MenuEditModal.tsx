@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../modal/Modal';
 import FormField from '../ui/FormField';
-import Button from '../ui/Button';
-import { Menu, UpdateMenuRequest } from '../../types';
-import { menuApi } from '../../services/api';
-import { useUIStore } from '../../stores/uiStore';
+import AppButton from '../ui/AppButton';
+import { Menu, UpdateMenuRequest } from '../../../types';
+import { menuApi } from '../../../services/api';
+import { useUIStore } from '../../../stores/uiStore';
 
 interface MenuEditModalProps {
   isOpen: boolean;
@@ -531,15 +531,15 @@ const MenuEditModal: React.FC<MenuEditModalProps> = ({
 
           {/* アクションボタン */}
           <div className='flex justify-end space-x-3 pt-6 border-t border-gray-200'>
-            <Button
+            <AppButton
               variant='outline'
               size='md'
               onClick={handleCloseWithConfirm}
               disabled={isSubmitting}
             >
               キャンセル
-            </Button>
-            <Button
+            </AppButton>
+            <AppButton
               variant='primary'
               size='md'
               type='submit'
@@ -547,7 +547,7 @@ const MenuEditModal: React.FC<MenuEditModalProps> = ({
               disabled={isSubmitting || !hasChanges()}
             >
               {isSubmitting ? '更新中...' : '変更を保存'}
-            </Button>
+            </AppButton>
           </div>
         </form>
       )}

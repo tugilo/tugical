@@ -12,8 +12,8 @@ import Modal from '../modal/Modal';
 import Button from '../ui/Button';
 import DatePicker from '../ui/DatePicker';
 import { MultiMenuSelector } from './MultiMenuSelector';
-import { customerApi, resourceApi, bookingApi } from '../../services/api';
-import { useUIStore } from '../../stores/uiStore';
+import { customerApi, resourceApi, bookingApi } from '../../../services/api';
+import { useUIStore } from '../../../stores/uiStore';
 import type {
   Booking,
   Customer,
@@ -22,7 +22,7 @@ import type {
   CreateCombinationBookingRequest,
   CombinationMenuRequest,
   CalculateCombinationResponse,
-} from '../../types';
+} from '../../../types';
 
 interface CombinationBookingModalProps {
   /** モーダルの開閉状態 */

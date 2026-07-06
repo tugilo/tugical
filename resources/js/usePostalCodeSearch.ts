@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { apiClient } from '../services/api';
+import { apiClient } from './services/api';
 
 interface PostalCodeSearchResult {
   prefecture: string;

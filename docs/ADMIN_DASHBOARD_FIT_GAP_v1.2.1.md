@@ -2,7 +2,7 @@
 
 **Version**: 1.0  
 **作成日**: 2026-02-11 17:41  
-**更新日**: 2026-02-11 18:13  
+**更新日**: 2026-02-11 21:24  
 **基準仕様**: admin_auth_and_role_dashboard_spec_v1.2.1.md  
 **目的**: spec v1.2.1 に対する実装状況を「実装済 / 一部 / 未実装 / 不明」で判定し、根拠と確認手順を記録する。
 
@@ -40,7 +40,7 @@
 
 | 種類 | パス | 役割 |
 |------|------|------|
-| DashboardPage | `backend/resources/js/pages/admin/dashboard/DashboardPage.tsx` | App の Route /dashboard で表示。今日の予約・売上・顧客数等を mock で表示。API 未接続。要対応・直近変更・ひとことメッセージは Step 7〜10 で対応予定。 |
+| DashboardPage | `backend/resources/js/pages/admin/dashboard/DashboardPage.tsx` | App の Route /dashboard で表示。Step 7〜12 完了。必須3ブロック・API一元化・次の予約強調・直近変更強化・要対応拡張・ひとことメッセージ（getOneLineMessage＋Alert）。 |
 | bookings API | `backend/app/Http/Controllers/Api/BookingController.php` | index(): date, status, resource_id, customer_id でフィルタ。auth()->user()->store_id でスコープ。 |
 | api.getBookings | `backend/resources/js/services/api.ts` | getBookings(filters)。FilterOptions で date 等を渡す。BookingsPage で date 使用実績あり。 |
 
@@ -81,9 +81,9 @@
 
 | 観点 | 判定 | 根拠・該当コード | 確認方法（不明時） |
 |------|------|-------------------|---------------------|
-| 要対応アクション（例外検知） | **未実装** | DashboardPage に該当ブロックなし。仕様 5.5 の例外条件（未確定・重複疑い等）のフロント判定・表示がない。 | ダッシュボードに「要対応」リストが表示され、例外条件該当件数に応じて変わるか。 |
-| 今日の予約タイムライン | **一部** | DashboardPage に「今日の予約」リストはあるが **mock データ**。次の予約の強調なし。API（getBookings with date=今日）未使用。 | 本日の日付で getBookings({ date }) を呼び、表示されるか。次の予約が視覚的に強調されているか。 |
-| 直近の変更・キャンセル | **未実装** | DashboardPage に「最近のアクティビティ」はあるが仕様の「直近の変更・キャンセル」ブロック（ステータス変更・キャンセル一覧＋確認導線）ではない。mock。 | 直近のキャンセル・ステータス変更が一覧され、予約詳細・顧客詳細への導線があるか。 |
+| 要対応アクション（例外検知） | **実装済** | Step 8 で API 一元化（本日かつ pending）。Step 11 で拡張可能に。ActionItem に type（pending_today）・severity（warning）・link（/bookings）を追加。表示は顧客名＋Chip「未確定」＋理由。CardActions「予約管理へ」は link で遷移。DashboardPage.tsx。 | ダッシュボードに「要対応」リストが表示され、例外条件該当件数に応じて変わるか。 |
+| 今日の予約タイムライン | **実装済** | Step 7・8 で必須3ブロックを MUI で実装。Step 8 で API 一元化。Step 9 で「次の予約」を強調（開始時刻≥現在で最も早い1件を Chip・背景・先頭表示）。DashboardPage.tsx。 | 本日の日付で getBookings({ date }) を呼び、表示されるか。次の予約が視覚的に強調されているか。 |
+| 直近の変更・キャンセル | **実装済** | Step 8 で同一 API 取得データから status=cancelled をフロントでフィルタし表示。Step 10 で表示強化（顧客名＋Chip キャンセル/変更、更新日時 YYYY-MM-DD HH:mm、予約日、24時間以内は相対表示「x時間前」）。RecentChangeItem に booking_date 追加。DashboardPage.tsx。 | 直近のキャンセル・ステータス変更が一覧され、予約詳細・顧客詳細への導線があるか。 |
 | データ取得が既存 API の範囲 | **実装済（API 側）** | BookingController::index に date, status あり。getBookings(filters) で date 渡し可能。新規 API なし。 | ダッシュボード用の新規エンドポイントが追加されていないか routes/api.php を確認。 |
 
 ---
@@ -92,10 +92,10 @@
 
 | 観点 | 判定 | 根拠・該当コード | 確認方法（不明時） |
 |------|------|-------------------|---------------------|
-| 固定文＋条件分岐のみ | **未実装** | ひとことメッセージを表示するコンポーネント・ロジックが無い。 | ダッシュボード最上段に 1 文が表示されるか。 |
-| 優先順位 A→B→C | **未実装** | 同上。 | 要対応≥1 → ルール A、今日 0 件 → B、それ以外 → C の文言になるか。 |
-| フォールバック（データ取れない場合） | **未実装** | 同上。 | 今日の予約件数・要対応件数のみで文言が決まるフォールバックがあるか。 |
-| 文言ガイド準拠 | **未実装** | 文言実装なし。 | 句読点少なめ・1 文・命令しない・説教しないが守られているか。 |
+| 固定文＋条件分岐のみ | **実装済** | Step 12 で getOneLineMessage を追加。要対応 > 0 → warning、今日 0 件 → info、次の予約あり → info、それ以外 → success。Container 直下に MUI Alert で 1 文表示。DashboardPage.tsx。 | ダッシュボード最上段に 1 文が表示されるか。 |
+| 優先順位 A→B→C | **実装済** | getOneLineMessage で要対応 > 0 → A（warning）、今日 0 件 → B（info）、次の予約あり／それ以外 → C（info/success）。 | 要対応≥1 → ルール A、今日 0 件 → B、それ以外 → C の文言になるか。 |
+| フォールバック（データ取れない場合） | **実装済** | 今日 0 件で info、要対応 0 かつ予約ありで success／次の予約時刻で info。ローディング・エラー時はひとこと非表示。 | 今日の予約件数・要対応件数のみで文言が決まるフォールバックがあるか。 |
+| 文言ガイド準拠 | **実装済** | 1 文・句読点少なめ・命令調なしの固定文。 | 句読点少なめ・1 文・命令しない・説教しないが守られているか。 |
 | 心理設計の深掘りが [FUTURE] に隔離 | **実装済（仕様側）** | spec v1.2.1 の「将来拡張スロット（FUTURE）」に記載。コードに時間帯別・人格チューニングが無い。 | コードベースで「相棒」「トーン」「A/B」等を検索し、MVP 範囲外の実装が無いか。 |
 
 ---
@@ -127,8 +127,8 @@
 |------------|---------------------|----------|
 | A. 認証 | ログイン画面・ログイン成功後 /dashboard は Step 1、未ログイン時リダイレクトは Step 2 で実装済。ログアウト後 /login は Step 4 で対応。 | Step 4: logout 後に navigate('/login'). |
 | B. ロール | 設定メニューを canManageSettings で出し分けていない。Layout が未使用。 | Router 実装後に Layout で navigation を canManageSettings でフィルタ。 |
-| C. 必須 3 ブロック | 要対応アクション未実装。今日の予約は mock。直近の変更・キャンセル未実装。 | 既存 getBookings で本日・直近を取得し、要対応はフロントで仕様 5.5 の条件に従いフィルタ。3 ブロックを DashboardPage に追加。 |
-| D. ひとことメッセージ | 未実装。 | 最上段にコンポーネントを追加。今日件数・要対応件数・次の予約時刻を既存データから算出し、A→B→C で固定文を表示。 |
+| C. 必須 3 ブロック | Step 8 で API 一元化完了。1 回の getBookings(date_from/date_to) で 3 ブロックに反映。要対応は本日 pending、直近変更は cancelled。 | 既存 getBookings に date_from/date_to を追加済み。DashboardPage で 1 回取得→3 ブロック表示。 |
+| D. ひとことメッセージ | 実装済。 | Step 12 で getOneLineMessage＋Container 直下 MUI Alert。要対応→warning、今日0件→info、次の予約→info、else→success。ローディング・エラー時は非表示。 |
 | E, F | 特になし（実装済または仕様で担保）。 | — |
 
 **不明**: なし。上記の確認方法で判定可能。

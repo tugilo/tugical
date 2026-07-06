@@ -1,7 +1,7 @@
 # tugical MVP 実装：計画遵守・進捗更新・ドキュメント同期 実行指示
 
 **作成日**: 2026-02-11 16:11  
-**更新日**: 2026-02-11 18:30  
+**更新日**: 2026-07-06 17:13:11  
 
 **あなたの役割**: tugical プロジェクトの MVP 実装担当。設計・方針・判断はすでに確定している。  
 **あなたの仕事**: (1) 計画に従って実装する (2) 必ず関連ドキュメントを更新する (3) 進捗を可視化しながら最後まで完走する。  
@@ -57,11 +57,12 @@ A を実装する際に守る構造のみ：
 | 順位 | ドキュメント |
 |------|--------------|
 | 1 | `backend/docs/MVP_EXECUTION_RULES.md`（本書） |
-| 2 | `backend/docs/MVP_IMPLEMENTATION_PLAN.md` |
-| 3 | `backend/docs/CONCEPT_SPEC_FIT_GAP.md` |
-| 4 | `backend/docs/tugical_requirements_specification_v1.1.md` |
+| 2 | `backend/docs/REMAINING_TASKS_PLAN_v1.0.md`（**実行順序 #1〜18**） |
+| 3 | `backend/docs/MVP_IMPLEMENTATION_PLAN.md`（タスク ID・DoD） |
+| 4 | `backend/docs/CONCEPT_SPEC_FIT_GAP.md` |
+| 5 | `backend/docs/tugical_requirements_specification_v1.1.md` |
 
-必要に応じて `tugical_project_overview.md`・`STATUS.md`・`CONCEPT_REQUIREMENTS_FIT_GAP.md` を参照する。
+必要に応じて `DOCS_INDEX.md`・`tugical_project_overview.md`・`STATUS.md`・`CONCEPT_REQUIREMENTS_FIT_GAP.md` を参照する。
 
 迷った場合は**実装を止めて** Fit & Gap を参照し、判断を記録する。
 
@@ -82,10 +83,11 @@ A を実装する際に守る構造のみ：
 
 ### Step 1：着手タスクの選択
 
-- `backend/docs/MVP_IMPLEMENTATION_PLAN.md` を開く
-- **次に着手すべきタスクを 1 つだけ**選ぶ
-- **選んだタスクのステータスを ⬜ 未着手 → 🟡 進行中 に変更する**
-- 並列作業は禁止
+- `backend/docs/REMAINING_TASKS_PLAN_v1.0.md` §4 で **次の #（#1〜18）** を確認する
+- 該当タスクの DoD は `backend/docs/MVP_IMPLEMENTATION_PLAN.md` で確認する
+- **次に着手すべきタスクを 1 つだけ**選ぶ（# の若い未完了を優先）
+- **選んだタスクのステータスを ⬜ 未着手 → 🟡 進行中 に変更する**（MVP_IMPLEMENTATION_PLAN.md）
+- 並列作業は禁止（**#16〜18 の UI 改善のみ β と独立して並行可**）
 
 ### Step 2：作業前チェック（必須）
 
@@ -117,6 +119,7 @@ A を実装する際に守る構造のみ：
 |----------|------|
 | **MVP_IMPLEMENTATION_PLAN.md** | ステータスを 🟡 → **✅ 完了** に変更。実施内容サマリー（2〜3 行）。残課題・注意点（あれば）。 |
 | **STATUS.md**（必要に応じて） | 進捗反映 |
+| **REMAINING_TASKS_PLAN_v1.0.md**（必要に応じて） | # 完了状況のメモ |
 | **tugical_requirements_specification_v1.1.md**（必要に応じて） | 解釈メモ・注意書きのみ |
 
 **日時の表記**: ドキュメント作成・編集時は**日付に加えて時刻まで必ず明記する**（例: `2025-02-11 14:30`）。1日に複数回更新するため。
@@ -139,9 +142,9 @@ A を実装する際に守る構造のみ：
 
 再開時は必ず以下を行う。
 
-1. `backend/docs/MVP_IMPLEMENTATION_PLAN.md` を開く
-2. 最後に **🟡** または **⬜** のタスクを確認する
-3. 「**次に着手すべきタスクの判断ルール**」に従う
+1. `backend/docs/DOCS_INDEX.md` または `backend/docs/STATUS.md` で現状を確認
+2. `backend/docs/REMAINING_TASKS_PLAN_v1.0.md` §4 で **次の #** を確認
+3. `backend/docs/MVP_IMPLEMENTATION_PLAN.md` で該当タスクの DoD・🟡/⬜ を確認
 4. そこから再開する
 
 ---

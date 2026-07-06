@@ -1,12 +1,21 @@
-import React, { useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { XMarkIcon } from '@heroicons/react/24/outline';
-import { cn } from '../../../utils';
+/**
+ * tugical 管理画面用 汎用モーダル（MUI Dialog 実装）
+ * Phase 2: 自作を MUI Dialog に置換。方針A: 背景クリック・Esc で閉じる。閉じる導線は onClose に集約。
+ */
+import React from 'react';
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
+} from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 
-interface ModalProps {
+export interface ModalProps {
   /** モーダルの開閉状態 */
   isOpen: boolean;
-  /** モーダルを閉じる関数 */
+  /** モーダルを閉じる関数（背景クリック・Esc・閉じるボタンいずれもここに集約） */
   onClose: () => void;
   /** モーダルのタイトル */
   title?: string;
@@ -14,7 +23,7 @@ interface ModalProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
   /** 閉じるボタンを表示するか */
   showCloseButton?: boolean;
-  /** オーバーレイクリックで閉じるか */
+  /** オーバーレイクリックで閉じるか（方針A: デフォルト true） */
   closeOnOverlayClick?: boolean;
   /** ESCキーで閉じるか */
   closeOnEsc?: boolean;
@@ -22,15 +31,21 @@ interface ModalProps {
   children: React.ReactNode;
   /** フッター要素 */
   footer?: React.ReactNode;
-  /** 追加のクラス名 */
+  /** 追加のクラス名（Paper に渡す） */
   className?: string;
 }
 
+const sizeToMaxWidth: Record<string, 'xs' | 'sm' | 'md' | 'lg' | 'xl'> = {
+  sm: 'xs',
+  md: 'sm',
+  lg: 'md',
+  xl: 'lg',
+};
+
 /**
- * 汎用モーダルコンポーネント
- * - Framer Motion によるアニメーション
- * - アクセシビリティ対応（ESCキー、フォーカストラップ）
- * - レスポンシブ対応
+ * 汎用モーダル（MUI Dialog ラッパー）
+ * - 背景クリック・Esc で閉じる（方針A）
+ * - すべての閉じる操作で onClose を呼ぶ
  */
 const Modal: React.FC<ModalProps> = ({
   isOpen,
@@ -44,110 +59,63 @@ const Modal: React.FC<ModalProps> = ({
   footer,
   className,
 }) => {
-  // ESCキーでモーダルを閉じる
-  useEffect(() => {
-    if (!isOpen || !closeOnEsc) return;
-
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    };
-
-    document.addEventListener('keydown', handleEsc);
-    return () => document.removeEventListener('keydown', handleEsc);
-  }, [isOpen, closeOnEsc, onClose]);
-
-  // モーダルが開いているときはbodyのスクロールを無効化
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isOpen]);
-
-  const sizeClasses = {
-    sm: 'max-w-md',
-    md: 'max-w-lg',
-    lg: 'max-w-2xl',
-    xl: 'max-w-4xl',
+  const handleClose = (_event: object, reason: string) => {
+    if (reason === 'backdropClick' && !closeOnOverlayClick) return;
+    if (reason === 'escapeKeyDown' && !closeOnEsc) return;
+    onClose();
   };
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          {/* オーバーレイとモーダルコンテナ */}
-          <motion.div
-            className="fixed inset-0 z-[9999] overflow-y-auto"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            {/* 背景オーバーレイ */}
-            <div className="fixed inset-0 bg-black/50 z-[9998]" />
-            
-            {/* モーダルコンテナ */}
-            <div 
-              className="relative flex min-h-full items-center justify-center p-4 z-[9999]"
-              onClick={closeOnOverlayClick ? onClose : undefined}
+    <Dialog
+      open={isOpen}
+      onClose={handleClose}
+      maxWidth={sizeToMaxWidth[size] ?? 'sm'}
+      fullWidth
+      PaperProps={{
+        className,
+        sx: { borderRadius: 2 },
+      }}
+      slotProps={{
+        backdrop: { sx: { backgroundColor: 'rgba(0,0,0,0.5)' } },
+      }}
+    >
+      {(title || showCloseButton) && (
+        <DialogTitle
+          component="div"
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            pr: 1,
+          }}
+        >
+          {title && (
+            <span style={{ fontSize: '1.25rem', fontWeight: 600 }}>{title}</span>
+          )}
+          {showCloseButton && (
+            <IconButton
+              aria-label="モーダルを閉じる"
+              onClick={() => onClose()}
+              size="small"
+              sx={{ ml: 1 }}
             >
-              {/* モーダル本体 */}
-              <motion.div
-                className={cn(
-                  'relative bg-white rounded-lg shadow-xl w-full z-[10000]',
-                  sizeClasses[size],
-                  className
-                )}
-                initial={{ scale: 0.95, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.95, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                onClick={(e) => e.stopPropagation()}
-              >
-              {/* ヘッダー */}
-              {(title || showCloseButton) && (
-                <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                  {title && (
-                    <h2 className="text-xl font-semibold text-gray-900">
-                      {title}
-                    </h2>
-                  )}
-                  {showCloseButton && (
-                    <button
-                      onClick={onClose}
-                      className="p-1 rounded-md hover:bg-gray-100 transition-colors"
-                      aria-label="モーダルを閉じる"
-                    >
-                      <XMarkIcon className="w-6 h-6 text-gray-400" />
-                    </button>
-                  )}
-                </div>
-              )}
-
-              {/* ボディ */}
-              <div className="p-6 max-h-[calc(100vh-200px)] overflow-y-auto">
-                {children}
-              </div>
-
-              {/* フッター */}
-              {footer && (
-                <div className="p-6 border-t border-gray-200">
-                  {footer}
-                </div>
-              )}
-                          </motion.div>
-            </div>
-          </motion.div>
-        </>
+              <CloseIcon />
+            </IconButton>
+          )}
+        </DialogTitle>
       )}
-    </AnimatePresence>
+      <DialogContent
+        dividers={!!footer}
+        sx={{
+          maxHeight: 'calc(100vh - 200px)',
+          overflowY: 'auto',
+        }}
+      >
+        {children}
+      </DialogContent>
+      {footer && <DialogActions sx={{ px: 3, py: 2 }}>{footer}</DialogActions>}
+    </Dialog>
   );
 };
 
-export default Modal; 
+export default Modal;

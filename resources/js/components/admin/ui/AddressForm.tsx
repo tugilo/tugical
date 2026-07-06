@@ -1,5 +1,5 @@
 import React from 'react';
-import { usePostalCodeSearch } from '../../hooks/usePostalCodeSearch';
+import { usePostalCodeSearch } from '../../../usePostalCodeSearch';
 
 interface AddressFormData {
   postal_code?: string;

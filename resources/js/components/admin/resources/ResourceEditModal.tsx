@@ -12,11 +12,11 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Resource } from '../../types';
-import { resourceApi } from '../../services/api';
-import { useUIStore } from '../../stores/uiStore';
+import { Resource } from '../../../types';
+import { resourceApi } from '../../../services/api';
+import { useUIStore } from '../../../stores/uiStore';
 import Modal from '../modal/Modal';
-import Button from '../ui/Button';
+import AppButton from '../ui/AppButton';
 import {
   UserIcon,
   BuildingOfficeIcon,
@@ -410,15 +410,15 @@ const ResourceEditModal: React.FC<ResourceEditModalProps> = ({
 
       {/* フッター */}
       <div className='flex justify-end gap-3 pt-6 border-t border-gray-200 mt-6'>
-        <Button
+        <AppButton
           variant='outline'
           size='md'
           onClick={handleClose}
           disabled={isLoading}
         >
           キャンセル
-        </Button>
-        <Button
+        </AppButton>
+        <AppButton
           variant='primary'
           size='md'
           onClick={handleSubmit}
@@ -426,7 +426,7 @@ const ResourceEditModal: React.FC<ResourceEditModalProps> = ({
           leftIcon={<TypeIcon className='w-4 h-4' />}
         >
           {typeLabel}を更新
-        </Button>
+        </AppButton>
       </div>
     </Modal>
   );

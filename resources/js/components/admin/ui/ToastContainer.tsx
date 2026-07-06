@@ -22,8 +22,8 @@ import {
   InformationCircleIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
-import { useUIStore } from '../../stores/uiStore';
-import type { ToastNotification } from '../../types';
+import { useUIStore } from '../../../stores/uiStore';
+import type { ToastNotification } from '../../../types';
 
 /**
  * 個別Toast通知コンポーネント

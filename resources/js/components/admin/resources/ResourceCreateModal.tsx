@@ -10,9 +10,9 @@ import {
 } from '@heroicons/react/24/outline';
 import Modal from '../modal/Modal';
 import Button from '../ui/Button';
-import { resourceApi } from '../../services/api';
-import { useUIStore } from '../../stores/uiStore';
-import type { Resource, ResourceType } from '../../types';
+import { resourceApi } from '../../../services/api';
+import { useUIStore } from '../../../stores/uiStore';
+import type { Resource, ResourceType } from '../../../types';
 
 interface ResourceCreateModalProps {
   /** モーダルの開閉状態 */

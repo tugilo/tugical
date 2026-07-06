@@ -13,9 +13,13 @@ footer: "© tugilo inc. all rights reserved"
 
 **Version**: 1.1（解釈付き）  
 **作成日**: 2026-02-11 15:43  
-**更新日**: 2026-02-11 18:02  
+**更新日**: 2026-07-06 16:50:15  
 **Author**: tugilo inc.  
 **ベース**: tugical_requirements_specification_v1.0.md
+
+**v1.2 追補（LINE 店舗別連携）**: `LINE_STORE_INTEGRATION_REQUIREMENTS_v1.0.md`  
+**実行順序・索引**: `DOCS_INDEX.md` / `REMAINING_TASKS_PLAN_v1.0.md` §4  
+**セキュリティ Fit&Gap**: `SECURITY_FIT_GAP_v1.0.md`
 
 ---
 

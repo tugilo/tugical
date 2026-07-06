@@ -7,8 +7,8 @@
  */
 
 import React, { useEffect } from 'react';
-import { useUIStore } from '../../stores/uiStore';
-import Card from '../../components/ui/Card';
+import { useUIStore } from '../../../stores/uiStore';
+import Card from '../../../components/admin/ui/Card';
 
 const SettingsPage: React.FC = () => {
   const { setPageTitle } = useUIStore();

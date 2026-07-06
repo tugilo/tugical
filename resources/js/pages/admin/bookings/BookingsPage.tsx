@@ -7,16 +7,16 @@
  */
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { useUIStore, useToast } from '../../stores/uiStore';
-import { bookingApi, menuApi } from '../../services/api';
-import { Booking, FilterOptions, Menu } from '../../types';
-import Card from '../../components/ui/Card';
-import Button from '../../components/ui/Button';
-import LoadingScreen from '../../components/ui/LoadingScreen';
-import BookingCard from '../../components/booking/BookingCard';
-import BookingCreateModal from '../../components/booking/BookingCreateModal';
-import BookingTimelineView from '../../components/booking/BookingTimelineView';
-import CombinationBookingModal from '../../components/booking/CombinationBookingModal';
+import { useUIStore, useToast } from '../../../stores/uiStore';
+import { bookingApi, menuApi } from '../../../services/api';
+import { Booking, FilterOptions, Menu } from '../../../types';
+import Card from '../../../components/admin/ui/Card';
+import Button from '../../../components/admin/ui/Button';
+import LoadingScreen from '../../../components/admin/ui/LoadingScreen';
+import BookingCard from '../../../components/admin/booking/BookingCard';
+import BookingCreateModal from '../../../components/admin/booking/BookingCreateModal';
+import BookingTimelineView from '../../../components/admin/booking/BookingTimelineView';
+import CombinationBookingModal from '../../../components/admin/booking/CombinationBookingModal';
 import {
   PlusIcon,
   MagnifyingGlassIcon,

@@ -1,13 +1,15 @@
 # コンセプト × 仕様書 フィット＆ギャップ
 
 **作成日**: 2026-02-11 15:43  
-**更新日**: 2026-02-11 15:43  
+**更新日**: 2026-07-06 17:05:25  
 
 **目的**: 現在のコンセプト（overview・STATUS・要件定義 v1.1 解釈付き）と、**各仕様書**（システム・DB・API・UI・テスト・デプロイ）の一致点・ずれを整理し、実装・仕様判断の基準にする。
 
 **参照**:
 - コンセプト・判断軸: `tugical_project_overview.md` / `STATUS.md` / `.cursorrules`
+- 実行順序: `REMAINING_TASKS_PLAN_v1.0.md`（#1〜18）
 - 要件の解釈: `CONCEPT_REQUIREMENTS_FIT_GAP.md` / `tugical_requirements_specification_v1.1.md`
+- LINE 店舗別連携: `LINE_STORE_INTEGRATION_REQUIREMENTS_v1.0.md` / `LINE_STORE_INTEGRATION_FIT_GAP_v1.0.md`
 - 本ドキュメント: 仕様書を「どう読むか」の解釈ルールを固定する
 
 ---
@@ -150,6 +152,36 @@
 
 4. **要件定義 v1.1 との関係**  
    要件定義 v1.1 の解釈タグ（[MVP]/[TEMPLATE]/[FUTURE]）と、本ドキュメントの「仕様書の解釈」を**両方**満たすように実装する。要件が「何をやるか」、仕様書が「どう作るか」の参照とする。
+
+---
+
+## 10. LINE 店舗別連携（2026-07 追補）
+
+**詳細は専用ドキュメントを正とする**: `LINE_STORE_INTEGRATION_REQUIREMENTS_v1.0.md` / `LINE_STORE_INTEGRATION_FIT_GAP_v1.0.md`
+
+### フィット
+
+- **stores テーブル**に `line_channel_id` / `line_channel_secret` / `line_access_token` / `line_liff_id` が定義済み（DB 設計書と一致）
+- **store_id 分離**・NotificationService のテンプレート置換方式はそのまま拡張可能
+- **単一 Webhook URL** + `destination` による店舗 routing は API 仕様の REST 方針と矛盾しない
+
+### ギャップ
+
+| 観点 | 仕様書の記載 | 現状 | 実行順 |
+|------|--------------|------|--------|
+| Webhook | API 仕様に LINE 節あり | 未実装 | **#6** MVP-P4-01 |
+| 店舗別トークン | env フォールバックは開発用想定 | 本番未整備 | **#3〜5** P6-01/02/04 |
+| LIFF ID | 店舗別 LIFF が自然 | ビルド時 `VITE_LIFF_ID` のみ | **#11** MVP-P6-03 |
+| 管理画面 LINE 設定 | 要件 [MVP] REQ §3.1 | SettingsPage プレースホルダーのみ | **#4** MVP-P6-02 |
+| 顧客 line_user_id 編集 | Push 送信先として必要 | API可・詳細UIは表示のみ | **#4** P6-02（ADMIN-G1） |
+
+**詳細**: `LINE_STORE_INTEGRATION_FIT_GAP_v1.0.md` §4.4、`SECURITY_FIT_GAP_v1.0.md`
+
+### 判断ルール
+
+- **tugical（単店舗 SaaS）**: 各 store が自店の LINE 公式アカウントを登録 — MVP スコープ（#3〜6, #11〜12）
+- **tugical+（将来）**: 本部横断 LINE 管理 — `TUGICAL_PLUS_BOUNDARY_v1.0.md` 参照。今は実装しない
+- **P6-05（Webhook routing）** は **P4-01 と一体**で着手（#6）。単独実装しない
 
 ---
 

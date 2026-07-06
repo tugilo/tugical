@@ -778,7 +778,9 @@ class BookingService
         $query = Booking::where('store_id', $storeId);
 
         // フィルタリング
-        if (isset($filters['date'])) {
+        if (isset($filters['date_from']) && isset($filters['date_to'])) {
+            $query->whereBetween('booking_date', [$filters['date_from'], $filters['date_to']]);
+        } elseif (isset($filters['date'])) {
             $query->whereDate('booking_date', $filters['date']);
         }
 

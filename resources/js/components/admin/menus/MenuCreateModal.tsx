@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import Modal from '../modal/Modal';
 import FormField from '../ui/FormField';
-import Button from '../ui/Button';
-import { CreateMenuRequest } from '../../types';
-import { menuApi } from '../../services/api';
-import { useUIStore } from '../../stores/uiStore';
+import AppButton from '../ui/AppButton';
+import { CreateMenuRequest } from '../../../types';
+import { menuApi } from '../../../services/api';
+import { useUIStore } from '../../../stores/uiStore';
 
 interface MenuCreateModalProps {
   isOpen: boolean;
@@ -423,15 +423,15 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
 
         {/* アクションボタン */}
         <div className='flex justify-end space-x-3 pt-6 border-t border-gray-200'>
-          <Button
+          <AppButton
             variant='outline'
             size='md'
             onClick={handleClose}
             disabled={isSubmitting}
           >
             キャンセル
-          </Button>
-          <Button
+          </AppButton>
+          <AppButton
             variant='primary'
             size='md'
             type='submit'
@@ -439,7 +439,7 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
             disabled={isSubmitting}
           >
             {isSubmitting ? '作成中...' : 'メニューを作成'}
-          </Button>
+          </AppButton>
         </div>
       </form>
     </Modal>

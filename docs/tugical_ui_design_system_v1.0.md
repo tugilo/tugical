@@ -10,11 +10,21 @@ footer: "© tugilo inc. all rights reserved"
 # tugical UI設計書・デザインシステム
 ## React Component Specification（完全版）
 
-**Version**: 1.1  
+**Version**: 1.2  
 **作成日**: 2025-10-22 16:31  
-**更新日**: 2025-10-22 16:31  
+**更新日**: 2026-02-11 20:14  
 **Project**: tugical（ツギカル）  
-**Framework**: React + TypeScript + Tailwind CSS + Framer Motion
+**Framework**:
+- **管理画面**: React + TypeScript + Material UI
+- **LIFF**: React + TypeScript + Tailwind CSS + Framer Motion
+
+---
+
+## 技術方針（v1.1）
+
+- **管理画面**は Material UI を採用し、業務効率・アクセシビリティを優先する。
+- **LIFF画面**は Tailwind + Framer Motion を使用し、軽量・ブランド体験を重視する。
+- **カラートークン**は共通管理し、両 UI で一貫性を持たせる（将来の SaaS 展開を見据えた設計）。
 
 ---
 
@@ -1074,5 +1084,6 @@ export const WithActions = {
 |---------|------|---------|--------|
 | 1.0 | 2025-06-28 | 初版作成 | tugilo inc. |
 | 1.1 | 2025-06-29 | モック画面・参考資料追加、完全版対応 | tugilo inc. |
+| 1.2 | 2025-02-11 | 案B採用：Framework を管理画面(MUI)／LIFF(Tailwind)に分離、技術方針セクション新設 | tugilo inc. |
 
 ---

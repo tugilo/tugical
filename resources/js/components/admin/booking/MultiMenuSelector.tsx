@@ -11,9 +11,9 @@ import {
   Menu,
   CombinationMenuRequest,
   CalculateCombinationResponse,
-} from '../../types';
+} from '../../../types';
 import { Card, Button } from '../index';
-import api from '../../services/api';
+import api from '../../../services/api';
 
 interface MultiMenuSelectorProps {
   /** 利用可能なメニュー一覧 */

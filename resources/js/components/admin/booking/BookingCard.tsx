@@ -20,7 +20,7 @@ import {
   XCircleIcon,
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
-import { Booking } from '../../types';
+import { Booking } from '../../../types';
 import Button from '../ui/Button';
 
 interface BookingCardProps {
