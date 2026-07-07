@@ -1,6 +1,6 @@
 # tugical プロジェクト現状ステータス
 
-**最終確認日**: 2026-07-06 17:13:11  
+**最終確認日**: 2026-07-07 19:49:38  
 **目的**: どこまで何をできているかを明確にし、再スタートの起点とする
 
 > **再開時は PROGRESS.md を読む必要はありません。** 本ドキュメント（STATUS.md）が司令塔です。索引は `DOCS_INDEX.md`。  
@@ -20,7 +20,7 @@
 | 仕様書 | `backend/docs/` に集約 |
 | MVP 進捗 | **27/40 タスク完了（68%）** — 詳細は `MVP_IMPLEMENTATION_PLAN.md` |
 | 実行順序 | **#1〜18** — `REMAINING_TASKS_PLAN_v1.0.md` §4（v1.7） |
-| 次に着手 | **#1 MVP-SEC-01**（ログ機密除去・P0.5 セキュリティゲート） |
+| 次に着手 | **#2 MVP-P4-02**（LINE 通知 E2E 実機確認） |
 | 進捗ログ | `backend/docs/PROGRESS.md`（長大・時系列・参照任意） |
 | ドキュメント索引 | `backend/docs/DOCS_INDEX.md` |
 
@@ -70,7 +70,8 @@
 - **顧客管理**: 一覧、詳細モーダル、作成モーダル、インライン編集
 - **メニュー管理**: 一覧、CRUD、カテゴリ、オプション
 - **リソース管理**: 一覧、CRUD、並び順
-- **設定**: SettingsPage（時間スロット設定等）
+- **設定**: SettingsPage（**LINE 連携ウィザード** 1→4 ステップ、Webhook/LIFF URL コピー、**認証情報を確認**、テスト Push）
+- **管理画面 UI（2026-07-07）**: `adminTokens` による落ち着いた SaaS 配色（背景 `#FAFAF9`）、**PageHeader** / **SetupStepCard**、**AdminTopBarActions**（通知・ユーザー・ログアウト）、ログイン MUI 化、認証トークン同期（401 解消）
 - UI: Modal, Toast, ConfirmDialog, AddressForm 等
 
 ### 2.5 仕様・設計
@@ -102,10 +103,10 @@
 | **実機 E2E** | ⬜ チャネル・トークン・友だち追加後に要確認 | **#2** MVP-P4-02 |
 | 店舗別トークン完全化 | ⬜ env フォールバック依存あり | **#6** MVP-P6-04 |
 | Webhook + 店舗 routing | ⬜ 未実装（P6-05 は P4-01 に統合） | **#7** MVP-P4-01 |
-| 店舗 LINE 設定 UI/API | ⬜ DB カラムは存在、管理画面未整備 | **#4〜5** MVP-P6-01/02 |
-| 顧客 line_user_id 詳細編集 | ⬜ API可・UIは作成時のみ（ADMIN-G1） | **#5** P6-02 |
-| **暗号化（LINE/PII）** | ⬜ secret/token 平文・PII 部分のみ | **#4, #15** SEC-G* |
-| **ログ機密（password 等）** | ❌ 要修正 | **#1** MVP-SEC-01 |
+| 店舗 LINE 設定 UI/API | ✅ 管理画面ウィザード + 疎通確認 API（`LineConnectionVerifier`） | **#5** ほぼ完了 |
+| 顧客 line_user_id 詳細編集 | ⬜ API可・UIは作成時のみ（ADMIN-G1） | **#5** 残 |
+| **暗号化（LINE/PII）** | 🟡 P6-01 実装済・要 DoD 確認 | **#4, #15** |
+| **ログ機密（password 等）** | ✅ MVP-SEC-01 実装済 | **#1** 完了 |
 | 多店舗 LINE E2E | ⬜ | **#13** MVP-P6-06 |
 
 **参照**: `LINE_NOTIFICATION_E2E_GUIDE_v1.0.md`、`LINE_STORE_INTEGRATION_REQUIREMENTS_v1.0.md`、`LINE_STORE_INTEGRATION_FIT_GAP_v1.0.md`
@@ -122,16 +123,16 @@
 
 > **実行順序の正**: `backend/docs/REMAINING_TASKS_PLAN_v1.0.md`（残タスク優先順位・ウェーブ定義）
 
-### 即日（P0.5 — #1）
+### 即日（P0 — #2〜3）← **今ここ**
 
-1. **#1 MVP-SEC-01** … ログ機密除去（password / PII ログ — SEC-R01/R03）
+1. **#2 MVP-P4-02** … LINE 通知 E2E 実機確認
+2. **#3 MVP-P3-07** … LIFF 単一メニュー実機 E2E 記録
 
-### 即日〜2日（P0 — #2〜3）
+### 完了済み（P0.5 — #1）
 
-2. **#2 MVP-P4-02** … LINE 通知 E2E 実機確認
-3. **#3 MVP-P3-07** … LIFF 単一メニュー実機 E2E 記録
+- **#1 MVP-SEC-01** … ログ機密除去（2026-07-07 コミット `3579a36`）
 
-### β 直後（P1 — #4〜10）
+### β 直後（P1 — #4〜10）— 一部実装済
 
 4. **#4 MVP-P6-01** … Store LINE 暗号化・integration 強化
 5. **#5 MVP-P6-02** … LINE 設定 API + 管理画面 UI
@@ -239,4 +240,4 @@ tugical は単店舗の相棒をコアとし、多店舗・本部・横断機能
 
 ---
 
-**まとめ**: 管理画面・複数メニュー組み合わせ予約・LIFF 単一メニュー・LINE 通知経路まで実装済み（MVP 68%）。**次は #1 ログ機密除去**（P0.5 セキュリティゲート）→ **#2 LINE 通知実機 E2E**（β ブロッカー）。店舗別 LINE・Webhook・LIFF 本人確認は #4〜8。MUI Phase 5 は #16〜18 で β と並行可。再スタートは **DOCS_INDEX.md → STATUS.md → REMAINING_TASKS_PLAN §4**。
+**まとめ**: 管理画面・複数メニュー組み合わせ予約・LIFF 単一メニュー・LINE 通知経路・**#1 SEC / #4〜8 LINE 基盤**まで実装済み（MVP 68%）。**次は #2 LINE 通知実機 E2E**（β ブロッカー）→ **#3 LIFF 実機 E2E**。管理画面 UI 刷新は `644c6b1`。再スタートは **DOCS_INDEX.md → STATUS.md → REMAINING_TASKS_PLAN §4**。

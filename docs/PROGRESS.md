@@ -1,5 +1,17 @@
 # tugical Development Progress
 
+## 2026-07-07 19:49:38 - 管理画面 UI 刷新・グローバルヘッダー・LINE 疎通確認 UI
+
+### 実施内容
+
+- **認証**: `authStore` / `apiClient` トークン同期、401 解消、`tugical:auth-expired` イベント
+- **LINE**: `LineConnectionVerifier`、`POST .../line-settings/test-connection`、Settings ウィザード（1→4 ステップ）
+- **UI**: `adminTokens`（背景 `#FAFAF9`）、PageHeader、SetupStepCard、AdminTopBarActions（通知/ユーザー/ログアウト）、LoginPage MUI 化
+- **テスト**: `StoreLineSettingsTest` 4 passed、ブラウザ smoke OK
+- **コミット**: `644c6b1`
+
+### 次に着手: **#2 MVP-P4-02**（LINE 通知 E2E 実機）
+
 ## 2026-07-07 00:29:37 - #1〜#8 実装バッチ（SEC / LINE 基盤 / Webhook / LIFF）
 
 ### 実施内容
