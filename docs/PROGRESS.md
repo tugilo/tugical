@@ -1,5 +1,21 @@
 # tugical Development Progress
 
+## 2026-07-07 19:50:00 - #2/#3 実機 E2E 事前確認（ブロック記録）
+
+### 実施内容
+
+- **#2**: `tugical:verify-line-e2e --store=1` → channel/token/customer 未設定。`LineBookingNotificationTest` 3 passed
+- **#3**: `http://localhost/liff/1` → 空白（`line_liff_id` 未設定）
+- **記録**: `LINE_NOTIFICATION_E2E_GUIDE_v1.0.md` §6、`MVP_IMPLEMENTATION_PLAN.md` 確認結果更新
+
+### ブロッカー（実機 E2E に必要）
+
+1. LINE Developers で Messaging API チャネル + LIFF アプリ作成
+2. 管理画面 Settings で Channel ID / Secret / Token / LIFF ID を保存
+3. テスト用 LINE アカウントを友だち追加 + `line_user_id` を顧客に設定
+
+### 次に着手: **#2/#3 実機 E2E**（LINE Developers 設定後）
+
 ## 2026-07-07 19:49:38 - 管理画面 UI 刷新・グローバルヘッダー・LINE 疎通確認 UI
 
 ### 実施内容
