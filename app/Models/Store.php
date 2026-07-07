@@ -102,6 +102,9 @@ class Store extends Model
         'notification_settings' => 'array',
         'time_slot_settings' => 'array',
         'social_links' => 'array',
+        'line_channel_secret' => 'encrypted',
+        'line_access_token' => 'encrypted',
+        'line_integration_active' => 'boolean',
         'last_activity_at' => 'datetime',
         'deleted_at' => 'datetime',
     ];
@@ -381,11 +384,31 @@ class Store extends Model
      */
     public function hasLineIntegration(): bool
     {
-        if (!empty($this->line_channel_id) && !empty($this->line_channel_secret)) {
+        if (!(bool) $this->line_integration_active) {
+            return false;
+        }
+
+        $hasChannel = !empty($this->line_channel_id) && !empty($this->line_channel_secret);
+        if (!$hasChannel) {
+            $lineSettings = $this->line_integration ?? [];
+            $hasChannel = !empty($lineSettings['channel_id']) && !empty($lineSettings['channel_secret']);
+        }
+
+        if (!$hasChannel) {
+            return false;
+        }
+
+        if (!empty($this->line_access_token)) {
             return true;
         }
+
         $lineSettings = $this->line_integration ?? [];
-        return !empty($lineSettings['channel_id']) && !empty($lineSettings['channel_secret']);
+        if (!empty($lineSettings['access_token'])) {
+            return true;
+        }
+
+        // 開発・テストのみ env フォールバック可（P6-04）
+        return app()->environment('local', 'testing') && !empty(env('LINE_ACCESS_TOKEN'));
     }
 
     /**

@@ -196,8 +196,8 @@ class CustomerController extends Controller
     {
         Log::info('Customer update attempt', [
             'customer_id' => $customer->id,
-            'request_data' => $request->all(),
-            'validated_data' => $request->validated(),
+            'store_id' => $customer->store_id,
+            'changed_fields' => array_keys($request->validated()),
         ]);
         
         // 店舗IDの確認（マルチテナント対応）

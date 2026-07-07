@@ -1,9 +1,7 @@
 /**
- * LIFF 予約フロー エントリ
- * - store_id は URL クエリ ?store_id=1 または /liff/1 から取得
- * - LIFF 初期化 → getProfile() → getOrCreateCustomer → BookingFlow
+ * LIFF 動的 init + ID token 連携
  */
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { createRoot } from "react-dom/client";
 import BookingFlow from "../../components/liff/BookingFlow/BookingFlow";
 
@@ -11,7 +9,7 @@ const API_BASE = "/api/v1/liff";
 
 function getStoreIdFromUrl(): number {
   const params = new URLSearchParams(window.location.search);
-  const fromQuery = params.get("store_id");
+  const fromQuery = params.get("store_id") || params.get("storeId");
   if (fromQuery) return parseInt(fromQuery, 10) || 1;
   const match = window.location.pathname.match(/^\/liff\/?(\d+)?/);
   const fromPath = match && match[1] ? match[1] : null;
@@ -21,31 +19,53 @@ function getStoreIdFromUrl(): number {
 const LiffApp: React.FC = () => {
   const [storeId] = useState(() => getStoreIdFromUrl());
   const [lineUserId, setLineUserId] = useState<string | null>(null);
+  const [idToken, setIdToken] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string>("");
   const [customer, setCustomer] = useState<{ id: number; name: string } | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [liffReady, setLiffReady] = useState(false);
+  const [awaitingLogin, setAwaitingLogin] = useState(false);
+  const initStarted = useRef(false);
 
   useEffect(() => {
+    if (initStarted.current) return;
+    initStarted.current = true;
+
     let cancelled = false;
 
     async function init() {
       try {
+        const configRes = await fetch(`${API_BASE}/stores/${storeId}/line-config`, {
+          headers: { Accept: "application/json" },
+        });
+        const configJson = await configRes.json();
+        const liffId =
+          configJson?.data?.line_liff_id ||
+          (import.meta as any).env?.VITE_LIFF_ID ||
+          "";
+
         const liff = (window as any).liff;
-        if (liff) {
-          await liff.init({ liffId: (import.meta as any).env?.VITE_LIFF_ID || "" });
+        if (liff && liffId) {
+          await liff.init({ liffId });
           if (!liff.isLoggedIn()) {
+            setAwaitingLogin(true);
             liff.login();
             return;
           }
           const profile = await liff.getProfile();
           setLineUserId(profile.userId);
           setDisplayName(profile.displayName || "");
-        } else {
-          // 開発時: LIFF なしで store_id のみで進める（顧客は仮）
+          const token = liff.getIDToken?.();
+          if (token) setIdToken(token);
+        } else if (import.meta.env.DEV) {
           setLineUserId("dev-user");
           setDisplayName("開発用ユーザー");
+        } else {
+          throw new Error("LIFF ID が未設定です");
         }
+
+        if (!cancelled) setLiffReady(true);
       } catch (e) {
         if (!cancelled) setError("LINE連携の初期化に失敗しました");
         console.error(e);
@@ -53,28 +73,37 @@ const LiffApp: React.FC = () => {
     }
 
     init();
-    return () => { cancelled = true; };
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [storeId]);
 
   useEffect(() => {
-    if (!lineUserId || customer !== null) return;
+    if (!liffReady || !lineUserId || customer !== null) return;
 
     let cancelled = false;
 
     async function fetchCustomer() {
       try {
+        const body: Record<string, unknown> = {
+          store_id: storeId,
+          display_name: displayName || undefined,
+        };
+
+        if (idToken) {
+          body.id_token = idToken;
+        } else if (import.meta.env.DEV) {
+          body.line_user_id = lineUserId;
+        }
+
         const res = await fetch(`${API_BASE}/customers/get-or-create`, {
           method: "POST",
-          headers: { "Content-Type": "application/json", "Accept": "application/json" },
-          body: JSON.stringify({
-            store_id: storeId,
-            line_user_id: lineUserId,
-            display_name: displayName || undefined,
-          }),
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
+          body: JSON.stringify(body),
         });
         const json = await res.json();
         if (!res.ok) {
-          if (!cancelled) setError(json?.error?.message || "顧客情報の取得に失敗しました");
+          if (!cancelled) setError(json?.error?.message || json?.message || "顧客情報の取得に失敗しました");
           return;
         }
         if (!cancelled && json?.data?.customer) {
@@ -89,12 +118,13 @@ const LiffApp: React.FC = () => {
     }
 
     fetchCustomer();
-    return () => { cancelled = true; };
-  }, [storeId, lineUserId, displayName, customer]);
+    return () => {
+      cancelled = true;
+    };
+  }, [storeId, lineUserId, idToken, displayName, customer, liffReady]);
 
-  // LIFF 未ログイン時は login() が動くので何も描画しない
   const liff = (window as any).liff;
-  if (liff && !liff.isLoggedIn?.()) {
+  if (awaitingLogin || (liff && !liffReady && liff.isLoggedIn && !liff.isLoggedIn())) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -138,12 +168,14 @@ const LiffApp: React.FC = () => {
   const handleComplete = (booking: any) => {
     console.log("予約完了", booking);
     if (liff?.sendMessages && booking?.booking_number) {
-      liff.sendMessages([
-        {
-          type: "text",
-          text: `予約が完了しました！\n予約番号: ${booking.booking_number}\n日時: ${booking.booking_date} ${booking.start_time}`,
-        },
-      ]).catch(() => {});
+      liff
+        .sendMessages([
+          {
+            type: "text",
+            text: `予約が完了しました！\n予約番号: ${booking.booking_number}\n日時: ${booking.booking_date} ${booking.start_time}`,
+          },
+        ])
+        .catch(() => {});
     }
   };
 

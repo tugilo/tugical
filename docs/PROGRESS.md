@@ -1,5 +1,17 @@
 # tugical Development Progress
 
+## 2026-07-07 00:29:37 - #1〜#8 実装バッチ（SEC / LINE 基盤 / Webhook / LIFF）
+
+### 実施内容
+
+- **#1 MVP-SEC-01**: `SensitiveDataMasker`、AuthController/CustomerController 修正
+- **#4〜8**: P6-01 暗号化、P6-02 設定 API+UI、P6-04 token、P4-01 Webhook、P6-03 LIFF+ID token
+- **#16 UI-FIX-01**: MenuController is_active フィルタ
+- **#11 P2-10**: cancel-settings API（管理 UI 未）
+- **テスト**: 15 passed、build OK
+
+### 次に着手: **#2 MVP-P4-02**（実機 E2E）
+
 ## 2026-07-06 17:13:11 - 優先順位 v1.7 再整理・全ドキュメント同期
 
 ### 実施内容

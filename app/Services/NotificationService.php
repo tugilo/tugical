@@ -689,7 +689,17 @@ class NotificationService
         }
         $lineSettings = $store->line_integration ?? [];
         $token = $lineSettings['access_token'] ?? null;
-        return $token ?: env('LINE_ACCESS_TOKEN');
+        if (!empty($token)) {
+            return $token;
+        }
+
+        if (app()->environment('local', 'testing')) {
+            return env('LINE_ACCESS_TOKEN') ?: null;
+        }
+
+        Log::warning('LINE access token 未設定', ['store_id' => $storeId]);
+
+        return null;
     }
 
     /**

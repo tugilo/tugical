@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Store;
+use App\Support\SensitiveDataMasker;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -163,7 +164,7 @@ class StoreController extends Controller
                 'error' => $e->getMessage(),
                 'user_id' => Auth::id(),
                 'store_id' => Auth::user()->store_id ?? null,
-                'request_data' => $request->all(),
+                'request_data' => SensitiveDataMasker::maskRequest($request),
             ]);
 
             return response()->json([
@@ -174,6 +175,60 @@ class StoreController extends Controller
                 ]
             ], 500);
         }
+    }
+
+    /**
+     * キャンセル期限・料金設定を取得（MVP-P2-10）
+     */
+    public function getCancelSettings(): JsonResponse
+    {
+        $store = $this->getCurrentStore();
+        if (!$store) {
+            return response()->json(['success' => false, 'error' => ['code' => 'STORE_NOT_FOUND', 'message' => '店舗が見つかりません']], 404);
+        }
+
+        $rules = $store->booking_rules ?? [];
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'cancel_deadline_minutes' => $rules['cancel_deadline_minutes'] ?? 1440,
+                'cancel_fee_rules' => $rules['cancel_fee_rules'] ?? [],
+            ],
+        ]);
+    }
+
+    /**
+     * キャンセル期限・料金設定を更新（MVP-P2-10）
+     */
+    public function updateCancelSettings(Request $request): JsonResponse
+    {
+        $store = $this->getCurrentStore();
+        if (!$store) {
+            return response()->json(['success' => false, 'error' => ['code' => 'STORE_NOT_FOUND', 'message' => '店舗が見つかりません']], 404);
+        }
+
+        $validated = $request->validate([
+            'cancel_deadline_minutes' => 'required|integer|min:0|max:10080',
+            'cancel_fee_rules' => 'nullable|array',
+            'cancel_fee_rules.*.hours_before' => 'required_with:cancel_fee_rules|integer|min:0',
+            'cancel_fee_rules.*.fee_amount' => 'required_with:cancel_fee_rules|integer|min:0',
+        ]);
+
+        $rules = $store->booking_rules ?? [];
+        $rules['cancel_deadline_minutes'] = $validated['cancel_deadline_minutes'];
+        $rules['cancel_fee_rules'] = $validated['cancel_fee_rules'] ?? [];
+        $store->booking_rules = $rules;
+        $store->save();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'cancel_deadline_minutes' => $rules['cancel_deadline_minutes'],
+                'cancel_fee_rules' => $rules['cancel_fee_rules'],
+            ],
+            'message' => 'キャンセル設定を更新しました',
+        ]);
     }
 
     /**

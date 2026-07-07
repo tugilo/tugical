@@ -38,9 +38,15 @@ class MenuController extends Controller
                 ->with(['options' => function ($q) {
                     $q->active()->ordered();
                 }])
-                ->where('is_active', true)
                 ->orderBy('sort_order')
                 ->orderBy('name');
+
+            // アクティブ状態フィルター（未指定時は有効のみ）
+            if ($request->filled('is_active')) {
+                $query->where('is_active', $request->boolean('is_active'));
+            } else {
+                $query->where('is_active', true);
+            }
 
             // 検索フィルター
             if ($request->filled('search')) {
@@ -50,11 +56,6 @@ class MenuController extends Controller
             // カテゴリフィルター
             if ($request->filled('category')) {
                 $query->byCategory($request->category);
-            }
-
-            // アクティブ状態フィルター
-            if ($request->filled('is_active')) {
-                $query->where('is_active', $request->boolean('is_active'));
             }
 
             // 価格帯フィルター

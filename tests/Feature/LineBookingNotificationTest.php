@@ -36,6 +36,7 @@ class LineBookingNotificationTest extends TestCase
             'line_channel_id' => 'test-channel-id',
             'line_channel_secret' => 'test-channel-secret',
             'line_access_token' => 'test-line-token',
+            'line_integration_active' => true,
         ]);
 
         $booking = Booking::withoutGlobalScopes()
@@ -94,6 +95,7 @@ class LineBookingNotificationTest extends TestCase
             'line_channel_id' => 'test-channel-id',
             'line_channel_secret' => 'test-channel-secret',
             'line_access_token' => 'test-line-token',
+            'line_integration_active' => true,
         ]);
 
         $booking = Booking::withoutGlobalScopes()
@@ -136,6 +138,7 @@ class LineBookingNotificationTest extends TestCase
             'line_channel_id' => null,
             'line_channel_secret' => null,
             'line_access_token' => null,
+            'line_integration_active' => false,
         ]);
 
         $booking = Booking::withoutGlobalScopes()
@@ -166,6 +169,7 @@ class LineBookingNotificationTest extends TestCase
             'line_channel_id' => $store->line_channel_id,
             'line_channel_secret' => $store->line_channel_secret,
             'line_access_token' => $store->line_access_token,
+            'line_integration_active' => $store->line_integration_active,
         ];
     }
 }

@@ -1028,6 +1028,56 @@ class ApiClient {
       response.data.error?.message || '時間スロット設定の更新に失敗しました'
     );
   }
+
+  /**
+   * LINE 連携設定を取得
+   */
+  async getLineSettings(): Promise<{
+    line_channel_id: string | null;
+    line_channel_secret_set: boolean;
+    line_access_token_set: boolean;
+    line_liff_id: string | null;
+    line_integration_active: boolean;
+    has_line_integration: boolean;
+    webhook_url: string;
+    liff_url: string | null;
+  }> {
+    const response = await this.client.get<ApiResponse<any>>('/store/line-settings');
+    if (response.data.success && response.data.data) {
+      return response.data.data;
+    }
+    throw new Error(response.data.error?.message || 'LINE 設定の取得に失敗しました');
+  }
+
+  /**
+   * LINE 連携設定を更新
+   */
+  async updateLineSettings(settings: {
+    line_channel_id?: string | null;
+    line_channel_secret?: string;
+    line_access_token?: string;
+    line_liff_id?: string | null;
+    line_integration_active?: boolean;
+  }): Promise<any> {
+    const response = await this.client.put<ApiResponse<any>>(
+      '/store/line-settings',
+      settings
+    );
+    if (response.data.success && response.data.data) {
+      return response.data.data;
+    }
+    throw new Error(response.data.error?.message || 'LINE 設定の保存に失敗しました');
+  }
+
+  async testLinePush(lineUserId: string): Promise<void> {
+    const response = await this.client.post<ApiResponse<null>>(
+      '/store/line-settings/test-push',
+      { line_user_id: lineUserId }
+    );
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'テスト Push に失敗しました');
+    }
+  }
 }
 
 // ========================================

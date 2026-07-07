@@ -136,3 +136,4 @@ newrelic.log
 
 # Auth (Composer)
 auth.json
+node_modules

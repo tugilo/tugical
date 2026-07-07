@@ -75,7 +75,7 @@
 | MVP-P2-07 | メニュー管理 API・UI（名称・料金・時間・バッファ・オプション） | ✅ 完了 | メニュー管理 |
 | MVP-P2-08 | 顧客管理 API・UI（基本情報・履歴・ランク・制限） | ✅ 完了 | 顧客管理 |
 | MVP-P2-09 | 営業時間・定休日（曜日別・祝日・リソース別）の利用確認 | ✅ 完了 | 営業時間・定休日設定 |
-| MVP-P2-10 | キャンセル期限・料金設定（期限制御・段階的料金） | ⬜ 未着手 | キャンセル期限・料金設定 [MVP] |
+| MVP-P2-10 | キャンセル期限・料金設定（期限制御・段階的料金） | 🟡 API 完了・UI 未 | キャンセル期限・料金設定 [MVP] |
 | MVP-P2-11 | 通知 API・通知テンプレート API・管理画面 | ✅ 完了 | LINE 通知機能 |
 | MVP-P2-12 | 操作ログ（予約変更履歴）の記録・確認 | ✅ 完了 | 予約管理 操作ログ |
 
@@ -96,7 +96,7 @@
 
 | タスクID | 概要 | ステータス | 関連要件 |
 |----------|------|------------|----------|
-| MVP-P4-01 | LINE Webhook 受信（メッセージ・フォロー等） | ⬜ 未着手 | LINE 連携・STATUS |
+| MVP-P4-01 | LINE Webhook 受信（メッセージ・フォロー等） | ✅ 完了 | LINE 連携・STATUS |
 | MVP-P4-02 | 予約確定・変更時の LINE 通知送信 E2E | ✅ 完了 | LINE 通知機能 [MVP]・β条件 |
 | MVP-P4-03 | 通知テンプレート・動的挿入（顧客名・予約詳細）の動作確認 | ✅ 完了 | LINE 通知 動的情報 [MVP] |
 
@@ -104,9 +104,9 @@
 
 | タスクID | 概要 | ステータス | 関連要件 |
 |----------|------|------------|----------|
-| MVP-SEC-01 | ログ機密除去（SEC-R01/R03 最小） | ⬜ 未着手 | SECURITY_FIT_GAP §4 |
-| MVP-P5-01 | 予約 API Feature テスト（作成・更新・move・複数メニュー） | ⬜ 未着手 | テスト戦略・STATUS |
-| MVP-P5-02 | LIFF API Feature テスト（menus, availability, hold, booking） | ⬜ 未着手 | テスト戦略 |
+| MVP-SEC-01 | ログ機密除去（SEC-R01/R03 最小） | ✅ 完了 | SECURITY_FIT_GAP §4 |
+| MVP-P5-01 | 予約 API Feature テスト（作成・更新・move・複数メニュー） | 🟡 一覧テストのみ | テスト戦略・STATUS |
+| MVP-P5-02 | LIFF API Feature テスト（menus, availability, hold, booking） | 🟡 基本 3 件 | テスト戦略 |
 | MVP-P5-03 | 空き時間・hold 整合性のテスト | ⬜ 未着手 | 予約整合性 |
 | MVP-P5-04 | セキュリティ・非機能確認（#1 以外の残項目） | ⬜ 未着手 | SECURITY_FIT_GAP §8 |
 
@@ -116,11 +116,11 @@
 
 | タスクID | 概要 | ステータス | 関連要件 |
 |----------|------|------------|----------|
-| MVP-P6-01 | Store LINE 認証情報暗号化・hasLineIntegration 強化・DB index | ⬜ 未着手 | LINE_STORE REQ §3.5, §4 |
-| MVP-P6-02 | LINE 設定 API + 管理画面 UI（Settings LINE ブロック） | ⬜ 未着手 | REQ §3.1 |
-| MVP-P6-03 | LIFF 動的 liff_id（config API + フロント store 別 init） | ⬜ 未着手 | REQ §3.2 |
-| MVP-P6-04 | 通知 store 別 token 完全化（本番 env フォールバック禁止） | ⬜ 未着手 | REQ §3.3 |
-| MVP-P6-05 | Webhook destination → store ルーティング + 署名検証 | ⬜ 未着手（**#6 MVP-P4-01 に吸収**。単独着手しない） | REQ §3.4 |
+| MVP-P6-01 | Store LINE 認証情報暗号化・hasLineIntegration 強化・DB index | ✅ 完了 | LINE_STORE REQ §3.5, §4 |
+| MVP-P6-02 | LINE 設定 API + 管理画面 UI（Settings LINE ブロック） | ✅ 完了 | REQ §3.1 |
+| MVP-P6-03 | LIFF 動的 liff_id（config API + フロント store 別 init） | ✅ 完了 | REQ §3.2 |
+| MVP-P6-04 | 通知 store 別 token 完全化（本番 env フォールバック禁止） | ✅ 完了 | REQ §3.3 |
+| MVP-P6-05 | Webhook destination → store ルーティング + 署名検証 | ✅ 完了（P4-01 に吸収） | REQ §3.4 |
 | MVP-P6-06 | 多店舗 LINE E2E（2 store 以上で独立 Push/LIFF 確認） | ⬜ 未着手 | REQ §3 受け入れ条件 |
 
 ---

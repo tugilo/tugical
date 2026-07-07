@@ -47,6 +47,7 @@ export const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
     address: '',
     line_display_name: '',
     line_picture_url: '',
+    line_user_id: '',
     loyalty_rank: 'new',
     notes: '',
   });
@@ -74,6 +75,7 @@ export const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
         address: customer.address || '',
         line_display_name: customer.line_display_name || '',
         line_picture_url: customer.line_picture_url || '',
+        line_user_id: customer.line_user_id || '',
         loyalty_rank: customer.loyalty_rank || 'new',
         notes: customer.notes || '',
       });
@@ -159,6 +161,7 @@ export const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
         address: customer.address || '',
         line_display_name: customer.line_display_name || '',
         line_picture_url: customer.line_picture_url || '',
+        line_user_id: customer.line_user_id || '',
         loyalty_rank: customer.loyalty_rank || 'new',
         notes: customer.notes || '',
       });
@@ -666,16 +669,29 @@ export const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
                     )}
                   </div>
 
-                  {customer.line_user_id && (
-                    <div>
-                      <label className='block text-sm font-medium text-gray-700 mb-1'>
-                        LINE User ID
-                      </label>
+                  <div>
+                    <label className='block text-sm font-medium text-gray-700 mb-1'>
+                      LINE User ID
+                    </label>
+                    {isEditing ? (
+                      <input
+                        type='text'
+                        value={formData.line_user_id || ''}
+                        onChange={e =>
+                          setFormData(prev => ({
+                            ...prev,
+                            line_user_id: e.target.value,
+                          }))
+                        }
+                        className='w-full px-3 py-2 border border-gray-300 rounded-md font-mono text-sm'
+                        placeholder='Uxxxxxxxx...'
+                      />
+                    ) : (
                       <p className='text-gray-900 text-sm font-mono'>
-                        {customer.line_user_id}
+                        {customer.line_user_id || '―'}
                       </p>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
 

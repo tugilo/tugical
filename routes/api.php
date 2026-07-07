@@ -13,6 +13,8 @@ use App\Http\Controllers\Api\MenuController;
 use App\Http\Controllers\Api\ResourceController;
 use App\Http\Controllers\Api\MenuOptionController;
 use App\Http\Controllers\Api\StoreController;
+use App\Http\Controllers\Api\StoreLineSettingsController;
+use App\Http\Controllers\Api\LineWebhookController;
 use Illuminate\Support\Facades\Http;
 
 /*
@@ -106,12 +108,20 @@ Route::prefix('v1')->middleware(['auth:sanctum'])->name('api.v1.')->group(functi
     // 店舗設定管理（NEW: 時間スロット設定対応）
     Route::get('store/time-slot-settings', [StoreController::class, 'getTimeSlotSettings']);
     Route::put('store/time-slot-settings', [StoreController::class, 'updateTimeSlotSettings']);
+    Route::get('store/cancel-settings', [StoreController::class, 'getCancelSettings']);
+    Route::put('store/cancel-settings', [StoreController::class, 'updateCancelSettings']);
+
+    // LINE 連携設定（MVP-P6-02）
+    Route::get('store/line-settings', [StoreLineSettingsController::class, 'show']);
+    Route::put('store/line-settings', [StoreLineSettingsController::class, 'update']);
+    Route::post('store/line-settings/test-push', [StoreLineSettingsController::class, 'testPush']);
 });
 
 // ===========================
 // LIFF API（LINE認証・顧客向け・認証不要／store_id でマルチテナント）
 // ===========================
 Route::prefix('v1/liff')->name('liff.')->group(function () {
+    Route::get('stores/{storeId}/line-config', [\App\Http\Controllers\Api\LiffController::class, 'getLineConfig'])->name('line-config');
     Route::get('stores/{storeId}/menus', [\App\Http\Controllers\Api\LiffController::class, 'getMenus'])->name('menus');
     Route::get('availability', [\App\Http\Controllers\Api\LiffController::class, 'getAvailability'])->name('availability');
     Route::post('customers/get-or-create', [\App\Http\Controllers\Api\LiffController::class, 'getOrCreateCustomer'])->name('customers.get-or-create');
@@ -123,8 +133,7 @@ Route::prefix('v1/liff')->name('liff.')->group(function () {
 // LINE Webhook（LINE Platform認証）
 // ===========================
 Route::prefix('v1/line')->name('line.')->group(function () {
-    // TODO: Phase 4.4 LINE連携実装時に追加
-    // Route::post('webhook', [LineWebhookController::class, 'handle'])->name('webhook');
+    Route::post('webhook', [LineWebhookController::class, 'handle'])->name('webhook');
 });
 
 // ===========================

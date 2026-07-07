@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Support\SensitiveDataMasker;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -55,13 +56,10 @@ class AuthController extends Controller
         try {
             $credentials = $request->validated();
 
-            // デバッグ：受信したリクエストデータをログ出力
             Log::info('ログインリクエスト受信', [
-                'credentials' => $credentials,
-                'raw_input' => $request->all(),
-                'headers' => $request->headers->all(),
-                'method' => $request->method(),
-                'url' => $request->fullUrl(),
+                'email' => $credentials['email'],
+                'store_id' => $credentials['store_id'],
+                'ip_address' => $request->ip(),
             ]);
 
             // ユーザー認証（メール・パスワード・店舗ID）
@@ -158,8 +156,7 @@ class AuthController extends Controller
         } catch (\Exception $e) {
             Log::error('ログイン処理エラー', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'request_data' => $request->except(['password']),
+                'request_data' => SensitiveDataMasker::maskRequest($request),
             ]);
 
             return response()->json([

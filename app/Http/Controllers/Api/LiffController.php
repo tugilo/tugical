@@ -10,6 +10,7 @@ use App\Models\Store;
 use App\Services\AvailabilityService;
 use App\Services\BookingService;
 use App\Services\HoldTokenService;
+use App\Services\LineIdTokenVerifier;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
@@ -30,8 +31,32 @@ class LiffController extends Controller
     public function __construct(
         protected AvailabilityService $availabilityService,
         protected HoldTokenService $holdTokenService,
-        protected BookingService $bookingService
+        protected BookingService $bookingService,
+        protected LineIdTokenVerifier $lineIdTokenVerifier
     ) {
+    }
+
+    /**
+     * 店舗 LINE/LIFF 設定取得（LIFF init 用・認証不要）
+     *
+     * GET /api/v1/liff/stores/{storeId}/line-config
+     */
+    public function getLineConfig(int $storeId): JsonResponse
+    {
+        $store = Store::findOrFail($storeId);
+        $this->validateStore($storeId);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'store_id' => $store->id,
+                'line_liff_id' => $store->line_liff_id,
+                'line_channel_id' => $store->line_channel_id,
+                'line_integration_active' => (bool) $store->line_integration_active,
+                'has_line_integration' => $store->hasLineIntegration(),
+            ],
+            'meta' => ['timestamp' => now()->toISOString()],
+        ]);
     }
 
     /**
@@ -132,24 +157,27 @@ class LiffController extends Controller
     {
         $validated = $request->validate([
             'store_id' => 'required|integer|exists:stores,id',
-            'line_user_id' => 'required|string|max:255',
+            'line_user_id' => 'nullable|string|max:255',
+            'id_token' => 'nullable|string',
             'display_name' => 'nullable|string|max:255',
         ], [
             'store_id.required' => '店舗IDは必須です',
-            'line_user_id.required' => 'LINEユーザーIDは必須です',
         ]);
 
         $storeId = (int) $validated['store_id'];
+        $store = Store::findOrFail($storeId);
         $this->validateStore($storeId);
 
+        $lineUserId = $this->resolveLineUserId($validated, $store);
+
         $customer = Customer::where('store_id', $storeId)
-            ->where('line_user_id', $validated['line_user_id'])
+            ->where('line_user_id', $lineUserId)
             ->first();
 
         if (!$customer) {
             $customer = Customer::create([
                 'store_id' => $storeId,
-                'line_user_id' => $validated['line_user_id'],
+                'line_user_id' => $lineUserId,
                 'name' => $validated['display_name'] ?? 'LINEのお客様',
                 'is_active' => true,
             ]);
@@ -361,9 +389,45 @@ class LiffController extends Controller
     private function validateStore(int $storeId): void
     {
         $store = Store::find($storeId);
-        if (!$store || $store->status !== 'active') {
+        if (!$store || !$store->is_active) {
             throw ValidationException::withMessages(['store_id' => '指定された店舗は利用できません']);
         }
+    }
+
+    /**
+     * ID token 検証または開発環境での line_user_id 申告を解決
+     *
+     * @param  array<string, mixed>  $validated
+     */
+    private function resolveLineUserId(array $validated, Store $store): string
+    {
+        if (!empty($validated['id_token'])) {
+            if (empty($store->line_channel_id)) {
+                throw ValidationException::withMessages([
+                    'id_token' => '店舗の LINE Channel ID が未設定です',
+                ]);
+            }
+
+            return $this->lineIdTokenVerifier->verify(
+                $validated['id_token'],
+                $store->line_channel_id
+            );
+        }
+
+        if (app()->environment('local', 'testing')) {
+            $lineUserId = $validated['line_user_id'] ?? null;
+            if (!$lineUserId) {
+                throw ValidationException::withMessages([
+                    'line_user_id' => 'LINEユーザーIDは必須です',
+                ]);
+            }
+
+            return $lineUserId;
+        }
+
+        throw ValidationException::withMessages([
+            'id_token' => 'LINE ID token が必要です',
+        ]);
     }
 
     private function validateMenuBelongsToStore(int $storeId, int $menuId): void
