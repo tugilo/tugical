@@ -2,7 +2,7 @@
 
 **Version**: 1.1  
 **作成日時**: 2026-07-06 16:29:20  
-**最終更新日時**: 2026-07-06 17:13:11  
+**最終更新日時**: 2026-07-07 19:49:38  
 **目的**: **#2 MVP-P4-02** — β 条件「予約確定・変更時に LINE 通知が届く」の実機確認手順  
 **関連**: `REMAINING_TASKS_PLAN_v1.0.md` §4 #2、`MVP_IMPLEMENTATION_PLAN.md` MVP-P4-02、`DOCS_INDEX.md`
 
@@ -113,6 +113,21 @@ docker compose exec app php artisan tugical:verify-line-e2e --store=1 --send --b
 ```
 
 #1 完了時は `REMAINING_TASKS_PLAN_v1.0.md` の **#1 DoD** チェックも更新する。
+
+---
+
+## 6. 確認ログ
+
+| 日時 | コマンド | 結果 |
+|------|----------|------|
+| 2026-07-07 19:49:38 | `tugical:verify-line-e2e --store=1` | ✗ 3項目（channel/token/customer 未設定）— **実機 E2E ブロック中** |
+| 2026-07-07 19:49:38 | `LineBookingNotificationTest` | ✅ 3 passed |
+
+**次のアクション（実機 E2E 実施者向け）**:
+1. 管理画面 `/admin/settings` で Channel ID / Secret / Token / LIFF ID を入力 → 保存 →「認証情報を確認」
+2. 友だち追加済み LINE アカウントの User ID を顧客に設定
+3. `tugical:verify-line-e2e --store=1` がすべて ✓ になることを確認
+4. `--send` → 予約作成/変更 → LINE 受信を Yes/No で記録
 
 ---
 
