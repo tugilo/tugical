@@ -3,8 +3,10 @@
  * 認証後は AdminShell（左ナビ）配下で /dashboard, /bookings, /menus, /customers, /resources, /settings を表示。
  * 未認証時は ProtectedRoute が /login へリダイレクト。
  */
-import React from "react";
+import React, { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useAuthStore } from "@/stores/authStore";
+import { ToastContainer } from "@/components/admin";
 import LoginPage from "./auth/LoginPage";
 import ProtectedRoute from "./ProtectedRoute";
 import AdminShell from "./layout/AdminShell";
@@ -16,8 +18,17 @@ import ResourcesPage from "./resources/ResourcesPage";
 import SettingsPage from "./settings/SettingsPage";
 
 const App: React.FC = () => {
+  const clearAuth = useAuthStore((s) => s.clearAuth);
+
+  useEffect(() => {
+    const onAuthExpired = () => clearAuth();
+    window.addEventListener("tugical:auth-expired", onAuthExpired);
+    return () => window.removeEventListener("tugical:auth-expired", onAuthExpired);
+  }, [clearAuth]);
+
   return (
     <BrowserRouter basename="/admin">
+      <ToastContainer />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route

@@ -15,7 +15,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { User, LoginRequest, LoginResponse, AuthState } from '../types';
-import { authApi } from '../services/api';
+import { authApi, apiClient } from '../services/api';
 
 interface AuthStore extends AuthState {
   // Actions
@@ -58,6 +58,8 @@ export const useAuthStore = create<AuthStore>()(
         try {
           const response: LoginResponse = await authApi.login(credentials);
           
+          apiClient.setToken(response.token);
+
           set({
             user: response.user,
             store: response.store,
@@ -137,6 +139,7 @@ export const useAuthStore = create<AuthStore>()(
        * 認証状態クリア
        */
       clearAuth: () => {
+        apiClient.clearToken();
         set({
           user: null,
           store: null,
@@ -204,6 +207,11 @@ export const useAuthStore = create<AuthStore>()(
         token: state.token,
         isAuthenticated: state.isAuthenticated,
       }),
+      onRehydrateStorage: () => (state) => {
+        if (state?.token) {
+          apiClient.setToken(state.token);
+        }
+      },
     }
   )
 ); 

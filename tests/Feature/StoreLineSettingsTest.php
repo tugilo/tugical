@@ -49,6 +49,65 @@ class StoreLineSettingsTest extends TestCase
         $store->update($original);
     }
 
+    public function test_test_connection_validates_credentials(): void
+    {
+        Http::fake([
+            'api.line.me/v2/oauth/accessToken' => Http::response(['access_token' => 'issued-token'], 200),
+            'api.line.me/oauth2/v2.1/verify*' => Http::response([
+                'client_id' => '2000000001',
+                'expires_in' => 3600,
+                'scope' => 'profile',
+            ], 200),
+            'api.line.me/v2/bot/info' => Http::response([
+                'displayName' => 'Test Bot',
+                'basicId' => '@testbot',
+            ], 200),
+        ]);
+
+        $user = User::where('store_id', 1)->first();
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->postJson('/api/v1/store/line-settings/test-connection', [
+                'line_channel_id' => '2000000001',
+                'line_channel_secret' => 'secret-value',
+                'line_access_token' => 'token-value',
+            ]);
+
+        $response->assertOk()
+            ->assertJsonPath('data.checks.channel_credentials.ok', true)
+            ->assertJsonPath('data.checks.access_token.ok', true)
+            ->assertJsonPath('data.checks.access_token.bot_display_name', 'Test Bot');
+    }
+
+    public function test_test_connection_reports_invalid_credentials(): void
+    {
+        Http::fake([
+            'api.line.me/v2/oauth/accessToken' => Http::response([
+                'error' => 'invalid_client',
+                'error_description' => 'invalid client_secret',
+            ], 401),
+            'api.line.me/oauth2/v2.1/verify*' => Http::response([
+                'message' => 'Authentication failed',
+            ], 401),
+            'api.line.me/v2/bot/info' => Http::response([
+                'message' => 'Authentication failed',
+            ], 401),
+        ]);
+
+        $user = User::where('store_id', 1)->first();
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->postJson('/api/v1/store/line-settings/test-connection', [
+                'line_channel_id' => '2000000001',
+                'line_channel_secret' => 'bad-secret',
+                'line_access_token' => 'bad-token',
+            ]);
+
+        $response->assertStatus(422)
+            ->assertJsonPath('data.checks.channel_credentials.ok', false)
+            ->assertJsonPath('data.checks.access_token.ok', false);
+    }
+
     public function test_test_push_requires_line_user_id(): void
     {
         $user = User::where('store_id', 1)->first();

@@ -1,7 +1,5 @@
 /**
- * 管理画面共通シェル（AppBar + 左 Drawer ナビ）
- * ログイン後の全ページをラップし、主要ページへの導線を提供する。
- * basename="/admin" 前提で navigate('/menus') は /admin/menus になる。
+ * 管理画面共通シェル（モダンサイドバー + グラス AppBar）
  */
 import React, { useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
@@ -18,6 +16,7 @@ import {
   Typography,
   useTheme,
   useMediaQuery,
+  alpha,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -28,34 +27,67 @@ import {
   Inventory as InventoryIcon,
   Settings as SettingsIcon,
 } from '@mui/icons-material';
+import { useUIStore } from '../../../stores/uiStore';
+import { adminColors, brandCardSx } from '../../../theme/adminTokens';
+import AdminTopBarActions from './AdminTopBarActions';
 
-const DRAWER_WIDTH = 240;
+const DRAWER_WIDTH = 272;
 
-const NAV_ITEMS: { path: string; label: string; icon: React.ReactElement }[] = [
-  { path: '/dashboard', label: 'ダッシュボード', icon: <DashboardIcon /> },
-  { path: '/bookings', label: '予約管理', icon: <EventIcon /> },
-  { path: '/menus', label: 'メニュー管理', icon: <RestaurantMenuIcon /> },
-  { path: '/customers', label: '顧客管理', icon: <PeopleIcon /> },
-  { path: '/resources', label: 'リソース管理', icon: <InventoryIcon /> },
-  { path: '/settings', label: '設定', icon: <SettingsIcon /> },
+const NAV_ITEMS: {
+  path: string;
+  label: string;
+  description: string;
+  icon: React.ReactElement;
+}[] = [
+  { path: '/dashboard', label: 'ダッシュボード', description: '今日の予約と要対応', icon: <DashboardIcon /> },
+  { path: '/bookings', label: '予約管理', description: '予約の確認・変更', icon: <EventIcon /> },
+  { path: '/menus', label: 'メニュー管理', description: 'サービス・料金設定', icon: <RestaurantMenuIcon /> },
+  { path: '/customers', label: '顧客管理', description: 'お客様情報', icon: <PeopleIcon /> },
+  { path: '/resources', label: 'リソース管理', description: 'スタッフ・設備', icon: <InventoryIcon /> },
+  { path: '/settings', label: '設定', description: 'LINE 連携など', icon: <SettingsIcon /> },
 ];
 
-/**
- * 管理画面シェル：AppBar + 左 Drawer（md以上は固定、sm以下は一時表示）
- */
+const drawerPaperSx = {
+  boxSizing: 'border-box' as const,
+  width: DRAWER_WIDTH,
+  borderRight: `1px solid ${adminColors.borderSubtle}`,
+  boxShadow: 'none',
+  bgcolor: 'background.paper',
+};
+
 const AdminShell: React.FC = () => {
   const theme = useTheme();
   const isMdUp = useMediaQuery(theme.breakpoints.up('md'));
   const location = useLocation();
   const navigate = useNavigate();
+  const pageTitle = useUIStore(s => s.pageTitle);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
-
   const drawer = (
-    <Box sx={{ pt: 1 }}>
-      <List>
-        {NAV_ITEMS.map((item) => {
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <Box
+        sx={{
+          mx: 1.5,
+          mt: 1.5,
+          mb: 2,
+          p: 2,
+          borderRadius: 2.5,
+          ...brandCardSx,
+        }}
+      >
+        <Typography
+          variant="h6"
+          sx={{ fontWeight: 800, letterSpacing: '-0.03em', color: adminColors.primary }}
+        >
+          tugical
+        </Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25, lineHeight: 1.4 }}>
+          次の時間が、もっと自由になる。
+        </Typography>
+      </Box>
+
+      <List aria-label="メインメニュー" sx={{ px: 1, flex: 1 }}>
+        {NAV_ITEMS.map(item => {
           const selected = location.pathname === item.path;
           return (
             <ListItemButton
@@ -65,11 +97,36 @@ const AdminShell: React.FC = () => {
                 navigate(item.path);
                 if (!isMdUp) setMobileOpen(false);
               }}
+              sx={{
+                mb: 0.5,
+                py: 1.25,
+                borderRadius: 2,
+                border: '1px solid transparent',
+                ...(selected && {
+                  bgcolor: adminColors.primaryMuted,
+                  borderColor: adminColors.primaryBorder,
+                  '& .MuiListItemIcon-root': { color: 'primary.main' },
+                  '& .MuiListItemText-primary': { color: 'primary.dark', fontWeight: 700 },
+                }),
+                '&:hover': {
+                  bgcolor: selected ? adminColors.primaryMuted : alpha(theme.palette.primary.main, 0.04),
+                },
+              }}
             >
-              <ListItemIcon sx={{ color: selected ? 'primary.main' : undefined }}>
+              <ListItemIcon
+                sx={{
+                  minWidth: 40,
+                  color: selected ? 'primary.main' : 'text.secondary',
+                }}
+              >
                 {item.icon}
               </ListItemIcon>
-              <ListItemText primary={item.label} />
+              <ListItemText
+                primary={item.label}
+                secondary={selected ? undefined : item.description}
+                primaryTypographyProps={{ fontSize: '0.9375rem' }}
+                secondaryTypographyProps={{ fontSize: '0.6875rem', lineHeight: 1.3 }}
+              />
             </ListItemButton>
           );
         })}
@@ -81,58 +138,59 @@ const AdminShell: React.FC = () => {
     <Box sx={{ display: 'flex', minHeight: '100vh' }}>
       <AppBar
         position="fixed"
+        color="inherit"
+        elevation={0}
         sx={{
           zIndex: theme.zIndex.drawer + 1,
           width: isMdUp ? `calc(100% - ${DRAWER_WIDTH}px)` : '100%',
           ml: isMdUp ? `${DRAWER_WIDTH}px` : 0,
+          backdropFilter: 'blur(10px)',
+          bgcolor: alpha(adminColors.surface, 0.92),
+          borderBottom: '1px solid',
+          borderColor: adminColors.borderSubtle,
         }}
       >
-        <Toolbar>
-          <IconButton
-            color="inherit"
-            aria-label="メニューを開く"
-            edge="start"
-            onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { md: 'none' } }}
-          >
-            <MenuIcon />
-          </IconButton>
-          <Typography variant="h6" noWrap component="div">
-            tugical 管理画面
-          </Typography>
+        <Toolbar sx={{ minHeight: { xs: 56, sm: 64 }, gap: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0, flex: 1 }}>
+            <IconButton
+              aria-label="メニューを開く"
+              edge="start"
+              onClick={() => setMobileOpen(!mobileOpen)}
+              sx={{ mr: 2, display: { md: 'none' } }}
+            >
+              <MenuIcon />
+            </IconButton>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography variant="h6" noWrap sx={{ fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.2 }}>
+                {pageTitle || 'tugical 管理画面'}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
+                店舗運営ダッシュボード
+              </Typography>
+            </Box>
+          </Box>
+          <AdminTopBarActions />
         </Toolbar>
       </AppBar>
 
-      {/* モバイル用一時 Drawer */}
       <Drawer
         variant="temporary"
         open={mobileOpen}
-        onClose={handleDrawerToggle}
+        onClose={() => setMobileOpen(false)}
         ModalProps={{ keepMounted: true }}
         sx={{
           display: { xs: 'block', md: 'none' },
-          '& .MuiDrawer-paper': {
-            boxSizing: 'border-box',
-            width: DRAWER_WIDTH,
-            pt: 8,
-          },
+          '& .MuiDrawer-paper': { ...drawerPaperSx, pt: 7 },
         }}
       >
         {drawer}
       </Drawer>
 
-      {/* md以上：常時表示 Drawer */}
       <Drawer
         variant="permanent"
         sx={{
           display: { xs: 'none', md: 'block' },
-          '& .MuiDrawer-paper': {
-            boxSizing: 'border-box',
-            width: DRAWER_WIDTH,
-            pt: 8,
-            borderRight: 1,
-            borderColor: 'divider',
-          },
+          '& .MuiDrawer-paper': { ...drawerPaperSx, pt: 8 },
         }}
         open
       >
@@ -144,9 +202,11 @@ const AdminShell: React.FC = () => {
         sx={{
           flexGrow: 1,
           width: isMdUp ? `calc(100% - ${DRAWER_WIDTH}px)` : '100%',
-          p: 2,
-          mt: 8,
+          p: { xs: 2, md: 3 },
+          mt: { xs: 7, sm: 8 },
           ml: { xs: 0, md: `${DRAWER_WIDTH}px` },
+          bgcolor: adminColors.canvas,
+          minHeight: '100vh',
         }}
       >
         <Outlet />

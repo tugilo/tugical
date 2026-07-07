@@ -114,6 +114,7 @@ Route::prefix('v1')->middleware(['auth:sanctum'])->name('api.v1.')->group(functi
     // LINE 連携設定（MVP-P6-02）
     Route::get('store/line-settings', [StoreLineSettingsController::class, 'show']);
     Route::put('store/line-settings', [StoreLineSettingsController::class, 'update']);
+    Route::post('store/line-settings/test-connection', [StoreLineSettingsController::class, 'testConnection']);
     Route::post('store/line-settings/test-push', [StoreLineSettingsController::class, 'testPush']);
 });
 

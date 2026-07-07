@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Store;
+use App\Services\LineConnectionVerifier;
 use App\Services\NotificationService;
 use App\Support\SensitiveDataMasker;
 use Illuminate\Http\JsonResponse;
@@ -18,7 +19,8 @@ use Illuminate\Validation\Rule;
 class StoreLineSettingsController extends Controller
 {
     public function __construct(
-        private readonly NotificationService $notificationService
+        private readonly NotificationService $notificationService,
+        private readonly LineConnectionVerifier $lineConnectionVerifier
     ) {
         $this->middleware('auth:sanctum');
     }
@@ -80,6 +82,92 @@ class StoreLineSettingsController extends Controller
             'success' => true,
             'data' => $this->formatSettings($store->fresh(), $request),
             'message' => 'LINE 連携設定を保存しました',
+            'meta' => ['timestamp' => now()->toISOString()],
+        ]);
+    }
+
+    /**
+     * POST /api/v1/store/line-settings/test-connection
+     * Channel Secret / Access Token の疎通確認（保存前のフォーム値も受け付ける）
+     */
+    public function testConnection(Request $request): JsonResponse
+    {
+        $store = $this->storeForUser();
+
+        $validated = $request->validate([
+            'line_channel_id' => ['nullable', 'string', 'max:100'],
+            'line_channel_secret' => ['nullable', 'string', 'max:500'],
+            'line_access_token' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $channelId = $validated['line_channel_id'] ?? $store->line_channel_id;
+        $channelSecret = $validated['line_channel_secret'] ?? $store->line_channel_secret;
+        $accessToken = $validated['line_access_token'] ?? $store->line_access_token;
+
+        $checks = [];
+
+        if ($channelId && $channelSecret) {
+            $checks['channel_credentials'] = $this->lineConnectionVerifier->verifyChannelCredentials(
+                $channelId,
+                $channelSecret
+            );
+        } else {
+            $checks['channel_credentials'] = [
+                'ok' => false,
+                'skipped' => true,
+                'message' => 'Channel ID / Secret が未入力です',
+            ];
+        }
+
+        if ($accessToken) {
+            $checks['access_token'] = $this->lineConnectionVerifier->verifyAccessToken(
+                $accessToken,
+                $channelId ?: null
+            );
+        } else {
+            $checks['access_token'] = [
+                'ok' => false,
+                'skipped' => true,
+                'message' => 'Channel Access Token が未入力です',
+            ];
+        }
+
+        $requiredChecks = array_filter($checks, fn (array $check) => empty($check['skipped']));
+        $allOk = $requiredChecks !== [] && collect($requiredChecks)->every(fn (array $check) => $check['ok']);
+
+        Log::info('LINE 認証情報疎通確認', [
+            'store_id' => $store->id,
+            'user_id' => Auth::id(),
+            'channel_credentials_ok' => $checks['channel_credentials']['ok'] ?? false,
+            'access_token_ok' => $checks['access_token']['ok'] ?? false,
+        ]);
+
+        if ($requiredChecks === []) {
+            return response()->json([
+                'success' => false,
+                'error' => [
+                    'code' => 'LINE_CREDENTIALS_MISSING',
+                    'message' => '確認する認証情報がありません。Channel ID / Secret / Token を入力してください。',
+                ],
+                'data' => ['checks' => $checks],
+            ], 422);
+        }
+
+        if (!$allOk) {
+            return response()->json([
+                'success' => false,
+                'error' => [
+                    'code' => 'LINE_CONNECTION_FAILED',
+                    'message' => '認証情報の疎通確認に失敗しました。各項目の結果を確認してください。',
+                ],
+                'data' => ['checks' => $checks],
+            ], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => '認証情報の疎通確認に成功しました',
+            'data' => ['checks' => $checks],
             'meta' => ['timestamp' => now()->toISOString()],
         ]);
     }

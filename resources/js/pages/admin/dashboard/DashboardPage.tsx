@@ -28,7 +28,9 @@ import {
   Chip,
   Box,
 } from '@mui/material';
-import { AppButton } from '../../../components/admin';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import { AppButton, PageHeader } from '../../../components/admin';
+import { modernCardSx } from '../../../theme/adminTokens';
 import { useUIStore } from '../../../stores/uiStore';
 import { bookingApi } from '../../../services/api';
 
@@ -344,20 +346,23 @@ const DashboardPage: React.FC = () => {
   );
 
   return (
-    <Container maxWidth="lg" sx={{ py: 3 }}>
+    <Container maxWidth="lg" sx={{ py: 1 }}>
+      <PageHeader
+        icon={<DashboardIcon />}
+        title="ダッシュボード"
+        description="今日の予約状況と、今すぐ確認すべき項目を一覧で確認できます。"
+        action={
+          <Typography variant="body2" color="text.secondary">
+            現在 {formatNowHHmm(now)}
+          </Typography>
+        }
+      />
+
       {!loading && !error && (
         <Alert severity={oneLine.severity} sx={{ mb: 2 }} variant="outlined">
           {oneLine.message}
         </Alert>
       )}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1, mb: 3 }}>
-        <Typography component="h1" variant="h5" sx={{ fontWeight: 600 }}>
-          ダッシュボード
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          現在 {formatNowHHmm(now)}
-        </Typography>
-      </Box>
 
       {error && (
         <Alert severity="warning" sx={{ mb: 2 }} onClose={() => setError(null)}>
@@ -384,11 +389,11 @@ const DashboardPage: React.FC = () => {
         <Grid container spacing={3}>
           {/* ブロック1: 今日の予約タイムライン */}
           <Grid item xs={12} md={4}>
-            <Card variant="outlined" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <Card variant="outlined" sx={{ height: '100%', display: 'flex', flexDirection: 'column', ...modernCardSx }}>
               <CardHeader
                 title="今日の予約"
                 subheader={`${todayBookings.length}件`}
-                titleTypographyProps={{ variant: 'h6' }}
+                titleTypographyProps={{ variant: 'h6', fontWeight: 600 }}
               />
               <CardContent sx={{ flex: 1, pt: 0 }}>
                 {orderedTodayBookings.length === 0 ? (
@@ -446,11 +451,11 @@ const DashboardPage: React.FC = () => {
 
           {/* ブロック2: 要対応アクション */}
           <Grid item xs={12} md={4}>
-            <Card variant="outlined" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <Card variant="outlined" sx={{ height: '100%', display: 'flex', flexDirection: 'column', ...modernCardSx }}>
               <CardHeader
                 title="要対応アクション"
                 subheader={actionItems.length > 0 ? `${actionItems.length}件` : undefined}
-                titleTypographyProps={{ variant: 'h6' }}
+                titleTypographyProps={{ variant: 'h6', fontWeight: 600 }}
               />
               <CardContent sx={{ flex: 1, pt: 0 }}>
                 {actionItems.length === 0 ? (
@@ -491,7 +496,7 @@ const DashboardPage: React.FC = () => {
 
           {/* ブロック3: 直近の変更・キャンセル */}
           <Grid item xs={12} md={4}>
-            <Card variant="outlined" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <Card variant="outlined" sx={{ height: '100%', display: 'flex', flexDirection: 'column', ...modernCardSx }}>
               <CardHeader
                 title="直近の変更・キャンセル"
                 subheader={`${recentChanges.length}件`}

@@ -92,22 +92,41 @@ class ApiClient {
   }
 
   /**
-   * トークンの初期化
+   * 永続化済みトークンを取得（Zustand persist と legacy key の両方に対応）
    */
-  private initializeToken(): void {
+  private resolveStoredToken(): string | null {
     try {
-      const savedToken = localStorage.getItem('tugical_admin_token');
-      if (savedToken) {
-        this.token = savedToken;
-      } else {
-        // 開発環境用のデフォルトトークン（Phase 19で取得した有効なトークン）
-        this.token = '40|PaitUC2tDNF0xXJYeFzFVA8s05T8AW2a8U36k1eG83f4b440';
-        localStorage.setItem('tugical_admin_token', this.token);
+      const legacyToken = localStorage.getItem('tugical_admin_token');
+      if (legacyToken) {
+        return legacyToken;
+      }
+
+      const persistedAuth = localStorage.getItem('tugical-auth-storage');
+      if (persistedAuth) {
+        const parsed = JSON.parse(persistedAuth) as {
+          state?: { token?: string | null };
+        };
+        return parsed.state?.token ?? null;
       }
     } catch (error) {
       console.warn('Failed to load token from localStorage:', error);
-      // フォールバック
-      this.token = '40|PaitUC2tDNF0xXJYeFzFVA8s05T8AW2a8U36k1eG83f4b440';
+    }
+
+    return null;
+  }
+
+  /**
+   * トークンの初期化
+   */
+  private initializeToken(): void {
+    const savedToken = this.resolveStoredToken();
+    if (savedToken) {
+      this.token = savedToken;
+      try {
+        localStorage.setItem('tugical_admin_token', savedToken);
+      } catch (error) {
+        console.warn('Failed to sync token to localStorage:', error);
+      }
     }
   }
 
@@ -140,14 +159,9 @@ class ApiClient {
    */
   private handleApiError(error: AxiosError<ApiResponse>): void {
     if (error.response?.status === 401) {
-      // 認証エラー時はトークンをクリア
+      // 認証エラー時は ApiClient と Zustand の両方を同期クリア
       this.clearToken();
-
-      // ログインページにリダイレクト（必要に応じて）
-      if (window.location.pathname !== '/login') {
-        console.warn('Authentication failed, redirecting to login');
-        // window.location.href = '/login';
-      }
+      window.dispatchEvent(new CustomEvent('tugical:auth-expired'));
     }
 
     // エラーログ出力
@@ -906,11 +920,27 @@ class ApiClient {
   // ========================================
 
   /**
-   * 通知一覧取得
+   * 通知一覧取得（バックエンド形式を正規化）
    */
   async getNotifications(
     filters?: FilterOptions
-  ): Promise<PaginatedResponse<Notification>> {
+  ): Promise<{
+    notifications: Notification[];
+    pagination: {
+      current_page: number;
+      last_page: number;
+      per_page: number;
+      total: number;
+      from: number | null;
+      to: number | null;
+    };
+    stats: {
+      total_count: number;
+      sent_count: number;
+      failed_count: number;
+      pending_count: number;
+    };
+  }> {
     const params = new URLSearchParams();
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
@@ -921,7 +951,23 @@ class ApiClient {
     }
 
     const response = await this.client.get<
-      ApiResponse<PaginatedResponse<Notification>>
+      ApiResponse<{
+        notifications: Notification[];
+        pagination: {
+          current_page: number;
+          last_page: number;
+          per_page: number;
+          total: number;
+          from: number | null;
+          to: number | null;
+        };
+        stats: {
+          total_count: number;
+          sent_count: number;
+          failed_count: number;
+          pending_count: number;
+        };
+      }>
     >(`/notifications?${params.toString()}`);
 
     if (response.data.success && response.data.data) {
@@ -1067,6 +1113,50 @@ class ApiClient {
       return response.data.data;
     }
     throw new Error(response.data.error?.message || 'LINE 設定の保存に失敗しました');
+  }
+
+  async testLineConnection(credentials?: {
+    line_channel_id?: string;
+    line_channel_secret?: string;
+    line_access_token?: string;
+  }): Promise<{
+    checks: {
+      channel_credentials: { ok: boolean; message: string; skipped?: boolean };
+      access_token: {
+        ok: boolean;
+        message: string;
+        skipped?: boolean;
+        bot_display_name?: string | null;
+        bot_basic_id?: string | null;
+      };
+    };
+  }> {
+    const payload: Record<string, string> = {};
+    if (credentials?.line_channel_id) {
+      payload.line_channel_id = credentials.line_channel_id;
+    }
+    if (credentials?.line_channel_secret) {
+      payload.line_channel_secret = credentials.line_channel_secret;
+    }
+    if (credentials?.line_access_token) {
+      payload.line_access_token = credentials.line_access_token;
+    }
+
+    const response = await this.client.post<ApiResponse<any>>(
+      '/store/line-settings/test-connection',
+      payload
+    );
+    if (response.data.success && response.data.data) {
+      return response.data.data;
+    }
+    if (response.data.data?.checks) {
+      const err = new Error(
+        response.data.error?.message || '認証情報の疎通確認に失敗しました'
+      ) as Error & { checks?: typeof response.data.data.checks };
+      err.checks = response.data.data.checks;
+      throw err;
+    }
+    throw new Error(response.data.error?.message || '認証情報の疎通確認に失敗しました');
   }
 
   async testLinePush(lineUserId: string): Promise<void> {

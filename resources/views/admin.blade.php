@@ -10,7 +10,7 @@
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.bunny.net/css?family=nunito:400,500,600,700|noto-sans-jp:400,500,700&display=swap" rel="stylesheet" />
 
     <!-- Vite（app.css に Tailwind を含む） -->
     @vite(['resources/css/app.css', 'resources/js/pages/admin/index.tsx'])
