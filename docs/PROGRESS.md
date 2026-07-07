@@ -1,5 +1,15 @@
 # tugical Development Progress
 
+## 2026-07-07 20:01:13 - LIFF 未設定時の案内画面（真っ白解消）
+
+### 実施内容
+
+- **LiffStatusScreen**: ローディング・設定不足・エラー・開発モードを常時表示
+- **index.tsx**: init 前の `liff.isLoggedIn()` 呼び出しを廃止（SDK クラッシュ防止）
+- **本番**: LIFF ID 未設定時に「予約の準備ができていません」+ 店舗向け手順を表示
+
+### 次に着手: **#2/#3 実機 E2E**（LINE Developers 設定後）
+
 ## 2026-07-07 19:50:00 - #2/#3 実機 E2E 事前確認（ブロック記録）
 
 ### 実施内容
@@ -26,7 +36,7 @@
 - **テスト**: `StoreLineSettingsTest` 4 passed、ブラウザ smoke OK
 - **コミット**: `644c6b1`
 
-### 次に着手: **#2 MVP-P4-02**（LINE 通知 E2E 実機）
+### 次に着手: **#2/#3 実機 E2E**（LINE Developers 設定後）
 
 ## 2026-07-07 00:29:37 - #1〜#8 実装バッチ（SEC / LINE 基盤 / Webhook / LIFF）
 
