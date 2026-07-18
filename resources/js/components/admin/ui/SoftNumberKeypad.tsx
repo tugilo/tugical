@@ -10,47 +10,59 @@ export interface SoftNumberKeypadProps {
   open: boolean;
   /** 閉じる */
   onClose: () => void;
-  /** 確定時 */
-  onConfirm: (value: number) => void;
+  /** 確定時（number モードは number、digits モードは string） */
+  onConfirm: (value: number | string) => void;
   /** 初期値 */
-  value: number;
+  value: number | string;
+  /** number=金額など / digits=電話・郵便 */
+  mode?: 'number' | 'digits';
   /** ラベル */
   label?: string;
-  /** 最小 */
+  /** 最小（number） */
   min?: number;
-  /** 最大 */
+  /** 最大（number） */
   max?: number;
-  /** 小数を許可（step が小数のとき） */
+  /** 小数を許可（number） */
   allowDecimal?: boolean;
-  /** 負数を許可 */
+  /** 負数を許可（number） */
   allowNegative?: boolean;
+  /** 桁数上限（digits） */
+  maxLength?: number;
   /** 単位表示（円・分など） */
   unit?: string;
 }
 
 /**
  * ソフトウェアテンキー（下部シート）
- * 片手操作向け・フルキーボード不要
+ * 数値・電話・郵便を共通UIで入力（フルキーボード不要）
  */
 const SoftNumberKeypad: React.FC<SoftNumberKeypadProps> = ({
   open,
   onClose,
   onConfirm,
   value,
+  mode = 'number',
   label = '数値入力',
   min,
   max,
   allowDecimal = false,
   allowNegative = false,
+  maxLength,
   unit,
 }) => {
-  const [buffer, setBuffer] = useState('0');
+  const isDigits = mode === 'digits';
+  const [buffer, setBuffer] = useState(isDigits ? '' : '0');
 
   useEffect(() => {
-    if (open) {
-      setBuffer(Number.isFinite(value) ? String(value) : '0');
+    if (!open) return;
+    if (isDigits) {
+      const raw = String(value ?? '').replace(/[^0-9]/g, '');
+      setBuffer(raw);
+    } else {
+      const n = typeof value === 'number' ? value : Number(value);
+      setBuffer(Number.isFinite(n) ? String(n) : '0');
     }
-  }, [open, value]);
+  }, [open, value, isDigits]);
 
   useEffect(() => {
     if (!open) return;
@@ -65,6 +77,13 @@ const SoftNumberKeypad: React.FC<SoftNumberKeypadProps> = ({
 
   const appendDigit = (digit: string) => {
     setBuffer(prev => {
+      if (isDigits) {
+        if (digit === '.') return prev;
+        const next = `${prev}${digit}`;
+        if (maxLength !== undefined && next.length > maxLength) return prev;
+        return next;
+      }
+
       if (prev === '0' && digit !== '.') return digit;
       if (prev === '-0' && digit !== '.') return `-${digit}`;
       if (digit === '.' && prev.includes('.')) return prev;
@@ -75,16 +94,19 @@ const SoftNumberKeypad: React.FC<SoftNumberKeypadProps> = ({
 
   const backspace = () => {
     setBuffer(prev => {
+      if (isDigits) {
+        return prev.slice(0, -1);
+      }
       if (prev.length <= 1 || prev === '-0' || prev === '-') return '0';
       const next = prev.slice(0, -1);
       return next === '-' || next === '' ? '0' : next;
     });
   };
 
-  const clear = () => setBuffer('0');
+  const clear = () => setBuffer(isDigits ? '' : '0');
 
   const toggleSign = () => {
-    if (!allowNegative) return;
+    if (isDigits || !allowNegative) return;
     setBuffer(prev => {
       if (prev.startsWith('-')) return prev.slice(1) || '0';
       if (prev === '0') return '0';
@@ -100,11 +122,38 @@ const SoftNumberKeypad: React.FC<SoftNumberKeypadProps> = ({
   };
 
   const handleConfirm = () => {
+    if (isDigits) {
+      onConfirm(buffer);
+      onClose();
+      return;
+    }
     const parsed = allowDecimal ? parseFloat(buffer) : parseInt(buffer, 10);
     const n = Number.isFinite(parsed) ? clamp(parsed) : clamp(0);
     onConfirm(n);
     onClose();
   };
+
+  const leftKey =
+    isDigits || (!allowDecimal && !allowNegative)
+      ? {
+          id: 'empty',
+          label: '' as React.ReactNode,
+          action: () => undefined,
+          className: 'invisible pointer-events-none',
+        }
+      : allowDecimal
+        ? {
+            id: 'dot',
+            label: '.' as React.ReactNode,
+            action: () => appendDigit('.'),
+            className: 'bg-gray-100',
+          }
+        : {
+            id: 'sign',
+            label: '±' as React.ReactNode,
+            action: toggleSign,
+            className: 'bg-gray-100',
+          };
 
   const keys: Array<{
     id: string;
@@ -121,26 +170,7 @@ const SoftNumberKeypad: React.FC<SoftNumberKeypadProps> = ({
     { id: '7', label: '7', action: () => appendDigit('7') },
     { id: '8', label: '8', action: () => appendDigit('8') },
     { id: '9', label: '9', action: () => appendDigit('9') },
-    allowDecimal
-      ? {
-          id: 'dot',
-          label: '.',
-          action: () => appendDigit('.'),
-          className: 'bg-gray-100',
-        }
-      : allowNegative
-        ? {
-            id: 'sign',
-            label: '±',
-            action: toggleSign,
-            className: 'bg-gray-100',
-          }
-        : {
-            id: 'empty',
-            label: '',
-            action: () => undefined,
-            className: 'invisible pointer-events-none',
-          },
+    leftKey,
     { id: '0', label: '0', action: () => appendDigit('0') },
     {
       id: 'back',
@@ -149,6 +179,8 @@ const SoftNumberKeypad: React.FC<SoftNumberKeypadProps> = ({
       className: 'bg-gray-100',
     },
   ];
+
+  const displayBuffer = buffer === '' ? (isDigits ? '—' : '0') : buffer;
 
   return (
     <div className='fixed inset-0 z-[1400] flex items-end justify-center'>
@@ -167,15 +199,20 @@ const SoftNumberKeypad: React.FC<SoftNumberKeypadProps> = ({
         <div className='flex items-center justify-between mb-3'>
           <div>
             <p className='text-sm font-medium text-gray-700'>{label}</p>
-            <p className='text-3xl font-semibold text-gray-900 tabular-nums mt-1'>
-              {buffer}
+            <p className='text-3xl font-semibold text-gray-900 tabular-nums mt-1 break-all'>
+              {displayBuffer}
               {unit ? (
                 <span className='ml-2 text-base font-normal text-gray-500'>
                   {unit}
                 </span>
               ) : null}
             </p>
-            {(min !== undefined || max !== undefined) && (
+            {isDigits && maxLength !== undefined && (
+              <p className='text-xs text-gray-500 mt-1'>
+                {buffer.length} / {maxLength} 桁
+              </p>
+            )}
+            {!isDigits && (min !== undefined || max !== undefined) && (
               <p className='text-xs text-gray-500 mt-1'>
                 {min !== undefined ? `最小 ${min}` : ''}
                 {min !== undefined && max !== undefined ? ' 〜 ' : ''}
@@ -210,10 +247,12 @@ const SoftNumberKeypad: React.FC<SoftNumberKeypadProps> = ({
 
         <div
           className={`grid gap-2 mt-3 ${
-            allowNegative && allowDecimal ? 'grid-cols-3' : 'grid-cols-2'
+            !isDigits && allowNegative && allowDecimal
+              ? 'grid-cols-3'
+              : 'grid-cols-2'
           }`}
         >
-          {allowNegative && allowDecimal && (
+          {!isDigits && allowNegative && allowDecimal && (
             <button
               type='button'
               onClick={toggleSign}

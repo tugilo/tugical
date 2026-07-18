@@ -6,6 +6,7 @@
 import React from 'react';
 import { Box, TextField, MenuItem } from '@mui/material';
 import FieldTip from './FieldTip';
+import SoftDigitField from './SoftDigitField';
 import SoftNumberField from './SoftNumberField';
 
 export interface FormFieldProps {
@@ -113,6 +114,25 @@ const FormField: React.FC<FormFieldProps> = ({
     );
   }
 
+  // 電話番号もソフトテンキーに統一
+  if (type === 'tel') {
+    return (
+      <SoftDigitField
+        name={name}
+        variant='phone'
+        label={label}
+        tip={tip}
+        value={value === null || value === undefined ? '' : String(value)}
+        onChange={v => onChange(v)}
+        placeholder={placeholder || 'タップして入力'}
+        error={error || undefined}
+        required={required}
+        disabled={disabled}
+        className={className}
+      />
+    );
+  }
+
   if (type === 'select') {
     return (
       <TextField
@@ -149,7 +169,7 @@ const FormField: React.FC<FormFieldProps> = ({
   const isMultiline = type === 'textarea';
   const inputType = isMultiline
     ? undefined
-    : (type as 'text' | 'email' | 'password' | 'tel' | 'url' | 'date');
+    : (type as 'text' | 'email' | 'password' | 'url' | 'date');
 
   return (
     <TextField
@@ -177,11 +197,6 @@ const FormField: React.FC<FormFieldProps> = ({
           : type === 'date'
             ? { shrink: true, required: muiRequired }
             : { required: muiRequired }
-      }
-      inputProps={
-        type === 'tel'
-          ? { inputMode: 'tel', autoComplete: 'tel' }
-          : undefined
       }
       FormHelperTextProps={{ sx: { marginTop: 0.25 } }}
     />
