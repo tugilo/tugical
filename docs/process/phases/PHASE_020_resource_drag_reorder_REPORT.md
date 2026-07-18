@@ -1,7 +1,7 @@
 # PHASE_020_resource_drag_reorder REPORT
 
 **作成日時**: 2026-07-19 06:16:29  
-**最終更新日時**: 2026-07-19 06:16:29  
+**最終更新日時**: 2026-07-19 06:16:43  
 **Phase ID**: PHASE_020  
 **フェーズ種別**: implement  
 
@@ -12,7 +12,7 @@
 ## Merge Evidence
 
 ```
-merge commit id: (merge 後に記入)
+merge commit id: a9236cf
 source branch: feature/phase020-resource-drag-reorder
 target branch: develop
 phase id: 020
@@ -23,7 +23,13 @@ test command: docker compose exec -T app npm run build
 test result: success
 
 changed files:
-(merge 後に記入)
+docs/process/PHASE_REGISTRY.md
+docs/process/phases/PHASE_020_resource_drag_reorder_PLAN.md
+docs/process/phases/PHASE_020_resource_drag_reorder_REPORT.md
+docs/process/phases/PHASE_020_resource_drag_reorder_WORKLOG.md
+resources/js/components/admin/resources/ResourcePriorityList.tsx
+resources/js/pages/admin/resources/ResourcesPage.tsx
+resources/js/services/api.ts
 
 scope check: OK
 ssot check: OK

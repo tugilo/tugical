@@ -1,7 +1,7 @@
 # Phase Registry
 
 **作成日時**: 2026-07-18 21:30:51  
-**最終更新日時**: 2026-07-19 06:16:29  
+**最終更新日時**: 2026-07-19 06:16:43  
 
 | Phase ID | 名称 | 種別 | 状態 | 完了日 | ブランチ |
 |----------|------|------|------|--------|----------|
@@ -24,7 +24,7 @@
 | PHASE_017 | auto_assign_resource | implement | 完了 | 2026-07-19 06:06:05 | feature/phase017-auto-assign-resource（merge: 0bc2980） |
 | PHASE_018 | backfill_unassigned_resources | implement | 完了 | 2026-07-19 06:09:58 | feature/phase018-backfill-unassigned-resources（merge: d765c0f） |
 | PHASE_019 | resource_priority_ui | implement | 完了 | 2026-07-19 06:12:22 | feature/phase019-resource-priority-ui（merge: 42be408） |
-| PHASE_020 | resource_drag_reorder | implement | 進行中 | — | feature/phase020-resource-drag-reorder |
+| PHASE_020 | resource_drag_reorder | implement | 完了 | 2026-07-19 06:16:43 | feature/phase020-resource-drag-reorder（merge: a9236cf） |
 
 ---
 
