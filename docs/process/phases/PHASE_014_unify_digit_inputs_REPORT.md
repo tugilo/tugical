@@ -1,7 +1,7 @@
 # PHASE_014_unify_digit_inputs REPORT
 
 **作成日時**: 2026-07-19 05:52:30  
-**最終更新日時**: 2026-07-19 05:52:30  
+**最終更新日時**: 2026-07-19 05:52:47  
 **Phase ID**: PHASE_014  
 **フェーズ種別**: implement  
 
@@ -14,7 +14,7 @@
 ## Merge Evidence
 
 ```
-merge commit id: (merge 後に記入)
+merge commit id: d2dac34
 source branch: feature/phase014-unify-digit-inputs
 target branch: develop
 phase id: 014
@@ -25,7 +25,19 @@ test command: docker compose exec -T app npm run build
 test result: success
 
 changed files:
-(merge 後に git diff --name-only で記入)
+docs/process/PHASE_REGISTRY.md
+docs/process/phases/PHASE_014_unify_digit_inputs_PLAN.md
+docs/process/phases/PHASE_014_unify_digit_inputs_REPORT.md
+docs/process/phases/PHASE_014_unify_digit_inputs_WORKLOG.md
+resources/js/components/admin/booking/CombinationBookingModal.tsx
+resources/js/components/admin/customers/CustomerCreateModal.tsx
+resources/js/components/admin/customers/CustomerDetailModal.tsx
+resources/js/components/admin/ui/AddressForm.tsx
+resources/js/components/admin/ui/FormField.tsx
+resources/js/components/admin/ui/SoftDigitField.tsx
+resources/js/components/admin/ui/SoftNumberField.tsx
+resources/js/components/admin/ui/SoftNumberKeypad.tsx
+resources/js/components/admin/ui/fieldTips.ts
 
 scope check: OK
 ssot check: OK
