@@ -192,13 +192,17 @@ class AvailabilityService
             }
 
             // 既存予約との競合チェック
+            // 当該リソース＋未割当（null）予約をブロック（レガシー指定なし予約対策）
             $conflictingBookings = Booking::where('store_id', $storeId)
-                ->where('resource_id', $resourceId)
+                ->where(function ($resourceQuery) use ($resourceId) {
+                    $resourceQuery->where('resource_id', $resourceId)
+                        ->orWhereNull('resource_id');
+                })
                 ->whereDate('booking_date', $date)
                 ->whereIn('status', ['confirmed', 'pending'])
-                ->where(function($query) use ($startTime, $endTime) {
-                    $query->where(function($q) use ($startTime, $endTime) {
-                        // 新規予約の開始時間が既存予約と重複
+                ->where(function ($query) use ($startTime, $endTime) {
+                    $query->where(function ($q) use ($startTime, $endTime) {
+                        // 時間帯の重なり
                         $q->where('start_time', '<', $endTime)
                           ->where('end_time', '>', $startTime);
                     });
@@ -277,11 +281,20 @@ class AvailabilityService
             $dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
             $dayName = $dayNames[$dayOfWeek];
 
-            if (!isset($businessHours[$dayName]) || !$businessHours[$dayName]['is_open']) {
+            if (!isset($businessHours[$dayName]) || !is_array($businessHours[$dayName])) {
                 return false;
             }
 
             $dayHours = $businessHours[$dayName];
+
+            // is_open キーがある形式と、open/close のみの形式の両方に対応
+            if (array_key_exists('is_open', $dayHours) && !$dayHours['is_open']) {
+                return false;
+            }
+            if (empty($dayHours['open']) || empty($dayHours['close'])) {
+                return false;
+            }
+
             return $this->isTimeWithinHours($startTime, $dayHours);
 
         } catch (\Exception $e) {
@@ -499,9 +512,16 @@ class AvailabilityService
      */
     protected function isTimeWithinHours(string $time, array $hours): bool
     {
+        // start/end 形式と open/close 形式の両方に対応
+        $start = $hours['start'] ?? $hours['open'] ?? null;
+        $end = $hours['end'] ?? $hours['close'] ?? null;
+        if (!$start || !$end) {
+            return false;
+        }
+
         $checkTime = Carbon::parse($time);
-        $startTime = Carbon::parse($hours['start']);
-        $endTime = Carbon::parse($hours['end']);
+        $startTime = Carbon::parse($start);
+        $endTime = Carbon::parse($end);
 
         return $checkTime->gte($startTime) && $checkTime->lt($endTime);
     }

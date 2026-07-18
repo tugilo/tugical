@@ -24,6 +24,8 @@ export const FIELD_TIPS = {
   capacityVehicle: '乗車できる人数です。',
   resourceActive:
     'オフにすると新規予約の候補から外れます。過去の予約は残ります。',
+  resourceSortOrder:
+    '一覧の表示順と、担当「指定なし」時の自動割当の優先順です。数字が小さいほど先に割り当てられます。',
 
   // ---- メニュー ----
   menuName: 'お客様に見せるメニュー名です。',
@@ -54,7 +56,8 @@ export const FIELD_TIPS = {
   // ---- 予約 ----
   bookingDate: '予約する日です。',
   bookingStartTime: '開始時刻です。所要時間はメニューから自動で決まります。',
-  bookingResource: '担当・部屋などの割り当てです。空けると「おまかせ」扱いにできます。',
+  bookingResource:
+    '担当・部屋などの割り当てです。「指定なし」だと優先順（表示順）で空きのある担当が自動で入ります。',
   bookingMenus: 'この予約に含めるメニューです。合計時間・料金の基準になります。',
 } as const;
 

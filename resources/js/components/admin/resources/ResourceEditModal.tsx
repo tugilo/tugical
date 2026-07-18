@@ -45,6 +45,7 @@ interface EditFormData {
   capacity: number;
   efficiency_rate: number;
   hourly_rate_diff: number;
+  sort_order: number;
   is_active: boolean;
   photo_url: string | null;
   images: EntityImageItem[];
@@ -68,6 +69,7 @@ const ResourceEditModal: React.FC<ResourceEditModalProps> = ({
     capacity: 1,
     efficiency_rate: 1.0,
     hourly_rate_diff: 0,
+    sort_order: 0,
     is_active: true,
     photo_url: null,
     images: [],
@@ -102,6 +104,7 @@ const ResourceEditModal: React.FC<ResourceEditModalProps> = ({
         capacity: resource.capacity || 1,
         efficiency_rate: resource.efficiency_rate || 1.0,
         hourly_rate_diff: resource.hourly_rate_diff || 0,
+        sort_order: resource.sort_order ?? 0,
         is_active: resource.is_active !== false,
         photo_url: resource.photo_url || null,
         images:
@@ -183,6 +186,7 @@ const ResourceEditModal: React.FC<ResourceEditModalProps> = ({
         capacity: Number(formData.capacity),
         efficiency_rate: Number(formData.efficiency_rate),
         hourly_rate_diff: Number(formData.hourly_rate_diff),
+        sort_order: Number(formData.sort_order),
         is_active: formData.is_active,
         images: formData.images || [],
         photo_url:
@@ -355,6 +359,18 @@ const ResourceEditModal: React.FC<ResourceEditModalProps> = ({
             unit='人'
             min={1}
             max={100}
+            disabled={isLoading}
+          />
+
+          <SoftNumberField
+            name='sort_order'
+            label='表示・割当優先順'
+            tip={FIELD_TIPS.resourceSortOrder}
+            value={formData.sort_order}
+            onChange={v => handleInputChange('sort_order', v)}
+            error={errors.sort_order}
+            min={0}
+            max={9999}
             disabled={isLoading}
           />
 

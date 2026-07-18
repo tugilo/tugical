@@ -95,6 +95,9 @@ class BookingService
         ]);
 
         return DB::transaction(function () use ($storeId, $bookingData) {
+            // 0. 担当未指定時は優先順で自動割当（resource_id を確定）
+            $bookingData['resource_id'] = $this->resolveResourceIdForBooking($storeId, $bookingData);
+
             // 1. Hold Token検証・解放
             if (isset($bookingData['hold_token'])) {
                 $this->validateAndReleaseHoldToken(
@@ -325,6 +328,80 @@ class BookingService
     }
 
     /**
+     * 予約の resource_id を解決する。
+     * 指定があれば検証して返し、未指定なら sort_order 優先で空き担当を自動割当する。
+     *
+     * @param int $storeId 店舗ID
+     * @param array $bookingData 予約データ（booking_date, start_time, end_time / menu_id 等）
+     * @return int 確定した resource_id
+     * @throws \Exception 割当不能時
+     */
+    public function resolveResourceIdForBooking(int $storeId, array $bookingData): int
+    {
+        $resourceId = $bookingData['resource_id'] ?? null;
+
+        if (!empty($resourceId)) {
+            $exists = Resource::where('store_id', $storeId)
+                ->where('id', $resourceId)
+                ->where('is_active', true)
+                ->exists();
+
+            if (!$exists) {
+                throw new \Exception('指定された担当者が見つかりません');
+            }
+
+            return (int) $resourceId;
+        }
+
+        $bookingDate = $bookingData['booking_date'] ?? null;
+        $startTime = isset($bookingData['start_time'])
+            ? substr((string) $bookingData['start_time'], 0, 5)
+            : null;
+
+        if (!$bookingDate || !$startTime) {
+            throw new \Exception('予約日時が不足しているため担当者を割り当てできません');
+        }
+
+        $endTime = isset($bookingData['end_time'])
+            ? substr((string) $bookingData['end_time'], 0, 5)
+            : $this->calculateEndTime(array_merge($bookingData, [
+                'start_time' => $startTime,
+            ]));
+
+        $candidates = Resource::where('store_id', $storeId)
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get();
+
+        if ($candidates->isEmpty()) {
+            throw new \Exception('割り当て可能な担当者がいません');
+        }
+
+        foreach ($candidates as $resource) {
+            if ($this->availabilityService->isResourceAvailable(
+                (int) $resource->id,
+                $bookingDate,
+                $startTime,
+                $endTime
+            )) {
+                Log::info('担当者を自動割当', [
+                    'store_id' => $storeId,
+                    'resource_id' => $resource->id,
+                    'sort_order' => $resource->sort_order,
+                    'booking_date' => $bookingDate,
+                    'start_time' => $startTime,
+                    'end_time' => $endTime,
+                ]);
+
+                return (int) $resource->id;
+            }
+        }
+
+        throw new \Exception('指定時間に空きのある担当者がいません');
+    }
+
+    /**
      * 時間競合チェック
      * 
      * 指定時間枠でのリソース予約競合を検出
@@ -347,9 +424,13 @@ class BookingService
             ->whereDate('booking_date', $bookingDate)
             ->whereIn('status', ['confirmed', 'pending']);
 
-        // リソース指定がある場合はそのリソースのみチェック
+        // リソース指定がある場合: そのリソース＋未割当（null）予約を競合対象にする
+        // （指定なし→指名の順序で二重予約になる穴を塞ぐ）
         if ($resourceId) {
-            $query->where('resource_id', $resourceId);
+            $query->where(function ($resourceQuery) use ($resourceId) {
+                $resourceQuery->where('resource_id', $resourceId)
+                    ->orWhereNull('resource_id');
+            });
         }
 
         // 更新時は既存予約を除外
@@ -1011,24 +1092,46 @@ class BookingService
         ]);
 
         return DB::transaction(function () use ($storeId, $bookingData) {
-            // 料金・時間計算
+            // 料金・時間計算（終了時刻算出用。担当は後で確定）
             $calculation = $this->calculateCombinationPricing(
                 $storeId,
                 collect($bookingData['menus'])->pluck('menu_id')->toArray(),
-                $bookingData['primary_resource_id'] ?? null,
+                $bookingData['resource_id'] ?? $bookingData['primary_resource_id'] ?? null,
                 $bookingData['booking_date'],
                 $bookingData['selected_options'] ?? []
             );
+
+            // 開始時刻ベースで終了時刻を算出（estimated_end_time は開始固定のレガシー値のため使わない）
+            $startTime = substr((string) $bookingData['start_time'], 0, 5);
+            $endTime = Carbon::createFromFormat('H:i', $startTime)
+                ->addMinutes((int) $calculation['total_duration'])
+                ->format('H:i');
+            $bookingData['end_time'] = $endTime;
+
+            // 担当未指定時は優先順で自動割当
+            $bookingData['resource_id'] = $this->resolveResourceIdForBooking($storeId, $bookingData);
+
+            // 時間競合チェック（combination 経路でも必須）
+            if ($this->checkTimeConflict($storeId, $bookingData)) {
+                Log::warning('組み合わせ予約競合検出', [
+                    'store_id' => $storeId,
+                    'resource_id' => $bookingData['resource_id'],
+                    'booking_date' => $bookingData['booking_date'],
+                    'start_time' => $bookingData['start_time'],
+                    'end_time' => $endTime,
+                ]);
+                throw new \Exception('指定時間は既に予約されています');
+            }
 
             // 予約作成
             $booking = Booking::create([
                 'store_id' => $storeId,
                 'customer_id' => $bookingData['customer_id'],
-                'resource_id' => $bookingData['resource_id'] ?? null,
+                'resource_id' => $bookingData['resource_id'],
                 'booking_type' => 'combination',
                 'booking_date' => $bookingData['booking_date'],
                 'start_time' => $bookingData['start_time'],
-                'end_time' => $calculation['estimated_end_time'],
+                'end_time' => $endTime,
                 'total_price' => $calculation['total_price'],
                 'base_total_price' => $calculation['base_total_price'],
                 'set_discount_amount' => $calculation['set_discount_amount'],

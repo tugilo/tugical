@@ -723,7 +723,7 @@ const BookingCreateModal: React.FC<BookingCreateModalProps> = ({
               }`}
             >
               <div className='font-medium'>指定なし</div>
-              <div className='text-sm text-gray-600'>お任せ</div>
+              <div className='text-sm text-gray-600'>優先順で自動割当</div>
             </button>
             {resources.map(resource => (
               <button
