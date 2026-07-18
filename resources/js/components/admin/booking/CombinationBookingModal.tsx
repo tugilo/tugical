@@ -235,7 +235,6 @@ const CombinationBookingModal: React.FC<CombinationBookingModalProps> = ({
   // 顧客 UI（電話優先）
   const [phoneSearch, setPhoneSearch] = useState('');
   const [nameSearch, setNameSearch] = useState('');
-  const [showNameSearch, setShowNameSearch] = useState(false);
   const [phoneMatches, setPhoneMatches] = useState<Customer[]>([]);
   const [nameMatches, setNameMatches] = useState<Customer[]>([]);
   const [showNameList, setShowNameList] = useState(false);
@@ -290,9 +289,9 @@ const CombinationBookingModal: React.FC<CombinationBookingModalProps> = ({
     }
   }, [phoneSearch, customers, selectedCustomer]);
 
-  // 名前検索（補助）
+  // 名前検索
   useEffect(() => {
-    if (selectedCustomer || !showNameSearch) {
+    if (selectedCustomer) {
       setNameMatches([]);
       setShowNameList(false);
       return;
@@ -310,7 +309,7 @@ const CombinationBookingModal: React.FC<CombinationBookingModalProps> = ({
     );
     setNameMatches(matches);
     setShowNameList(matches.length > 0);
-  }, [nameSearch, customers, selectedCustomer, showNameSearch]);
+  }, [nameSearch, customers, selectedCustomer]);
 
   // 初期顧客設定
   useEffect(() => {
@@ -375,7 +374,6 @@ const CombinationBookingModal: React.FC<CombinationBookingModalProps> = ({
     setCalculationResult(null);
     setPhoneSearch('');
     setNameSearch('');
-    setShowNameSearch(false);
     setPhoneMatches([]);
     setNameMatches([]);
     setShowNameList(false);
@@ -433,7 +431,6 @@ const CombinationBookingModal: React.FC<CombinationBookingModalProps> = ({
     setPhoneMatches([]);
     setNameMatches([]);
     setShowNameList(false);
-    setShowNameSearch(false);
     setNameSearch('');
     if (!options?.keepPhone) {
       setPhoneSearch(customer.phone || '');
@@ -837,21 +834,12 @@ const CombinationBookingModal: React.FC<CombinationBookingModalProps> = ({
                     </div>
                   )}
 
-                  <div className='mt-2'>
-                    <button
-                      type='button'
-                      onClick={() => setShowNameSearch(prev => !prev)}
-                      className='text-sm text-emerald-700 hover:text-emerald-800 underline-offset-2 hover:underline min-h-[44px] inline-flex items-center'
-                    >
-                      <UserIcon className='w-4 h-4 mr-1' />
-                      {showNameSearch
-                        ? '名前検索を閉じる'
-                        : '名前で探す（補助）'}
-                    </button>
-                  </div>
-
-                  {showNameSearch && (
-                    <div className='mt-2 relative'>
+                  <div className='mt-4'>
+                    <label className='block text-sm font-medium text-gray-700 mb-2'>
+                      <UserIcon className='w-4 h-4 inline mr-1' />
+                      名前で探す
+                    </label>
+                    <div className='relative'>
                       <MagnifyingGlassIcon className='absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400' />
                       <input
                         type='text'
@@ -887,7 +875,7 @@ const CombinationBookingModal: React.FC<CombinationBookingModalProps> = ({
                         </div>
                       )}
                     </div>
-                  )}
+                  </div>
                 </>
               )}
 
