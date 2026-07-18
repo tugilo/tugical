@@ -59,6 +59,10 @@ const DatePicker: React.FC<DatePickerProps> = ({
         minDate={minDate}
         maxDate={maxDate}
         disabled={disabled}
+        // デフォルトは day/year のみで月は矢印送りだけになる。
+        // month を含めるとヘッダから月グリッドを開ける（v6: day→year→month とトグル）
+        views={['year', 'month', 'day']}
+        openTo='day'
         slotProps={{
           textField: {
             label: label ?? undefined,
