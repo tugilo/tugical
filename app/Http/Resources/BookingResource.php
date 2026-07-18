@@ -35,7 +35,8 @@ class BookingResource extends JsonResource
             // 基本情報
             'id' => $this->id,
             'booking_number' => $this->booking_number,
-            'booking_date' => $this->booking_date,
+            // カレンダー日として返す（UTC ISO だと JST で日付がずれる）
+            'booking_date' => $this->booking_date?->format('Y-m-d'),
             'start_time' => $this->start_time,
             'end_time' => $this->calculateEndTime(),
             'status' => $this->status,

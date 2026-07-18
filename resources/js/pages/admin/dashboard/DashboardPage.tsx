@@ -158,10 +158,16 @@ function orderTodayBookingsWithNextFirst(
   return [nextItem, ...sorted];
 }
 
+/** booking_date を Y-m-d キーに正規化（API は Y-m-d を返す想定） */
+function toBookingDateKey(bookingDate: string | undefined | null): string {
+  if (!bookingDate) return '';
+  return String(bookingDate).slice(0, 10);
+}
+
 /** API 取得データ → 今日の予約 */
 function mapToTodayBookings(bookings: BookingRow[], today: string): TodayBookingItem[] {
   return bookings
-    .filter((b) => b.booking_date === today)
+    .filter((b) => toBookingDateKey(b.booking_date) === today)
     .map((b) => ({
       id: b.id,
       booking_number: b.booking_number,
@@ -180,7 +186,7 @@ const BOOKINGS_LINK = '/bookings';
 /** 要対応: 仕様 5.5 の「本日予約が未確定のまま」。型を拡張し link/type/severity を付与。 */
 function mapToActionItems(bookings: BookingRow[], today: string): ActionItem[] {
   return bookings
-    .filter((b) => b.booking_date === today && b.status === 'pending')
+    .filter((b) => toBookingDateKey(b.booking_date) === today && b.status === 'pending')
     .map((b) => ({
       id: b.id,
       booking_id: b.id,
