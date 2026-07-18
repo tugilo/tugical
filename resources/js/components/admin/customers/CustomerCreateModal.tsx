@@ -179,6 +179,8 @@ export const CustomerCreateModal: React.FC<CustomerCreateModalProps> = ({
                 />
                 <input
                   type='tel'
+                  inputMode='tel'
+                  autoComplete='tel'
                   value={formData.phone}
                   onChange={e =>
                     setFormData(prev => ({ ...prev, phone: e.target.value }))

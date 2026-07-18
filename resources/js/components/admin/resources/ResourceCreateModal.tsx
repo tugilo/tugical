@@ -11,6 +11,7 @@ import Modal from '../modal/Modal';
 import Button from '../ui/Button';
 import FieldLabel from '../ui/FieldLabel';
 import FieldTip from '../ui/FieldTip';
+import SoftNumberField from '../ui/SoftNumberField';
 import MultiImageUploadField, {
   EntityImageItem,
 } from '../ui/MultiImageUploadField';
@@ -397,73 +398,41 @@ const ResourceCreateModal: React.FC<ResourceCreateModalProps> = ({
         <div>
           <h3 className='text-lg font-semibold text-gray-900 mb-4'>詳細設定</h3>
           <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
-            <div>
-              <FieldLabel
-                label='指名料金'
-                tip={FIELD_TIPS.hourlyRateDiff}
-                startAdornment={<CurrencyYenIcon className='w-4 h-4 mr-1' />}
-              />
-              <div className='relative'>
-                <input
-                  type='number'
-                  value={formData.hourly_rate_diff || 0}
-                  onChange={e =>
-                    handleInputChange(
-                      'hourly_rate_diff',
-                      parseInt(e.target.value) || 0
-                    )
-                  }
-                  className={`w-full px-3 py-2 pr-14 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
-                    errors.hourly_rate_diff
-                      ? 'border-red-500'
-                      : 'border-gray-300'
-                  }`}
-                  placeholder='0'
-                  min='-10000'
-                  max='10000'
-                  step='100'
-                />
-                <span className='absolute right-2 top-2 text-gray-500 text-sm'>
-                  円/時
-                </span>
-              </div>
-              {errors.hourly_rate_diff && (
-                <p className='mt-1 text-sm text-red-600'>
-                  {errors.hourly_rate_diff}
-                </p>
-              )}
-            </div>
+            <SoftNumberField
+              name='hourly_rate_diff'
+              label='指名料金'
+              tip={FIELD_TIPS.hourlyRateDiff}
+              value={formData.hourly_rate_diff || 0}
+              onChange={v => handleInputChange('hourly_rate_diff', v)}
+              error={errors.hourly_rate_diff}
+              unit='円/時'
+              min={-10000}
+              max={10000}
+              step={100}
+              startAdornment={<CurrencyYenIcon className='w-4 h-4 mr-1' />}
+              disabled={isLoading}
+            />
 
-            <div>
-              <FieldLabel
-                label={
-                  formData.type === 'staff'
-                    ? '同時対応人数'
-                    : formData.type === 'room'
-                      ? '収容人数'
-                      : formData.type === 'equipment'
-                        ? '同時利用数'
-                        : '乗車定員'
-                }
-                tip={capacityTip(formData.type)}
-              />
-              <input
-                type='number'
-                value={formData.capacity || 1}
-                onChange={e =>
-                  handleInputChange('capacity', parseInt(e.target.value) || 1)
-                }
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
-                  errors.capacity ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder='1'
-                min='1'
-                max='100'
-              />
-              {errors.capacity && (
-                <p className='mt-1 text-sm text-red-600'>{errors.capacity}</p>
-              )}
-            </div>
+            <SoftNumberField
+              name='capacity'
+              label={
+                formData.type === 'staff'
+                  ? '同時対応人数'
+                  : formData.type === 'room'
+                    ? '収容人数'
+                    : formData.type === 'equipment'
+                      ? '同時利用数'
+                      : '乗車定員'
+              }
+              tip={capacityTip(formData.type)}
+              value={formData.capacity || 1}
+              onChange={v => handleInputChange('capacity', v)}
+              error={errors.capacity}
+              unit='人'
+              min={1}
+              max={100}
+              disabled={isLoading}
+            />
 
             <div>
               <FieldLabel
