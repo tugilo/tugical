@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   BackspaceIcon,
   CheckIcon,
@@ -182,8 +183,9 @@ const SoftNumberKeypad: React.FC<SoftNumberKeypadProps> = ({
 
   const displayBuffer = buffer === '' ? (isDigits ? '—' : '0') : buffer;
 
-  return (
-    <div className='fixed inset-0 z-[1400] flex items-end justify-center'>
+  // MUI Dialog 内でも操作できるよう body へ portal（overflow / focus trap 対策）
+  const sheet = (
+    <div className='fixed inset-0 z-[2000] flex items-end justify-center'>
       <button
         type='button'
         className='absolute inset-0 bg-black/40'
@@ -280,6 +282,8 @@ const SoftNumberKeypad: React.FC<SoftNumberKeypadProps> = ({
       </div>
     </div>
   );
+
+  return createPortal(sheet, document.body);
 };
 
 export default SoftNumberKeypad;

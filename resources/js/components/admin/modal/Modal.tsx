@@ -71,6 +71,9 @@ const Modal: React.FC<ModalProps> = ({
       onClose={handleClose}
       maxWidth={sizeToMaxWidth[size] ?? 'sm'}
       fullWidth
+      // SoftNumberKeypad 等の portal オーバーレイ操作を許可
+      disableEnforceFocus
+      disableAutoFocus
       PaperProps={{
         className,
         sx: { borderRadius: 2 },

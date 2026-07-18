@@ -225,8 +225,8 @@ class Resource extends Model
             // デフォルトアクティブ状態
             $resource->is_active = $resource->is_active ?? true;
 
-            // デフォルト表示順序
-            if (!$resource->sort_order) {
+            // デフォルト表示順序（0 は有効な優先順なので null のときだけ自動採番）
+            if ($resource->sort_order === null) {
                 $maxSort = self::where('store_id', $resource->store_id)
                     ->where('type', $resource->type)
                     ->max('sort_order') ?? 0;

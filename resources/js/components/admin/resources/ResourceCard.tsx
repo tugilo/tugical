@@ -101,6 +101,15 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
 
           {/* 詳細情報 */}
           <div className='space-y-1 text-sm text-gray-600 mb-4'>
+            <p>
+              優先順:{' '}
+              <span className='font-medium text-gray-800'>
+                {resource.sort_order ?? '—'}
+              </span>
+              <span className='text-xs text-gray-500 ml-1'>
+                （小さいほど自動割当で優先）
+              </span>
+            </p>
             {resource.type === 'staff' && resource.capacity && (
               <p>稼働可能: {resource.capacity}人まで</p>
             )}
