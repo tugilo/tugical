@@ -1014,8 +1014,9 @@ const CombinationBookingModal: React.FC<CombinationBookingModalProps> = ({
                   type='button'
                   onClick={() => selectResource(undefined)}
                   className={chipClass(formData.resource_id == null)}
+                  title='優先順で空きのある担当を自動割当'
                 >
-                  指定なし
+                  指定なし（自動割当）
                 </button>
                 {resources.map(resource => (
                   <button

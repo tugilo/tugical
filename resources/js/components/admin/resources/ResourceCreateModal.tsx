@@ -462,6 +462,18 @@ const ResourceCreateModal: React.FC<ResourceCreateModalProps> = ({
                 </p>
               )}
             </div>
+
+            <SoftNumberField
+              name='sort_order'
+              label='表示・割当優先順'
+              tip={FIELD_TIPS.resourceSortOrder}
+              value={formData.sort_order ?? 0}
+              onChange={v => handleInputChange('sort_order', v)}
+              error={errors.sort_order}
+              min={0}
+              max={9999}
+              disabled={isLoading}
+            />
           </div>
         </div>
 
