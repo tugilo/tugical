@@ -1,4 +1,6 @@
 import React from 'react';
+import SoftDigitField from './SoftDigitField';
+import { FIELD_TIPS } from './fieldTips';
 import { usePostalCodeSearch } from '../../../usePostalCodeSearch';
 
 interface AddressFormData {
@@ -54,47 +56,30 @@ export const AddressForm: React.FC<AddressFormProps> = ({
     formatPostalCode,
   } = usePostalCodeSearch();
 
-  /**
-   * 郵便番号変更時の処理（自動ハイフン挿入 + 住所自動補完）
-   */
-  const onPostalCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatPostalCode(e.target.value);
-    onChange({ postal_code: formatted });
-
-    // カスタムフックで自動補完処理
-    handlePostalCodeChange(formatted, address => {
-      onChange({
-        prefecture: address.prefecture,
-        city: address.city,
-        address_line1: address.address_line1,
-      });
-    });
-  };
-
   return (
     <div className={`space-y-4 ${className}`}>
       <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
         <div>
-          <label className='block text-sm font-medium text-gray-700 mb-1'>
-            郵便番号
-            {postalCodeLoading && (
-              <span className='ml-2 text-xs text-blue-600'>検索中...</span>
-            )}
-          </label>
-          <input
-            type='text'
+          <SoftDigitField
+            name='postal_code'
+            variant='postal'
+            label={postalCodeLoading ? '郵便番号（検索中...）' : '郵便番号'}
+            tip={FIELD_TIPS.customerPostal}
             value={data.postal_code || ''}
-            onChange={onPostalCodeChange}
+            onChange={v => onChange({ postal_code: formatPostalCode(v) })}
+            onAfterChange={formatted => {
+              handlePostalCodeChange(formatted, address => {
+                onChange({
+                  prefecture: address.prefecture,
+                  city: address.city,
+                  address_line1: address.address_line1,
+                });
+              });
+            }}
+            error={errors.postal_code}
             disabled={disabled}
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
-              errors.postal_code ? 'border-red-300' : 'border-gray-300'
-            } ${disabled ? 'bg-gray-100' : ''}`}
-            placeholder='123-4567'
-            maxLength={8}
+            placeholder='タップして入力'
           />
-          {errors.postal_code && (
-            <p className='mt-1 text-sm text-red-600'>{errors.postal_code}</p>
-          )}
         </div>
 
         <div>

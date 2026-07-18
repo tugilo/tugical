@@ -101,7 +101,8 @@ const SoftNumberField: React.FC<SoftNumberFieldProps> = ({
       <SoftNumberKeypad
         open={open}
         onClose={() => setOpen(false)}
-        onConfirm={onChange}
+        mode='number'
+        onConfirm={v => onChange(typeof v === 'number' ? v : Number(v) || 0)}
         value={typeof value === 'number' && !Number.isNaN(value) ? value : 0}
         label={label || '数値入力'}
         min={min}

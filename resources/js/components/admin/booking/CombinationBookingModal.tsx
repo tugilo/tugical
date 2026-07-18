@@ -11,6 +11,8 @@ import {
 import Modal from '../modal/Modal';
 import Button from '../ui/Button';
 import DatePicker from '../ui/DatePicker';
+import SoftDigitField from '../ui/SoftDigitField';
+import { FIELD_TIPS } from '../ui/fieldTips';
 import { MultiMenuSelector } from './MultiMenuSelector';
 import { customerApi, resourceApi, bookingApi } from '../../../services/api';
 import { useUIStore } from '../../../stores/uiStore';
@@ -762,22 +764,19 @@ const CombinationBookingModal: React.FC<CombinationBookingModalProps> = ({
                 </div>
               ) : (
                 <>
-                  <div className='relative'>
-                    <PhoneIcon className='absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400' />
-                    <input
-                      type='tel'
-                      inputMode='tel'
-                      autoComplete='tel'
-                      placeholder='例: 09012345678'
-                      value={phoneSearch}
-                      onChange={e => handlePhoneSearchChange(e.target.value)}
-                      className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent ${
-                        errors.customer_id
-                          ? 'border-red-500'
-                          : 'border-gray-300'
-                      }`}
-                    />
-                  </div>
+                  <SoftDigitField
+                    name='phone_search'
+                    variant='phone'
+                    label='電話番号'
+                    tip={FIELD_TIPS.customerPhone}
+                    value={phoneSearch}
+                    onChange={handlePhoneSearchChange}
+                    error={errors.customer_id}
+                    placeholder='タップして入力'
+                    startAdornment={
+                      <PhoneIcon className='w-4 h-4 mr-1 text-gray-500' />
+                    }
+                  />
 
                   {showPhoneCandidates && (
                     <div className='mt-2 border border-gray-200 rounded-lg overflow-hidden max-h-48 overflow-y-auto'>
