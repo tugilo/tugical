@@ -811,6 +811,32 @@ class ApiClient {
   }
 
   /**
+   * リソース画像アップロード（メイン1枚）
+   */
+  async uploadResourceImage(file: File): Promise<string> {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    const response = await this.client.post<ApiResponse<{ url: string }>>(
+      '/resources/upload-image',
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+
+    if (response.data.success && response.data.data?.url) {
+      return response.data.data.url;
+    }
+
+    throw new Error(
+      response.data.error?.message || '画像のアップロードに失敗しました'
+    );
+  }
+
+  /**
    * メニュー更新
    */
   async updateMenu(id: number, menuData: UpdateMenuRequest): Promise<Menu> {
@@ -1305,6 +1331,7 @@ export const resourceApi = {
   create: (data: any) => apiClient.createResource(data),
   update: (id: number, data: any) => apiClient.updateResource(id, data),
   delete: (id: number) => apiClient.deleteResource(id),
+  uploadImage: (file: File) => apiClient.uploadResourceImage(file),
   getTypes: () => apiClient.getResourceTypes(),
 };
 

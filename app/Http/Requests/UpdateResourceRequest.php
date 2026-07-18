@@ -60,8 +60,8 @@ class UpdateResourceRequest extends FormRequest
             'equipment_specs' => 'nullable|array',
             'booking_rules' => 'nullable|array',
             
-            // その他
-            'image_url' => 'nullable|url|max:500',
+            // その他（DBカラムは photo_url）
+            'photo_url' => 'nullable|string|max:500',
             'is_active' => 'nullable|boolean',
             'sort_order' => 'nullable|integer|min:0',
         ];
@@ -103,8 +103,7 @@ class UpdateResourceRequest extends FormRequest
             'booking_rules.array' => '予約ルールは配列形式で入力してください',
             
             // その他
-            'image_url.url' => '画像URLの形式が正しくありません',
-            'image_url.max' => '画像URLは500文字以内で入力してください',
+            'photo_url.max' => '画像のパスは500文字以内にしてください',
             'sort_order.integer' => '表示順序は整数で入力してください',
             'sort_order.min' => '表示順序は0以上で入力してください',
         ];
