@@ -9,9 +9,12 @@ import {
 } from '@heroicons/react/24/outline';
 import Modal from '../modal/Modal';
 import Button from '../ui/Button';
+import FieldLabel from '../ui/FieldLabel';
+import FieldTip from '../ui/FieldTip';
 import MultiImageUploadField, {
   EntityImageItem,
 } from '../ui/MultiImageUploadField';
+import { capacityTip, FIELD_TIPS } from '../ui/fieldTips';
 import { resourceApi } from '../../../services/api';
 import { useUIStore } from '../../../stores/uiStore';
 import type { Resource, ResourceType } from '../../../types';
@@ -111,13 +114,13 @@ const ResourceCreateModal: React.FC<ResourceCreateModalProps> = ({
     },
   ];
 
-  // 効率率オプション
+  // 作業時間の倍率（メニュー所要時間に掛ける）
   const efficiencyOptions = [
-    { value: 0.8, label: '80% (新人・研修中)' },
-    { value: 0.9, label: '90% (標準より少し遅い)' },
-    { value: 1.0, label: '100% (標準)' },
-    { value: 1.1, label: '110% (標準より早い)' },
-    { value: 1.2, label: '120% (ベテラン・高効率)' },
+    { value: 0.8, label: '短め（×0.8）' },
+    { value: 0.9, label: 'やや短め（×0.9）' },
+    { value: 1.0, label: 'そのまま（標準）' },
+    { value: 1.1, label: 'やや長め（×1.1）' },
+    { value: 1.2, label: '長め（×1.2）' },
   ];
 
   const handleInputChange = (field: keyof ResourceFormData, value: any) => {
@@ -158,7 +161,8 @@ const ResourceCreateModal: React.FC<ResourceCreateModalProps> = ({
       formData.efficiency_rate &&
       (formData.efficiency_rate < 0.5 || formData.efficiency_rate > 2.0)
     ) {
-      newErrors.efficiency_rate = '効率率は0.5〜2.0の範囲で入力してください';
+      newErrors.efficiency_rate =
+        '作業時間の調整は0.5〜2.0の範囲で選んでください';
     }
 
     if (
@@ -173,7 +177,7 @@ const ResourceCreateModal: React.FC<ResourceCreateModalProps> = ({
       (formData.hourly_rate_diff < -10000 || formData.hourly_rate_diff > 10000)
     ) {
       newErrors.hourly_rate_diff =
-        '時間料金差は-10,000〜10,000円の範囲で入力してください';
+        '指名料金は-10,000〜10,000円の範囲で入力してください';
     }
 
     setErrors(newErrors);
@@ -261,8 +265,9 @@ const ResourceCreateModal: React.FC<ResourceCreateModalProps> = ({
       <div className='space-y-8 max-h-[70vh] overflow-y-auto'>
         {/* リソースタイプ選択 */}
         <div>
-          <h3 className='text-lg font-semibold text-gray-900 mb-4'>
-            リソースタイプ
+          <h3 className='text-lg font-semibold text-gray-900 mb-4 flex items-center'>
+            種類
+            <FieldTip tip={FIELD_TIPS.resourceType} label='種類の説明' />
           </h3>
           <div className='grid grid-cols-2 md:grid-cols-4 gap-3'>
             {resourceTypes.map(type => {
@@ -306,55 +311,46 @@ const ResourceCreateModal: React.FC<ResourceCreateModalProps> = ({
           <h3 className='text-lg font-semibold text-gray-900 mb-4'>基本情報</h3>
           <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
             <div>
-              <label className='flex items-center text-sm font-medium text-gray-700 mb-1'>
-                <TypeIcon className='w-4 h-4 mr-1' />
-                リソース名
-                <span className='text-red-500 ml-1'>*</span>
-              </label>
-              <input
-                type='text'
-                value={formData.name}
-                onChange={e => handleInputChange('name', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
-                  errors.name ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder={`例: ${
-                  formData.type === 'staff'
-                    ? 'staff_001'
-                    : formData.type === 'room'
-                    ? 'room_001'
-                    : formData.type === 'equipment'
-                    ? 'equipment_001'
-                    : 'vehicle_001'
-                }`}
+              <FieldLabel
+                label='表示名'
+                tip={FIELD_TIPS.resourceDisplayName}
+                required
+                startAdornment={<TypeIcon className='w-4 h-4 mr-1' />}
               />
-              {errors.name && (
-                <p className='mt-1 text-sm text-red-600'>{errors.name}</p>
-              )}
-            </div>
-
-            <div>
-              <label className='text-sm font-medium text-gray-700 mb-1 block'>
-                表示名
-                <span className='text-red-500 ml-1'>*</span>
-              </label>
               <input
                 type='text'
                 value={formData.display_name || ''}
-                onChange={e =>
-                  handleInputChange('display_name', e.target.value)
-                }
+                onChange={e => {
+                  const v = e.target.value;
+                  setFormData(prev => ({
+                    ...prev,
+                    display_name: v,
+                    // 管理コードが空、または表示名と同値なら同期
+                    name:
+                      !prev.name || prev.name === prev.display_name
+                        ? v.trim()
+                        : prev.name,
+                  }));
+                  if (errors.display_name || errors.name) {
+                    setErrors(prev => {
+                      const next = { ...prev };
+                      delete next.display_name;
+                      delete next.name;
+                      return next;
+                    });
+                  }
+                }}
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                   errors.display_name ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder={`例: ${
                   formData.type === 'staff'
-                    ? 'スタッフA'
+                    ? '山田'
                     : formData.type === 'room'
-                    ? '部屋A'
+                    ? '個室A'
                     : formData.type === 'equipment'
-                    ? '設備A'
-                    : '車両A'
+                    ? '機器A'
+                    : '送迎車'
                 }`}
               />
               {errors.display_name && (
@@ -363,18 +359,36 @@ const ResourceCreateModal: React.FC<ResourceCreateModalProps> = ({
                 </p>
               )}
             </div>
+
+            <div>
+              <FieldLabel
+                label='管理コード'
+                tip={FIELD_TIPS.resourceName}
+                required
+              />
+              <input
+                type='text'
+                value={formData.name}
+                onChange={e => handleInputChange('name', e.target.value)}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                  errors.name ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder='表示名と同じでもOK'
+              />
+              {errors.name && (
+                <p className='mt-1 text-sm text-red-600'>{errors.name}</p>
+              )}
+            </div>
           </div>
 
           <div className='mt-4'>
-            <label className='text-sm font-medium text-gray-700 mb-1 block'>
-              説明
-            </label>
+            <FieldLabel label='説明' tip={FIELD_TIPS.resourceDescription} />
             <textarea
               value={formData.description || ''}
               onChange={e => handleInputChange('description', e.target.value)}
-              rows={3}
+              rows={2}
               className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500'
-              placeholder={`${selectedType?.label}の詳細説明を入力してください`}
+              placeholder='任意'
             />
           </div>
         </div>
@@ -384,10 +398,79 @@ const ResourceCreateModal: React.FC<ResourceCreateModalProps> = ({
           <h3 className='text-lg font-semibold text-gray-900 mb-4'>詳細設定</h3>
           <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
             <div>
-              <label className='flex items-center text-sm font-medium text-gray-700 mb-1'>
-                <ClockIcon className='w-4 h-4 mr-1' />
-                効率率
-              </label>
+              <FieldLabel
+                label='指名料金'
+                tip={FIELD_TIPS.hourlyRateDiff}
+                startAdornment={<CurrencyYenIcon className='w-4 h-4 mr-1' />}
+              />
+              <div className='relative'>
+                <input
+                  type='number'
+                  value={formData.hourly_rate_diff || 0}
+                  onChange={e =>
+                    handleInputChange(
+                      'hourly_rate_diff',
+                      parseInt(e.target.value) || 0
+                    )
+                  }
+                  className={`w-full px-3 py-2 pr-14 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                    errors.hourly_rate_diff
+                      ? 'border-red-500'
+                      : 'border-gray-300'
+                  }`}
+                  placeholder='0'
+                  min='-10000'
+                  max='10000'
+                  step='100'
+                />
+                <span className='absolute right-2 top-2 text-gray-500 text-sm'>
+                  円/時
+                </span>
+              </div>
+              {errors.hourly_rate_diff && (
+                <p className='mt-1 text-sm text-red-600'>
+                  {errors.hourly_rate_diff}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <FieldLabel
+                label={
+                  formData.type === 'staff'
+                    ? '同時対応人数'
+                    : formData.type === 'room'
+                      ? '収容人数'
+                      : formData.type === 'equipment'
+                        ? '同時利用数'
+                        : '乗車定員'
+                }
+                tip={capacityTip(formData.type)}
+              />
+              <input
+                type='number'
+                value={formData.capacity || 1}
+                onChange={e =>
+                  handleInputChange('capacity', parseInt(e.target.value) || 1)
+                }
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                  errors.capacity ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder='1'
+                min='1'
+                max='100'
+              />
+              {errors.capacity && (
+                <p className='mt-1 text-sm text-red-600'>{errors.capacity}</p>
+              )}
+            </div>
+
+            <div>
+              <FieldLabel
+                label='作業時間の調整'
+                tip={FIELD_TIPS.efficiencyRate}
+                startAdornment={<ClockIcon className='w-4 h-4 mr-1' />}
+              />
               <select
                 value={formData.efficiency_rate || 1.0}
                 onChange={e =>
@@ -410,76 +493,13 @@ const ResourceCreateModal: React.FC<ResourceCreateModalProps> = ({
                 </p>
               )}
             </div>
-
-            <div>
-              <label className='flex items-center text-sm font-medium text-gray-700 mb-1'>
-                <CurrencyYenIcon className='w-4 h-4 mr-1' />
-                時間料金差
-              </label>
-              <div className='relative'>
-                <input
-                  type='number'
-                  value={formData.hourly_rate_diff || 0}
-                  onChange={e =>
-                    handleInputChange(
-                      'hourly_rate_diff',
-                      parseInt(e.target.value) || 0
-                    )
-                  }
-                  className={`w-full px-3 py-2 pr-8 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
-                    errors.hourly_rate_diff
-                      ? 'border-red-500'
-                      : 'border-gray-300'
-                  }`}
-                  placeholder='0'
-                  min='-10000'
-                  max='10000'
-                  step='100'
-                />
-                <span className='absolute right-2 top-2 text-gray-500 text-sm'>
-                  円
-                </span>
-              </div>
-              {errors.hourly_rate_diff && (
-                <p className='mt-1 text-sm text-red-600'>
-                  {errors.hourly_rate_diff}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className='text-sm font-medium text-gray-700 mb-1 block'>
-                {formData.type === 'staff'
-                  ? '同時対応人数'
-                  : formData.type === 'room'
-                  ? '収容人数'
-                  : formData.type === 'equipment'
-                  ? '同時利用数'
-                  : '乗車定員'}
-              </label>
-              <input
-                type='number'
-                value={formData.capacity || 1}
-                onChange={e =>
-                  handleInputChange('capacity', parseInt(e.target.value) || 1)
-                }
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
-                  errors.capacity ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder='1'
-                min='1'
-                max='100'
-              />
-              {errors.capacity && (
-                <p className='mt-1 text-sm text-red-600'>{errors.capacity}</p>
-              )}
-            </div>
           </div>
         </div>
 
         <div>
-          <h3 className='text-lg font-semibold text-gray-900 mb-4'>
-            ステータス設定
+          <h3 className='text-lg font-semibold text-gray-900 mb-4 flex items-center'>
+            公開設定
+            <FieldTip tip={FIELD_TIPS.resourceActive} label='公開設定の説明' />
           </h3>
           <div className='space-y-3'>
             <div className='flex items-center'>
@@ -491,7 +511,7 @@ const ResourceCreateModal: React.FC<ResourceCreateModalProps> = ({
                 className='w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500'
               />
               <label htmlFor='is_active' className='ml-2 text-sm text-gray-700'>
-                アクティブ状態（予約受付可能）
+                予約受付する（公開）
               </label>
             </div>
           </div>

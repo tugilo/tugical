@@ -1,9 +1,10 @@
 /**
  * tugical 管理画面用 統一フォームフィールド（MUI TextField 実装）
- * Phase 3: 内部を MUI TextField / Select に置換。呼び出し側の props は互換維持。
+ * tip: ⓘ で効果・意味を表示
  */
 import React from 'react';
-import { TextField, MenuItem } from '@mui/material';
+import { Box, TextField, MenuItem } from '@mui/material';
+import FieldTip from './FieldTip';
 
 export interface FormFieldProps {
   label: string;
@@ -22,6 +23,8 @@ export interface FormFieldProps {
   onChange: (value: string | number) => void;
   placeholder?: string;
   error?: string;
+  /** ⓘ TIPS（効果・意味の説明） */
+  tip?: string;
   required?: boolean;
   disabled?: boolean;
   options?: Array<{ value: string | number; label: string }>;
@@ -34,9 +37,6 @@ export interface FormFieldProps {
 
 /**
  * 統一フォームフィールド（MUI TextField ラッパー）
- * - text / number / textarea / select 対応
- * - onChange は (value) => void のまま互換
- * - error は MUI の error + helperText にマッピング
  */
 const FormField: React.FC<FormFieldProps> = ({
   label,
@@ -46,6 +46,7 @@ const FormField: React.FC<FormFieldProps> = ({
   onChange,
   placeholder = '',
   error = '',
+  tip,
   required = false,
   disabled = false,
   options = [],
@@ -76,28 +77,44 @@ const FormField: React.FC<FormFieldProps> = ({
   const hasError = Boolean(error);
   const helperText = error || ' ';
 
+  const labelNode = tip ? (
+    <Box component='span' sx={{ display: 'inline-flex', alignItems: 'center' }}>
+      {label}
+      {required ? ' *' : ''}
+      <FieldTip tip={tip} label={`${label}の説明`} />
+    </Box>
+  ) : (
+    label
+  );
+
+  // tip 付きのとき required はラベル側に出したので TextField の * は抑止
+  const muiRequired = tip ? false : required;
+
   if (type === 'select') {
     return (
       <TextField
         id={name}
         name={name}
-        label={label}
+        label={labelNode}
         value={displayValue}
-        onChange={(e) => onChange(e.target.value)}
-        required={required}
+        onChange={e => onChange(e.target.value)}
+        required={muiRequired}
         disabled={disabled}
         error={hasError}
         helperText={helperText}
         fullWidth
-        size="small"
+        size='small'
         select
-        variant="outlined"
+        variant='outlined'
         className={className}
         sx={{ mb: 0 }}
+        InputLabelProps={
+          tip ? { shrink: true, required: false } : { required: muiRequired }
+        }
         FormHelperTextProps={{ sx: { marginTop: 0.25 } }}
       >
-        <MenuItem value="">選択してください</MenuItem>
-        {options.map((opt) => (
+        <MenuItem value=''>選択してください</MenuItem>
+        {options.map(opt => (
           <MenuItem key={String(opt.value)} value={String(opt.value)}>
             {opt.label}
           </MenuItem>
@@ -107,33 +124,38 @@ const FormField: React.FC<FormFieldProps> = ({
   }
 
   const isMultiline = type === 'textarea';
-  const inputType = isMultiline ? undefined : (type as 'text' | 'email' | 'password' | 'number' | 'tel' | 'url');
+  const inputType = isMultiline
+    ? undefined
+    : (type as 'text' | 'email' | 'password' | 'number' | 'tel' | 'url');
 
   return (
     <TextField
       id={name}
       name={name}
-      label={label}
+      label={labelNode}
       value={displayValue}
       onChange={handleChange}
       placeholder={placeholder}
-      required={required}
+      required={muiRequired}
       disabled={disabled}
       error={hasError}
       helperText={helperText}
       fullWidth
-      size="small"
-      variant="outlined"
+      size='small'
+      variant='outlined'
       type={inputType}
       multiline={isMultiline}
       rows={isMultiline ? rows : undefined}
       className={className}
       sx={{ mb: 0 }}
-      inputProps={
-        type === 'number'
-          ? { min, max, step }
-          : undefined
+      InputLabelProps={
+        tip
+          ? { shrink: true, required: false }
+          : type === 'date'
+            ? { shrink: true, required: muiRequired }
+            : { required: muiRequired }
       }
+      inputProps={type === 'number' ? { min, max, step } : undefined}
       FormHelperTextProps={{ sx: { marginTop: 0.25 } }}
     />
   );

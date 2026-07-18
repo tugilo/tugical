@@ -17,9 +17,12 @@ import { resourceApi } from '../../../services/api';
 import { useUIStore } from '../../../stores/uiStore';
 import Modal from '../modal/Modal';
 import AppButton from '../ui/AppButton';
+import FieldLabel from '../ui/FieldLabel';
+import FieldTip from '../ui/FieldTip';
 import MultiImageUploadField, {
   EntityImageItem,
 } from '../ui/MultiImageUploadField';
+import { capacityTip, FIELD_TIPS } from '../ui/fieldTips';
 import {
   UserIcon,
   BuildingOfficeIcon,
@@ -141,7 +144,8 @@ const ResourceEditModal: React.FC<ResourceEditModalProps> = ({
     }
 
     if (formData.efficiency_rate < 0.5 || formData.efficiency_rate > 2.0) {
-      newErrors.efficiency_rate = '効率率は0.5〜2.0の範囲で入力してください';
+      newErrors.efficiency_rate =
+        '作業時間の調整は0.5〜2.0の範囲で選んでください';
     }
 
     if (formData.capacity < 1 || formData.capacity > 100) {
@@ -153,7 +157,7 @@ const ResourceEditModal: React.FC<ResourceEditModalProps> = ({
       formData.hourly_rate_diff > 10000
     ) {
       newErrors.hourly_rate_diff =
-        '時間料金差は-10,000〜10,000円の範囲で入力してください';
+        '指名料金は-10,000〜10,000円の範囲で入力してください';
     }
 
     setErrors(newErrors);
@@ -261,30 +265,11 @@ const ResourceEditModal: React.FC<ResourceEditModalProps> = ({
         {/* 基本情報 */}
         <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
           <div>
-            <label className='flex items-center text-sm font-medium text-gray-700 mb-1'>
-              リソース名
-              <span className='text-red-500 ml-1'>*</span>
-            </label>
-            <input
-              type='text'
-              value={formData.name}
-              onChange={e => handleInputChange('name', e.target.value)}
-              disabled={isLoading}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-50 ${
-                errors.name ? 'border-red-500' : 'border-gray-300'
-              }`}
-              placeholder='例: staff_001'
+            <FieldLabel
+              label='表示名'
+              tip={FIELD_TIPS.resourceDisplayName}
+              required
             />
-            {errors.name && (
-              <p className='mt-1 text-sm text-red-600'>{errors.name}</p>
-            )}
-          </div>
-
-          <div>
-            <label className='text-sm font-medium text-gray-700 mb-1 block'>
-              表示名
-              <span className='text-red-500 ml-1'>*</span>
-            </label>
             <input
               type='text'
               value={formData.display_name}
@@ -293,41 +278,95 @@ const ResourceEditModal: React.FC<ResourceEditModalProps> = ({
               className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-50 ${
                 errors.display_name ? 'border-red-500' : 'border-gray-300'
               }`}
-              placeholder='例: スタッフA'
+              placeholder='例: 山田'
             />
             {errors.display_name && (
               <p className='mt-1 text-sm text-red-600'>{errors.display_name}</p>
+            )}
+          </div>
+
+          <div>
+            <FieldLabel
+              label='管理コード'
+              tip={FIELD_TIPS.resourceName}
+              required
+            />
+            <input
+              type='text'
+              value={formData.name}
+              onChange={e => handleInputChange('name', e.target.value)}
+              disabled={isLoading}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-50 ${
+                errors.name ? 'border-red-500' : 'border-gray-300'
+              }`}
+              placeholder='表示名と同じでもOK'
+            />
+            {errors.name && (
+              <p className='mt-1 text-sm text-red-600'>{errors.name}</p>
             )}
           </div>
         </div>
 
         {/* 説明 */}
         <div>
-          <label className='text-sm font-medium text-gray-700 mb-1 block'>
-            説明
-          </label>
+          <FieldLabel label='説明' tip={FIELD_TIPS.resourceDescription} />
           <textarea
             value={formData.description}
             onChange={e => handleInputChange('description', e.target.value)}
             disabled={isLoading}
-            rows={3}
+            rows={2}
             className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-50'
-            placeholder={`${typeLabel}の詳細説明を入力してください`}
+            placeholder='任意'
           />
         </div>
 
         {/* 詳細設定 */}
         <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
           <div>
-            <label className='text-sm font-medium text-gray-700 mb-1 block'>
-              {resource.type === 'staff'
-                ? '同時対応人数'
-                : resource.type === 'room'
-                ? '収容人数'
-                : resource.type === 'equipment'
-                ? '同時利用数'
-                : '乗車定員'}
-            </label>
+            <FieldLabel label='指名料金' tip={FIELD_TIPS.hourlyRateDiff} />
+            <div className='relative'>
+              <input
+                type='number'
+                min='-10000'
+                max='10000'
+                step='100'
+                value={formData.hourly_rate_diff}
+                onChange={e =>
+                  handleInputChange(
+                    'hourly_rate_diff',
+                    parseInt(e.target.value) || 0
+                  )
+                }
+                disabled={isLoading}
+                className={`w-full px-3 py-2 pr-14 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-50 ${
+                  errors.hourly_rate_diff ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder='0'
+              />
+              <span className='absolute right-2 top-2 text-gray-500 text-sm'>
+                円/時
+              </span>
+            </div>
+            {errors.hourly_rate_diff && (
+              <p className='mt-1 text-sm text-red-600'>
+                {errors.hourly_rate_diff}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <FieldLabel
+              label={
+                resource.type === 'staff'
+                  ? '同時対応人数'
+                  : resource.type === 'room'
+                    ? '収容人数'
+                    : resource.type === 'equipment'
+                      ? '同時利用数'
+                      : '乗車定員'
+              }
+              tip={capacityTip(resource.type)}
+            />
             <input
               type='number'
               min='1'
@@ -347,9 +386,10 @@ const ResourceEditModal: React.FC<ResourceEditModalProps> = ({
           </div>
 
           <div>
-            <label className='text-sm font-medium text-gray-700 mb-1 block'>
-              効率率
-            </label>
+            <FieldLabel
+              label='作業時間の調整'
+              tip={FIELD_TIPS.efficiencyRate}
+            />
             <select
               value={formData.efficiency_rate}
               onChange={e =>
@@ -358,11 +398,11 @@ const ResourceEditModal: React.FC<ResourceEditModalProps> = ({
               disabled={isLoading}
               className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-50'
             >
-              <option value={0.8}>80% (新人・研修中)</option>
-              <option value={0.9}>90% (標準より少し遅い)</option>
-              <option value={1.0}>100% (標準)</option>
-              <option value={1.1}>110% (標準より早い)</option>
-              <option value={1.2}>120% (ベテラン・高効率)</option>
+              <option value={0.8}>短め（×0.8）</option>
+              <option value={0.9}>やや短め（×0.9）</option>
+              <option value={1.0}>そのまま（標準）</option>
+              <option value={1.1}>やや長め（×1.1）</option>
+              <option value={1.2}>長め（×1.2）</option>
             </select>
             {errors.efficiency_rate && (
               <p className='mt-1 text-sm text-red-600'>
@@ -370,46 +410,13 @@ const ResourceEditModal: React.FC<ResourceEditModalProps> = ({
               </p>
             )}
           </div>
-
-          <div>
-            <label className='text-sm font-medium text-gray-700 mb-1 block'>
-              時間料金差
-            </label>
-            <div className='relative'>
-              <input
-                type='number'
-                min='-10000'
-                max='10000'
-                step='100'
-                value={formData.hourly_rate_diff}
-                onChange={e =>
-                  handleInputChange(
-                    'hourly_rate_diff',
-                    parseInt(e.target.value) || 0
-                  )
-                }
-                disabled={isLoading}
-                className={`w-full px-3 py-2 pr-8 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-50 ${
-                  errors.hourly_rate_diff ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder='0'
-              />
-              <span className='absolute right-2 top-2 text-gray-500 text-sm'>
-                円
-              </span>
-            </div>
-            {errors.hourly_rate_diff && (
-              <p className='mt-1 text-sm text-red-600'>
-                {errors.hourly_rate_diff}
-              </p>
-            )}
-          </div>
         </div>
 
         {/* ステータス設定 */}
         <div>
-          <label className='text-sm font-medium text-gray-700 mb-3 block'>
-            ステータス
+          <label className='text-sm font-medium text-gray-700 mb-3 flex items-center'>
+            公開設定
+            <FieldTip tip={FIELD_TIPS.resourceActive} label='公開設定の説明' />
           </label>
           <div className='flex items-center space-x-4'>
             <label className='flex items-center'>

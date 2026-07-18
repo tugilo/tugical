@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Customer, CreateCustomerRequest } from '../../../types';
 import Button from '../ui/Button';
 import Modal from '../modal/Modal';
+import FieldLabel from '../ui/FieldLabel';
+import { FIELD_TIPS } from '../ui/fieldTips';
 import { apiClient } from '../../../services/api';
 import { usePostalCodeSearch } from '../../../usePostalCodeSearch';
 
@@ -148,9 +150,11 @@ export const CustomerCreateModal: React.FC<CustomerCreateModalProps> = ({
           <div className='space-y-4'>
             <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
               <div>
-                <label className='block text-sm font-medium text-gray-700 mb-1'>
-                  お名前 <span className='text-red-500'>*</span>
-                </label>
+                <FieldLabel
+                  label='お名前'
+                  tip={FIELD_TIPS.customerName}
+                  required
+                />
                 <input
                   type='text'
                   value={formData.name}
@@ -168,9 +172,11 @@ export const CustomerCreateModal: React.FC<CustomerCreateModalProps> = ({
               </div>
 
               <div>
-                <label className='block text-sm font-medium text-gray-700 mb-1'>
-                  電話番号 <span className='text-red-500'>*</span>
-                </label>
+                <FieldLabel
+                  label='電話番号'
+                  tip={FIELD_TIPS.customerPhone}
+                  required
+                />
                 <input
                   type='tel'
                   value={formData.phone}
@@ -189,9 +195,7 @@ export const CustomerCreateModal: React.FC<CustomerCreateModalProps> = ({
             </div>
 
             <div>
-              <label className='block text-sm font-medium text-gray-700 mb-1'>
-                メールアドレス
-              </label>
+              <FieldLabel label='メールアドレス' tip={FIELD_TIPS.customerEmail} />
               <input
                 type='email'
                 value={formData.email || ''}

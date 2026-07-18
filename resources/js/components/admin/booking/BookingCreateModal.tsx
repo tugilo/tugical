@@ -14,6 +14,8 @@ import {
 import Modal from '../modal/Modal';
 import Button from '../ui/Button';
 import DatePicker from '../ui/DatePicker';
+import FieldTip from '../ui/FieldTip';
+import { FIELD_TIPS } from '../ui/fieldTips';
 import {
   bookingApi,
   customerApi,
@@ -778,8 +780,12 @@ const BookingCreateModal: React.FC<BookingCreateModalProps> = ({
 
           {/* 時間選択 */}
           <div>
-            <label className='block text-sm font-medium text-pink-700 mb-2'>
+            <label className='flex items-center text-sm font-medium text-pink-700 mb-2'>
               開始時間
+              <FieldTip
+                tip={FIELD_TIPS.bookingStartTime}
+                label='開始時間の説明'
+              />
             </label>
 
             {isLoadingAvailability ? (
