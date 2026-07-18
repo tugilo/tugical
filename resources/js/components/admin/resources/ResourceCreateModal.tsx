@@ -195,8 +195,13 @@ const ResourceCreateModal: React.FC<ResourceCreateModalProps> = ({
       const images = formData.images || [];
       const primary =
         images.find(img => img.is_primary)?.url || images[0]?.url || null;
+      // 優先順 0 は未指定扱い（サーバ側で自動採番）
       const resource = await resourceApi.create({
         ...formData,
+        sort_order:
+          formData.sort_order && formData.sort_order > 0
+            ? formData.sort_order
+            : null,
         images,
         photo_url: primary,
       });
@@ -394,6 +399,25 @@ const ResourceCreateModal: React.FC<ResourceCreateModalProps> = ({
           </div>
         </div>
 
+        {/* 自動割当の優先順 */}
+        <div className='rounded-lg border border-amber-200 bg-amber-50 p-4'>
+          <SoftNumberField
+            name='sort_order'
+            label='自動割当の優先順'
+            tip={FIELD_TIPS.resourceSortOrder}
+            value={formData.sort_order ?? 0}
+            onChange={v => handleInputChange('sort_order', v)}
+            error={errors.sort_order}
+            min={0}
+            max={9999}
+            disabled={isLoading}
+          />
+          <p className='mt-2 text-xs text-amber-800'>
+            数字が小さいほど、「指定なし」予約で先に割り当てられます（例: 10 → 20 → 30）。
+            0のままなら作成時に自動で採番されます。
+          </p>
+        </div>
+
         {/* 詳細設定 */}
         <div>
           <h3 className='text-lg font-semibold text-gray-900 mb-4'>詳細設定</h3>
@@ -462,18 +486,6 @@ const ResourceCreateModal: React.FC<ResourceCreateModalProps> = ({
                 </p>
               )}
             </div>
-
-            <SoftNumberField
-              name='sort_order'
-              label='表示・割当優先順'
-              tip={FIELD_TIPS.resourceSortOrder}
-              value={formData.sort_order ?? 0}
-              onChange={v => handleInputChange('sort_order', v)}
-              error={errors.sort_order}
-              min={0}
-              max={9999}
-              disabled={isLoading}
-            />
           </div>
         </div>
 

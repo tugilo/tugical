@@ -325,6 +325,24 @@ const ResourceEditModal: React.FC<ResourceEditModalProps> = ({
           />
         </div>
 
+        {/* 自動割当の優先順（スタッフ管理で見つけやすい位置） */}
+        <div className='rounded-lg border border-amber-200 bg-amber-50 p-4'>
+          <SoftNumberField
+            name='sort_order'
+            label='自動割当の優先順'
+            tip={FIELD_TIPS.resourceSortOrder}
+            value={formData.sort_order}
+            onChange={v => handleInputChange('sort_order', v)}
+            error={errors.sort_order}
+            min={0}
+            max={9999}
+            disabled={isLoading}
+          />
+          <p className='mt-2 text-xs text-amber-800'>
+            数字が小さいほど、「指定なし」予約で先に割り当てられます（例: 10 → 20 → 30）。
+          </p>
+        </div>
+
         {/* 詳細設定 */}
         <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
           <SoftNumberField
@@ -359,18 +377,6 @@ const ResourceEditModal: React.FC<ResourceEditModalProps> = ({
             unit='人'
             min={1}
             max={100}
-            disabled={isLoading}
-          />
-
-          <SoftNumberField
-            name='sort_order'
-            label='表示・割当優先順'
-            tip={FIELD_TIPS.resourceSortOrder}
-            value={formData.sort_order}
-            onChange={v => handleInputChange('sort_order', v)}
-            error={errors.sort_order}
-            min={0}
-            max={9999}
             disabled={isLoading}
           />
 
