@@ -1,7 +1,7 @@
 # PHASE_008_always_show_name_search REPORT
 
 **作成日時**: 2026-07-19 05:17:55  
-**最終更新日時**: 2026-07-19 05:17:55  
+**最終更新日時**: 2026-07-19 05:18:10  
 **Phase ID**: PHASE_008  
 **フェーズ種別**: implement  
 
@@ -12,7 +12,7 @@
 ## Merge Evidence
 
 ```
-merge commit id: (merge 後に記入)
+merge commit id: e9f8595
 source branch: feature/phase008-always-show-name-search
 target branch: develop
 phase id: 008
