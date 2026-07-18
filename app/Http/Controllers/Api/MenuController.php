@@ -9,6 +9,7 @@ use App\Http\Resources\MenuResource;
 use App\Models\Menu;
 use App\Models\MenuOption;
 use App\Http\Resources\MenuOptionResource;
+use App\Services\EntityImageSyncService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -36,9 +37,12 @@ class MenuController extends Controller
 
             // クエリビルダー開始
             $query = Menu::where('store_id', $storeId)
-                ->with(['options' => function ($q) {
-                    $q->active()->ordered();
-                }])
+                ->with([
+                    'options' => function ($q) {
+                        $q->active()->ordered();
+                    },
+                    'images',
+                ])
                 ->orderBy('sort_order')
                 ->orderBy('name');
 
@@ -141,7 +145,7 @@ class MenuController extends Controller
 
             $menu->load(['options' => function ($q) {
                 $q->ordered();
-            }, 'store']);
+            }, 'images', 'store']);
 
             return response()->json([
                 'success' => true,
@@ -223,12 +227,23 @@ class MenuController extends Controller
                     }
                 }
 
+                // 画像1対多同期（images 優先、なければ image_url）
+                $imageSync = app(EntityImageSyncService::class);
+                $images = $imageSync->normalizeFromLegacy(
+                    $request->has('images') ? $request->input('images') : null,
+                    $request->input('image_url'),
+                    $request->has('image_url')
+                );
+                if ($images !== null) {
+                    $imageSync->sync($menu, $images, $storeId);
+                }
+
                 return $menu;
             });
 
             $menu->load(['options' => function ($q) {
                 $q->ordered();
-            }]);
+            }, 'images']);
 
             return response()->json([
                 'success' => true,
@@ -366,11 +381,27 @@ class MenuController extends Controller
                         ]);
                     }
                 }
+
+                // 画像1対多同期（images 送信時、または image_url のみ更新時）
+                $imageSync = app(EntityImageSyncService::class);
+                if ($request->has('images')) {
+                    $imageSync->sync($menu, $request->input('images', []), $menu->store_id);
+                } elseif ($request->has('image_url')) {
+                    $imageSync->sync(
+                        $menu,
+                        $imageSync->normalizeFromLegacy(
+                            null,
+                            $request->input('image_url'),
+                            true
+                        ),
+                        $menu->store_id
+                    );
+                }
             });
 
             $menu->load(['options' => function ($q) {
                 $q->ordered();
-            }]);
+            }, 'images']);
 
             return response()->json([
                 'success' => true,

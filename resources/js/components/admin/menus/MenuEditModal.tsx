@@ -74,6 +74,13 @@ const MenuEditModal: React.FC<MenuEditModalProps> = ({
       setOriginalMenu(menu);
 
       // フォームデータを初期化
+      const images =
+        menu.images && menu.images.length > 0
+          ? menu.images
+          : menu.image_url
+            ? [{ url: menu.image_url, is_primary: true }]
+            : [];
+
       setFormData({
         name: menu.name,
         display_name: menu.display_name,
@@ -84,6 +91,7 @@ const MenuEditModal: React.FC<MenuEditModalProps> = ({
         prep_duration: menu.prep_duration,
         cleanup_duration: menu.cleanup_duration,
         image_url: menu.image_url ?? null,
+        images,
         is_active: menu.is_active,
         requires_approval: menu.requires_approval,
         sort_order: menu.sort_order,
@@ -195,6 +203,19 @@ const MenuEditModal: React.FC<MenuEditModalProps> = ({
   };
 
   // 変更検出（null と undefined を同等に扱う）
+  const isFieldChanged = (
+    key: string,
+    formValue: unknown,
+    originalValue: unknown
+  ): boolean => {
+    if (key === 'images') {
+      return (
+        JSON.stringify(formValue ?? []) !== JSON.stringify(originalValue ?? [])
+      );
+    }
+    return (formValue ?? null) !== (originalValue ?? null);
+  };
+
   const hasChanges = (): boolean => {
     if (!originalMenu) return false;
 
@@ -202,7 +223,7 @@ const MenuEditModal: React.FC<MenuEditModalProps> = ({
       const formValue = formData[key as keyof UpdateMenuRequest];
       if (formValue === undefined) return false;
       const originalValue = originalMenu[key as keyof Menu];
-      return (formValue ?? null) !== (originalValue ?? null);
+      return isFieldChanged(key, formValue, originalValue);
     });
   };
 
@@ -236,11 +257,17 @@ const MenuEditModal: React.FC<MenuEditModalProps> = ({
         const originalValue = originalMenu?.[key as keyof Menu];
         if (
           formValue !== undefined &&
-          (formValue ?? null) !== (originalValue ?? null)
+          isFieldChanged(key, formValue, originalValue)
         ) {
           (updateData as any)[key] = formValue;
         }
       });
+
+      if (updateData.images) {
+        const imgs = updateData.images;
+        updateData.image_url =
+          imgs.find(img => img.is_primary)?.url || imgs[0]?.url || null;
+      }
 
       await menuApi.update(menuId, updateData);
 
@@ -322,9 +349,9 @@ const MenuEditModal: React.FC<MenuEditModalProps> = ({
       ) : (
         <form onSubmit={handleSubmit} className='space-y-6'>
           <MenuImageField
-            value={formData.image_url}
-            onChange={url => updateFormData('image_url', url)}
-            error={errors.image_url}
+            value={formData.images || []}
+            onChange={images => updateFormData('images', images)}
+            error={errors.images || errors.image_url}
             disabled={isSubmitting}
           />
 

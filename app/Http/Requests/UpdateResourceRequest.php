@@ -62,6 +62,10 @@ class UpdateResourceRequest extends FormRequest
             
             // その他（DBカラムは photo_url）
             'photo_url' => 'nullable|string|max:500',
+            // 1対多画像（最大10枚・送信時は完全置換）
+            'images' => 'nullable|array|max:10',
+            'images.*.url' => 'required|string|max:500',
+            'images.*.is_primary' => 'nullable|boolean',
             'is_active' => 'nullable|boolean',
             'sort_order' => 'nullable|integer|min:0',
         ];

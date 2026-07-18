@@ -17,7 +17,9 @@ import { resourceApi } from '../../../services/api';
 import { useUIStore } from '../../../stores/uiStore';
 import Modal from '../modal/Modal';
 import AppButton from '../ui/AppButton';
-import ImageUploadField from '../ui/ImageUploadField';
+import MultiImageUploadField, {
+  EntityImageItem,
+} from '../ui/MultiImageUploadField';
 import {
   UserIcon,
   BuildingOfficeIcon,
@@ -41,6 +43,7 @@ interface EditFormData {
   hourly_rate_diff: number;
   is_active: boolean;
   photo_url: string | null;
+  images: EntityImageItem[];
 }
 
 /**
@@ -63,6 +66,7 @@ const ResourceEditModal: React.FC<ResourceEditModalProps> = ({
     hourly_rate_diff: 0,
     is_active: true,
     photo_url: null,
+    images: [],
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -96,6 +100,12 @@ const ResourceEditModal: React.FC<ResourceEditModalProps> = ({
         hourly_rate_diff: resource.hourly_rate_diff || 0,
         is_active: resource.is_active !== false,
         photo_url: resource.photo_url || null,
+        images:
+          resource.images && resource.images.length > 0
+            ? resource.images
+            : resource.photo_url
+              ? [{ url: resource.photo_url, is_primary: true }]
+              : [],
       });
       setErrors({});
     }
@@ -169,7 +179,11 @@ const ResourceEditModal: React.FC<ResourceEditModalProps> = ({
         efficiency_rate: Number(formData.efficiency_rate),
         hourly_rate_diff: Number(formData.hourly_rate_diff),
         is_active: formData.is_active,
-        photo_url: formData.photo_url?.trim() || null,
+        images: formData.images || [],
+        photo_url:
+          formData.images?.find(img => img.is_primary)?.url ||
+          formData.images?.[0]?.url ||
+          null,
       });
 
       addNotification({
@@ -233,14 +247,15 @@ const ResourceEditModal: React.FC<ResourceEditModalProps> = ({
           </div>
         </div>
 
-        <ImageUploadField
-          value={formData.photo_url}
-          onChange={url => handleInputChange('photo_url', url)}
+        <MultiImageUploadField
+          value={formData.images || []}
+          onChange={images => handleInputChange('images', images)}
           onUpload={file => resourceApi.uploadImage(file)}
           label='画像'
-          hint='任意・1枚 / ドラッグ＆ドロップ可'
-          error={errors.photo_url}
+          hint='任意・最大10枚 / ドラッグ＆ドロップ可 / ★がメイン'
+          error={errors.images || errors.photo_url}
           disabled={isLoading}
+          max={10}
         />
 
         {/* 基本情報 */}

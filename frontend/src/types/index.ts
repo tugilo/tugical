@@ -619,6 +619,17 @@ export interface UpdateCustomerRequest {
 }
 
 // ========================================
+// エンティティ画像（1対多）
+// ========================================
+
+export interface EntityImage {
+  id?: number;
+  url: string;
+  sort_order?: number;
+  is_primary?: boolean;
+}
+
+// ========================================
 // リソース関連型定義
 // ========================================
 
@@ -638,6 +649,7 @@ export interface Resource {
   booking_rules: Record<string, any>;
   photo_url?: string | null;
   image_url?: string | null;
+  images?: EntityImage[];
   is_active: boolean;
   sort_order: number;
   created_at: string;
@@ -658,6 +670,7 @@ export interface CreateResourceRequest {
   equipment_specs?: Record<string, any>;
   booking_rules?: Record<string, any>;
   photo_url?: string | null;
+  images?: EntityImage[];
   is_active?: boolean;
   sort_order?: number;
 }
@@ -676,6 +689,7 @@ export interface UpdateResourceRequest {
   equipment_specs?: Record<string, any>;
   booking_rules?: Record<string, any>;
   photo_url?: string | null;
+  images?: EntityImage[];
   is_active?: boolean;
   sort_order?: number;
 }
@@ -717,6 +731,7 @@ export interface Menu {
   requires_approval: boolean;
   sort_order: number;
   image_url?: string;
+  images?: EntityImage[];
   options?: MenuOption[];
   options_count?: number;
   bookings_count?: number;
@@ -797,6 +812,7 @@ export interface CreateMenuRequest {
   resource_requirements?: MenuResourceRequirements;
   industry_settings?: Record<string, any>;
   image_url?: string;
+  images?: EntityImage[];
   is_active?: boolean;
   requires_approval?: boolean;
   sort_order?: number;
@@ -816,6 +832,7 @@ export interface UpdateMenuRequest {
   resource_requirements?: MenuResourceRequirements;
   industry_settings?: Record<string, any>;
   image_url?: string | null;
+  images?: EntityImage[];
   is_active?: boolean;
   requires_approval?: boolean;
   sort_order?: number;

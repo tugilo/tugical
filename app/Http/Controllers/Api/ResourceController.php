@@ -7,6 +7,7 @@ use App\Models\Resource;
 use App\Http\Resources\ResourceResource;
 use App\Http\Requests\CreateResourceRequest;
 use App\Http\Requests\UpdateResourceRequest;
+use App\Services\EntityImageSyncService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -49,7 +50,7 @@ class ResourceController extends Controller
             ]);
 
             // クエリビルダー開始
-            $query = Resource::where('store_id', $storeId);
+            $query = Resource::where('store_id', $storeId)->with('images');
 
             // タイプフィルター
             if ($request->filled('type')) {
@@ -170,6 +171,8 @@ class ResourceController extends Controller
                 'type' => $resource->type
             ]);
 
+            $resource->load('images');
+
             return response()->json([
                 'success' => true,
                 'data' => [
@@ -283,6 +286,19 @@ class ResourceController extends Controller
                     'is_active' => $request->is_active ?? true,
                 ]);
 
+                // 画像1対多同期（images 優先、なければ photo_url）
+                $imageSync = app(EntityImageSyncService::class);
+                $images = $imageSync->normalizeFromLegacy(
+                    $request->has('images') ? $request->input('images') : null,
+                    $request->input('photo_url'),
+                    $request->has('photo_url')
+                );
+                if ($images !== null) {
+                    $imageSync->sync($resource, $images, $storeId);
+                }
+
+                $resource->load('images');
+
                 DB::commit();
 
                 Log::info('リソース作成完了', [
@@ -351,8 +367,9 @@ class ResourceController extends Controller
             DB::beginTransaction();
 
             try {
-                // 更新データの準備（photo_url の null クリアを許可）
+                // 更新データの準備（photo_url の null クリアを許可、images は別同期）
                 $validated = $request->validated();
+                unset($validated['images']);
                 $updateData = [];
                 foreach ($validated as $key => $value) {
                     if ($key === 'photo_url' && $request->has('photo_url')) {
@@ -399,8 +416,24 @@ class ResourceController extends Controller
                 // リソース更新
                 $resource->update($updateData);
 
+                // 画像1対多同期
+                $imageSync = app(EntityImageSyncService::class);
+                if ($request->has('images')) {
+                    $imageSync->sync($resource, $request->input('images', []), $storeId);
+                } elseif ($request->has('photo_url')) {
+                    $imageSync->sync(
+                        $resource,
+                        $imageSync->normalizeFromLegacy(
+                            null,
+                            $request->input('photo_url'),
+                            true
+                        ),
+                        $storeId
+                    );
+                }
+
                 // 更新後の最新データを取得
-                $resource->refresh();
+                $resource->refresh()->load('images');
 
                 DB::commit();
 

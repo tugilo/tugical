@@ -36,6 +36,7 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
     advance_booking_hours: 1,
     gender_restriction: 'none',
     image_url: undefined,
+    images: [],
     is_active: true,
     requires_approval: false,
     sort_order: 0,
@@ -111,12 +112,16 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
     setIsSubmitting(true);
     try {
       const label = (formData.display_name || formData.name || '').trim();
+      const images = formData.images || [];
+      const primary =
+        images.find(img => img.is_primary)?.url || images[0]?.url || undefined;
       await menuApi.create({
         ...formData,
         name: label,
         display_name: label,
         category: formData.category?.trim() || undefined,
-        image_url: formData.image_url || undefined,
+        images,
+        image_url: primary,
       });
 
       addNotification({
@@ -163,6 +168,7 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
       advance_booking_hours: 1,
       gender_restriction: 'none',
       image_url: undefined,
+      images: [],
       is_active: true,
       requires_approval: false,
       sort_order: 0,
@@ -183,9 +189,9 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
     >
       <form onSubmit={handleSubmit} className='space-y-5'>
         <MenuImageField
-          value={formData.image_url}
-          onChange={url => updateFormData('image_url', url ?? undefined)}
-          error={errors.image_url}
+          value={formData.images || []}
+          onChange={images => updateFormData('images', images)}
+          error={errors.images || errors.image_url}
           disabled={isSubmitting}
         />
 

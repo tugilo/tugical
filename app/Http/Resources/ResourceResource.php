@@ -37,6 +37,7 @@ class ResourceResource extends JsonResource
             'is_active' => $this->is_active,
             'sort_order' => $this->sort_order,
             'photo_url' => $this->photo_url,
+            'images' => EntityImageResource::collection($this->whenLoaded('images')),
             // 互換（旧クライアント向け）
             'image_url' => $this->photo_url,
             
