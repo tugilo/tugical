@@ -13,6 +13,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * メニュー管理コントローラー
@@ -254,6 +255,51 @@ class MenuController extends Controller
     }
 
     /**
+     * メニュー画像アップロード（メイン1枚用）
+     * LIFF は image_url → photo_url で1枚表示するため、ギャラリーは扱わない
+     */
+    public function uploadImage(Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'image' => 'required|image|mimes:jpeg,jpg,png,webp|max:5120',
+            ], [
+                'image.required' => '画像を選択してください',
+                'image.image' => '画像ファイルを選択してください',
+                'image.mimes' => 'jpeg / png / webp のみアップロードできます',
+                'image.max' => '画像は5MB以下にしてください',
+            ]);
+
+            $storeId = auth()->user()->store_id;
+            $path = $request->file('image')->store("menus/{$storeId}", 'public');
+            $url = Storage::disk('public')->url($path);
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'url' => $url,
+                ],
+                'message' => '画像をアップロードしました',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            Log::error('メニュー画像アップロードエラー', [
+                'error' => $e->getMessage(),
+                'store_id' => auth()->user()->store_id ?? null,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => [
+                    'code' => 'MENU_IMAGE_UPLOAD_ERROR',
+                    'message' => '画像のアップロードに失敗しました',
+                ],
+            ], 500);
+        }
+    }
+
+    /**
      * メニュー更新
      * 
      * @param UpdateMenuRequest $request
@@ -290,7 +336,9 @@ class MenuController extends Controller
                     'required_resources' => $request->resource_requirements ?? $menu->required_resources,
                     'settings' => $request->industry_settings ?? $menu->settings,
                     'gender_restriction' => $request->gender_restriction ?? $menu->gender_restriction,
-                    'image_url' => $request->image_url ?? $menu->image_url,
+                    'image_url' => $request->has('image_url')
+                        ? $request->image_url
+                        : $menu->image_url,
                     'is_active' => $request->is_active ?? $menu->is_active,
                     'require_approval' => $request->requires_approval ?? $menu->require_approval,
                     'sort_order' => $request->sort_order ?? $menu->sort_order,

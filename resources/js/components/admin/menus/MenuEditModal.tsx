@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Modal from '../modal/Modal';
 import FormField from '../ui/FormField';
 import AppButton from '../ui/AppButton';
+import MenuImageField from './MenuImageField';
 import { Menu, UpdateMenuRequest } from '../../../types';
 import { menuApi } from '../../../services/api';
 import { useUIStore } from '../../../stores/uiStore';
@@ -82,6 +83,7 @@ const MenuEditModal: React.FC<MenuEditModalProps> = ({
         base_duration: menu.base_duration,
         prep_duration: menu.prep_duration,
         cleanup_duration: menu.cleanup_duration,
+        image_url: menu.image_url ?? null,
         is_active: menu.is_active,
         requires_approval: menu.requires_approval,
         sort_order: menu.sort_order,
@@ -192,14 +194,15 @@ const MenuEditModal: React.FC<MenuEditModalProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  // 変更検出
+  // 変更検出（null と undefined を同等に扱う）
   const hasChanges = (): boolean => {
     if (!originalMenu) return false;
 
     return Object.keys(formData).some(key => {
       const formValue = formData[key as keyof UpdateMenuRequest];
+      if (formValue === undefined) return false;
       const originalValue = originalMenu[key as keyof Menu];
-      return formValue !== undefined && formValue !== originalValue;
+      return (formValue ?? null) !== (originalValue ?? null);
     });
   };
 
@@ -231,7 +234,10 @@ const MenuEditModal: React.FC<MenuEditModalProps> = ({
       Object.keys(formData).forEach(key => {
         const formValue = formData[key as keyof UpdateMenuRequest];
         const originalValue = originalMenu?.[key as keyof Menu];
-        if (formValue !== undefined && formValue !== originalValue) {
+        if (
+          formValue !== undefined &&
+          (formValue ?? null) !== (originalValue ?? null)
+        ) {
           (updateData as any)[key] = formValue;
         }
       });
@@ -315,6 +321,13 @@ const MenuEditModal: React.FC<MenuEditModalProps> = ({
         </div>
       ) : (
         <form onSubmit={handleSubmit} className='space-y-6'>
+          <MenuImageField
+            value={formData.image_url}
+            onChange={url => updateFormData('image_url', url)}
+            error={errors.image_url}
+            disabled={isSubmitting}
+          />
+
           {/* 基本情報 */}
           <div className='space-y-4'>
             <h4 className='text-sm font-medium text-gray-900 border-b border-gray-200 pb-2'>

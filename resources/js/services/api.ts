@@ -785,6 +785,32 @@ class ApiClient {
   }
 
   /**
+   * メニュー画像アップロード（メイン1枚）
+   */
+  async uploadMenuImage(file: File): Promise<string> {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    const response = await this.client.post<ApiResponse<{ url: string }>>(
+      '/menus/upload-image',
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+
+    if (response.data.success && response.data.data?.url) {
+      return response.data.data.url;
+    }
+
+    throw new Error(
+      response.data.error?.message || '画像のアップロードに失敗しました'
+    );
+  }
+
+  /**
    * メニュー更新
    */
   async updateMenu(id: number, menuData: UpdateMenuRequest): Promise<Menu> {
@@ -1289,6 +1315,7 @@ export const menuApi = {
   update: (id: number, data: UpdateMenuRequest) =>
     apiClient.updateMenu(id, data),
   delete: (id: number) => apiClient.deleteMenu(id),
+  uploadImage: (file: File) => apiClient.uploadMenuImage(file),
   getCategories: () => apiClient.getMenuCategories(),
   updateOrder: (menuOrders: Array<{ id: number; sort_order: number }>) =>
     apiClient.updateMenuOrder(menuOrders),

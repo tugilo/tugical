@@ -95,6 +95,7 @@ Route::prefix('v1')->middleware(['auth:sanctum'])->name('api.v1.')->group(functi
     Route::apiResource('customers', CustomerController::class);
 
     // メニュー管理API
+    Route::post('menus/upload-image', [MenuController::class, 'uploadImage'])->name('menus.upload-image');
     Route::apiResource('menus', MenuController::class);
     Route::get('menus/{menu}/options', [MenuController::class, 'getOptions'])->name('menus.options');
     Route::get('menus-categories', [MenuController::class, 'categories'])->name('menus.categories');
