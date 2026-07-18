@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   CalendarIcon,
   ClockIcon,
@@ -51,21 +51,11 @@ interface LastVisitSummary {
   menus: CombinationMenuRequest[];
 }
 
-/**
- * 開始時間スロット（15分刻み）を生成
- */
-const buildTimeSlots = (startHour = 8, endHour = 21): string[] => {
-  const slots: string[] = [];
-  for (let h = startHour; h <= endHour; h++) {
-    for (let m = 0; m < 60; m += 15) {
-      if (h === endHour && m > 0) break;
-      slots.push(
-        `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
-      );
-    }
-  }
-  return slots;
-};
+/** 選択可能な時（08〜21） */
+const HOUR_OPTIONS = Array.from({ length: 14 }, (_, i) => i + 8);
+
+/** 15分刻みの分（21時は 00 のみ別途制限） */
+const MINUTE_OPTIONS = [0, 15, 30, 45] as const;
 
 /**
  * HH:mm を最も近い 15 分刻みに丸める
@@ -82,8 +72,41 @@ const snapToQuarterHour = (time?: string): string => {
     m = 0;
   }
   if (h > 23) h = 23;
+  // 営業終了 21:00 を超える場合は 21:00 に丸める
+  if (h > 21 || (h === 21 && m > 0)) {
+    h = 21;
+    m = 0;
+  }
+  if (h < 8) {
+    h = 8;
+    m = 0;
+  }
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 };
+
+/**
+ * HH:mm を時・分に分解
+ */
+const parseTimeParts = (
+  time?: string
+): { hour: number | null; minute: number | null } => {
+  const snapped = snapToQuarterHour(time);
+  if (!snapped) return { hour: null, minute: null };
+  const [h, m] = snapped.split(':').map(Number);
+  return { hour: h, minute: m };
+};
+
+/**
+ * 時・分から HH:mm を組み立て
+ */
+const formatHm = (hour: number, minute: number): string =>
+  `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+
+/**
+ * 選択した時に応じた分の候補（21時は 00 のみ）
+ */
+const minutesForHour = (hour: number): number[] =>
+  hour === 21 ? [0] : [...MINUTE_OPTIONS];
 
 /** 電話番号を数字のみに正規化 */
 const digitsOnly = (value: string): string => value.replace(/\D/g, '');
@@ -174,7 +197,7 @@ const CombinationBookingModal: React.FC<CombinationBookingModalProps> = ({
   initialResourceId,
 }) => {
   const { addNotification } = useUIStore();
-  const timeSlots = useMemo(() => buildTimeSlots(8, 21), []);
+  const initialTimeParts = parseTimeParts(initialStartTime);
 
   // フォーム状態
   const [formData, setFormData] = useState<CreateCombinationBookingRequest>({
@@ -185,6 +208,15 @@ const CombinationBookingModal: React.FC<CombinationBookingModalProps> = ({
     menus: [],
     customer_notes: '',
   });
+
+  /** 開始時間: 時（未選択は null） */
+  const [selectedHour, setSelectedHour] = useState<number | null>(
+    initialTimeParts.hour
+  );
+  /** 開始時間: 分（時未選択時は非表示） */
+  const [selectedMinute, setSelectedMinute] = useState<number | null>(
+    initialTimeParts.minute
+  );
 
   // データ状態
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -327,6 +359,7 @@ const CombinationBookingModal: React.FC<CombinationBookingModalProps> = ({
    * フォームリセット
    */
   const resetForm = () => {
+    const parts = parseTimeParts(initialStartTime);
     setFormData({
       customer_id: initialCustomerId || 0,
       booking_date: initialDate || '',
@@ -335,6 +368,8 @@ const CombinationBookingModal: React.FC<CombinationBookingModalProps> = ({
       menus: [],
       customer_notes: '',
     });
+    setSelectedHour(parts.hour);
+    setSelectedMinute(parts.minute);
     setSelectedCustomer(null);
     setSelectedMenus([]);
     setCalculationResult(null);
@@ -526,6 +561,45 @@ const CombinationBookingModal: React.FC<CombinationBookingModalProps> = ({
       delete newErrors[field];
       return newErrors;
     });
+  };
+
+  /**
+   * 時・分から start_time を同期
+   */
+  const syncStartTime = (hour: number | null, minute: number | null) => {
+    if (hour != null && minute != null) {
+      setFormData(prev => ({
+        ...prev,
+        start_time: formatHm(hour, minute),
+      }));
+      clearError('start_time');
+    } else {
+      setFormData(prev => ({ ...prev, start_time: '' }));
+    }
+  };
+
+  /**
+   * 時を選択（再選択も同じ行で可能）。分が有効なら引き継ぐ
+   */
+  const handleHourSelect = (hour: number) => {
+    setSelectedHour(hour);
+    const allowedMinutes = minutesForHour(hour);
+    const nextMinute =
+      selectedMinute != null && allowedMinutes.includes(selectedMinute)
+        ? selectedMinute
+        : null;
+    if (nextMinute !== selectedMinute) {
+      setSelectedMinute(nextMinute);
+    }
+    syncStartTime(hour, nextMinute);
+  };
+
+  /**
+   * 分を選択（時選択後に表示）
+   */
+  const handleMinuteSelect = (minute: number) => {
+    setSelectedMinute(minute);
+    syncStartTime(selectedHour, minute);
   };
 
   /**
@@ -888,32 +962,56 @@ const CombinationBookingModal: React.FC<CombinationBookingModalProps> = ({
               )}
             </div>
 
-            {/* 開始時間（チップ） */}
+            {/* 開始時間（時 → 分） */}
             <div>
               <label className='block text-sm font-medium text-gray-700 mb-2'>
                 <ClockIcon className='w-4 h-4 inline mr-1' />
                 開始時間
-                {formData.start_time && (
-                  <span className='ml-2 text-emerald-700 font-semibold'>
+                {formData.start_time ? (
+                  <span className='ml-2 text-emerald-700 font-semibold text-base'>
                     {formData.start_time}
                   </span>
-                )}
+                ) : selectedHour != null ? (
+                  <span className='ml-2 text-gray-500 font-medium'>
+                    {String(selectedHour).padStart(2, '0')}:--
+                  </span>
+                ) : null}
               </label>
-              <div className='flex flex-wrap gap-2 max-h-40 overflow-y-auto p-1 -m-1'>
-                {timeSlots.map(slot => (
+
+              <p className='text-xs text-gray-500 mb-2'>時を選ぶ</p>
+              <div className='flex flex-wrap gap-2 p-1 -m-1'>
+                {HOUR_OPTIONS.map(hour => (
                   <button
                     type='button'
-                    key={slot}
-                    onClick={() => {
-                      setFormData(prev => ({ ...prev, start_time: slot }));
-                      clearError('start_time');
-                    }}
-                    className={chipClass(formData.start_time === slot)}
+                    key={hour}
+                    onClick={() => handleHourSelect(hour)}
+                    className={chipClass(selectedHour === hour)}
+                    aria-pressed={selectedHour === hour}
                   >
-                    {slot}
+                    {String(hour).padStart(2, '0')}
                   </button>
                 ))}
               </div>
+
+              {selectedHour != null && (
+                <div className='mt-4'>
+                  <p className='text-xs text-gray-500 mb-2'>分を選ぶ</p>
+                  <div className='flex flex-wrap gap-2 p-1 -m-1'>
+                    {minutesForHour(selectedHour).map(minute => (
+                      <button
+                        type='button'
+                        key={minute}
+                        onClick={() => handleMinuteSelect(minute)}
+                        className={`${chipClass(selectedMinute === minute)} min-w-[5rem]`}
+                        aria-pressed={selectedMinute === minute}
+                      >
+                        :{String(minute).padStart(2, '0')}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {errors.start_time && (
                 <p className='text-sm text-red-600 mt-1'>{errors.start_time}</p>
               )}
