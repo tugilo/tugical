@@ -205,20 +205,30 @@ const CombinationBookingModal: React.FC<CombinationBookingModalProps> = ({
   }, [isOpen, isDataLoaded]);
 
   // 顧客検索フィルタリング
+  // 注意: 選択直後に customerSearch が名前で更新されるため、
+  // 選択済みと一致するだけのときは候補を再オープンしない（2タップ問題の防止）
   useEffect(() => {
-    if (customerSearch.trim()) {
-      const filtered = customers.filter(
-        customer =>
-          customer.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
-          (customer.phone && customer.phone.includes(customerSearch))
-      );
-      setFilteredCustomers(filtered);
-      setShowCustomerList(true);
-    } else {
+    const query = customerSearch.trim();
+    if (!query) {
       setFilteredCustomers([]);
       setShowCustomerList(false);
+      return;
     }
-  }, [customerSearch, customers]);
+
+    if (selectedCustomer && query === selectedCustomer.name) {
+      setFilteredCustomers([]);
+      setShowCustomerList(false);
+      return;
+    }
+
+    const filtered = customers.filter(
+      customer =>
+        customer.name.toLowerCase().includes(query.toLowerCase()) ||
+        (customer.phone && customer.phone.includes(query))
+    );
+    setFilteredCustomers(filtered);
+    setShowCustomerList(filtered.length > 0);
+  }, [customerSearch, customers, selectedCustomer]);
 
   // 初期顧客設定
   useEffect(() => {
@@ -319,15 +329,28 @@ const CombinationBookingModal: React.FC<CombinationBookingModalProps> = ({
   };
 
   /**
-   * 顧客選択
+   * 顧客選択（1タップで候補を閉じる）
    */
   const selectCustomer = (customer: Customer) => {
+    setShowCustomerList(false);
+    setFilteredCustomers([]);
     setSelectedCustomer(customer);
     setCustomerSearch(customer.name);
-    setShowCustomerList(false);
     setFormData(prev => ({ ...prev, customer_id: customer.id }));
     clearError('customer_id');
     void loadLastVisit(customer.id);
+  };
+
+  /**
+   * 検索入力変更（手入力時は選択を解除して候補を出す）
+   */
+  const handleCustomerSearchChange = (value: string) => {
+    setCustomerSearch(value);
+    if (selectedCustomer && value !== selectedCustomer.name) {
+      setSelectedCustomer(null);
+      setFormData(prev => ({ ...prev, customer_id: 0 }));
+      setLastVisit(null);
+    }
   };
 
   /**
@@ -494,18 +517,37 @@ const CombinationBookingModal: React.FC<CombinationBookingModalProps> = ({
                   type='text'
                   placeholder='顧客名または電話番号で検索'
                   value={customerSearch}
-                  onChange={e => setCustomerSearch(e.target.value)}
+                  onChange={e => handleCustomerSearchChange(e.target.value)}
+                  onFocus={() => {
+                    // 未選択、または検索文字列が選択名と違うときだけ候補を開く
+                    if (
+                      customerSearch.trim() &&
+                      !(selectedCustomer && customerSearch === selectedCustomer.name) &&
+                      filteredCustomers.length > 0
+                    ) {
+                      setShowCustomerList(true);
+                    }
+                  }}
                   className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent ${
                     errors.customer_id ? 'border-red-500' : 'border-gray-300'
                   }`}
                 />
-                {showCustomerList && (
-                  <div className='absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto'>
+                {showCustomerList && filteredCustomers.length > 0 && (
+                  <div
+                    className='absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto'
+                    // 入力の blur より先に選択を確定（モバイルの1タップ目を拾う）
+                    onMouseDown={e => e.preventDefault()}
+                  >
                     {filteredCustomers.map(customer => (
-                      <div
+                      <button
+                        type='button'
                         key={customer.id}
+                        onMouseDown={e => {
+                          e.preventDefault();
+                          selectCustomer(customer);
+                        }}
                         onClick={() => selectCustomer(customer)}
-                        className='px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0'
+                        className='w-full text-left px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0'
                       >
                         <div className='font-medium text-gray-900'>
                           {customer.name}
@@ -513,7 +555,7 @@ const CombinationBookingModal: React.FC<CombinationBookingModalProps> = ({
                         <div className='text-sm text-gray-600'>
                           {customer.phone}
                         </div>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 )}
