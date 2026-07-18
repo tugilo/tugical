@@ -902,6 +902,24 @@ class ApiClient {
   }
 
   /**
+   * リソース表示・自動割当優先順の一括更新
+   */
+  async updateResourceOrder(
+    resources: Array<{ id: number; sort_order: number }>
+  ): Promise<void> {
+    const response = await this.client.patch<ApiResponse>('/resources-order', {
+      resources,
+    });
+
+    if (!response.data.success) {
+      throw new Error(
+        response.data.error?.message ||
+          'リソースの優先順更新に失敗しました'
+      );
+    }
+  }
+
+  /**
    * 郵便番号から住所を検索
    * @param postalCode 郵便番号（ハイフンあり・なし両対応）
    * @returns 住所情報
@@ -1333,6 +1351,8 @@ export const resourceApi = {
   delete: (id: number) => apiClient.deleteResource(id),
   uploadImage: (file: File) => apiClient.uploadResourceImage(file),
   getTypes: () => apiClient.getResourceTypes(),
+  updateOrder: (resources: Array<{ id: number; sort_order: number }>) =>
+    apiClient.updateResourceOrder(resources),
 };
 
 export const menuApi = {

@@ -24,6 +24,7 @@ import ConfirmDialog from '../../../components/admin/ui/ConfirmDialog';
 import ResourceCard from '../../../components/admin/resources/ResourceCard';
 import ResourceCreateModal from '../../../components/admin/resources/ResourceCreateModal';
 import ResourceEditModal from '../../../components/admin/resources/ResourceEditModal';
+import ResourcePriorityList from '../../../components/admin/resources/ResourcePriorityList';
 import {
   PlusIcon,
   MagnifyingGlassIcon,
@@ -33,6 +34,7 @@ import {
   TruckIcon,
   ArrowPathIcon,
   FunnelIcon,
+  ArrowsUpDownIcon,
 } from '@heroicons/react/24/outline';
 
 // リソースタイプのアイコンマッピング
@@ -73,6 +75,8 @@ const ResourcesPage: React.FC = () => {
     null
   );
   const [isDeleting, setIsDeleting] = useState(false);
+  /** 優先順ドラッグ並べ替えモード */
+  const [reorderMode, setReorderMode] = useState(false);
 
   useEffect(() => {
     setPageTitle('スタッフ・設備');
@@ -300,6 +304,53 @@ const ResourcesPage: React.FC = () => {
       : 0;
   };
 
+  /**
+   * 優先順並べ替えモードを開始（スタッフが対象になりやすいよう種類をスタッフへ）
+   */
+  const enterReorderMode = () => {
+    if (typeFilter === 'all') {
+      setTypeFilter('staff');
+    }
+    setReorderMode(true);
+  };
+
+  /**
+   * ドラッグ後の優先順を保存（上から 10, 20, 30...）
+   */
+  const handlePriorityReorder = async (ordered: Resource[]) => {
+    const payload = ordered.map((resource, index) => ({
+      id: resource.id,
+      sort_order: (index + 1) * 10,
+    }));
+    try {
+      await resourceApi.updateOrder(payload);
+      addToast({
+        type: 'success',
+        title: '優先順を更新しました',
+        message: '上にあるほど「指定なし」予約で先に割り当てられます',
+      });
+      await fetchAllResources();
+    } catch (error: any) {
+      addToast({
+        type: 'error',
+        title: '優先順の更新に失敗しました',
+        message:
+          error.response?.data?.error?.message ||
+          error.message ||
+          'しばらく時間をおいて再度お試しください',
+      });
+      throw error;
+    }
+  };
+
+  /** 並べ替え用: 現在の絞り込み結果を sort_order 順 */
+  const reorderTargets = [...filteredResources].sort((a, b) => {
+    const sa = a.sort_order ?? 0;
+    const sb = b.sort_order ?? 0;
+    if (sa !== sb) return sa - sb;
+    return a.id - b.id;
+  });
+
   if (isLoading) {
     return <LoadingScreen />;
   }
@@ -317,7 +368,16 @@ const ResourcesPage: React.FC = () => {
             {getActiveResourceCount()} 件）
           </p>
         </div>
-        <div className='flex gap-3'>
+        <div className='flex gap-3 flex-wrap justify-end'>
+          <AppButton
+            variant={reorderMode ? 'primary' : 'outline'}
+            leftIcon={<ArrowsUpDownIcon className='w-4 h-4' />}
+            onClick={() =>
+              reorderMode ? setReorderMode(false) : enterReorderMode()
+            }
+          >
+            {reorderMode ? '並べ替えを終了' : '優先順を並べ替え'}
+          </AppButton>
           <AppButton
             variant='outline'
             leftIcon={<ArrowPathIcon className='w-4 h-4' />}
@@ -330,6 +390,7 @@ const ResourcesPage: React.FC = () => {
             variant='primary'
             leftIcon={<PlusIcon className='w-4 h-4' />}
             onClick={handleCreateResource}
+            disabled={reorderMode}
           >
             新規追加
           </AppButton>
@@ -432,8 +493,24 @@ const ResourcesPage: React.FC = () => {
         </Card.Body>
       </Card>
 
-      {/* リソース一覧 */}
-      {filteredResources.length === 0 ? (
+      {/* リソース一覧 / 優先順並べ替え */}
+      {reorderMode ? (
+        <Card>
+          <Card.Body>
+            <div className='mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900'>
+              現在のフィルター対象（
+              {typeFilter === 'all'
+                ? 'すべて'
+                : getResourceTypeLabel(typeFilter)}
+              ）をドラッグで並べ替えます。スタッフだけ並べる場合は種類を「スタッフ」にしてください。
+            </div>
+            <ResourcePriorityList
+              resources={reorderTargets}
+              onReorder={handlePriorityReorder}
+            />
+          </Card.Body>
+        </Card>
+      ) : filteredResources.length === 0 ? (
         <Card>
           <Card.Body>
             <div className='text-center py-12'>
