@@ -66,7 +66,7 @@ class UpdateBookingRequest extends FormRequest
                 'sometimes',
                 'date',
                 'date_format:Y-m-d',
-                'after_or_equal:today'  // 更新時は当日も許可
+                // 管理画面の過去予約のメモ・担当変更も許可するため日付下限は設けない
             ],
             'start_time' => [
                 'sometimes',

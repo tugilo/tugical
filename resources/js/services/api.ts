@@ -295,12 +295,12 @@ class ApiClient {
    * 予約詳細取得
    */
   async getBooking(id: number): Promise<Booking> {
-    const response = await this.client.get<ApiResponse<Booking>>(
+    const response = await this.client.get<ApiResponse<{ booking: Booking }>>(
       `/bookings/${id}`
     );
 
-    if (response.data.success && response.data.data) {
-      return response.data.data;
+    if (response.data.success && response.data.data?.booking) {
+      return response.data.data.booking;
     }
 
     throw new Error(
@@ -329,15 +329,20 @@ class ApiClient {
    */
   async updateBooking(
     id: number,
-    bookingData: Partial<CreateBookingRequest>
+    bookingData: Partial<CreateBookingRequest> & {
+      end_time?: string;
+      status?: string;
+      staff_notes?: string;
+      total_price?: number;
+    }
   ): Promise<Booking> {
-    const response = await this.client.put<ApiResponse<Booking>>(
-      `/bookings/${id}`,
-      bookingData
-    );
+    const response = await this.client.put<
+      ApiResponse<{ booking: Booking } | Booking>
+    >(`/bookings/${id}`, bookingData);
 
     if (response.data.success && response.data.data) {
-      return response.data.data;
+      const data = response.data.data as { booking?: Booking } & Booking;
+      return data.booking ?? data;
     }
 
     throw new Error(response.data.error?.message || '予約の更新に失敗しました');
@@ -362,14 +367,19 @@ class ApiClient {
   }
 
   /**
-   * 予約削除
+   * 予約キャンセル（ソフトキャンセル）
    */
-  async deleteBooking(id: number): Promise<void> {
-    const response = await this.client.delete<ApiResponse>(`/bookings/${id}`);
+  async deleteBooking(id: number, cancellationReason?: string): Promise<void> {
+    const response = await this.client.delete<ApiResponse>(`/bookings/${id}`, {
+      data: {
+        cancellation_reason: cancellationReason,
+        send_notification: true,
+      },
+    });
 
     if (!response.data.success) {
       throw new Error(
-        response.data.error?.message || '予約の削除に失敗しました'
+        response.data.error?.message || '予約のキャンセルに失敗しました'
       );
     }
   }
@@ -1192,7 +1202,8 @@ export const bookingApi = {
     apiClient.updateBooking(id, data),
   updateStatus: (id: number, status: string) =>
     apiClient.updateBookingStatus(id, status),
-  delete: (id: number) => apiClient.deleteBooking(id),
+  delete: (id: number, cancellationReason?: string) =>
+    apiClient.deleteBooking(id, cancellationReason),
 
   // Phase 23: 複数メニュー組み合わせ対応
   calculateCombination: (data: CalculateCombinationRequest) =>

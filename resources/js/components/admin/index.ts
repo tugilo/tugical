@@ -36,6 +36,7 @@ export { default as DashboardLayout } from './layout/DashboardLayout';
 // ========================================
 export { default as BookingCard } from './booking/BookingCard';
 export { default as BookingCreateModal } from './booking/BookingCreateModal';
+export { default as BookingDetailModal } from './booking/BookingDetailModal';
 export { MultiMenuSelector } from './booking/MultiMenuSelector';
 
 // ========================================
