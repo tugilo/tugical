@@ -333,11 +333,21 @@ class BookingService
      *
      * @param int $storeId 店舗ID
      * @param array $bookingData 予約データ（booking_date, start_time, end_time / menu_id 等）
+     * @param int|null $excludeBookingId 除外する予約ID（更新・バックフィル用）
+     * @param bool $includeUnassignedConflicts 未割当予約も競合に含めるか（バックフィル時は false）
+     * @param bool $checkBusinessHours 営業時間チェック（バックフィル時は false 可）
+     * @param bool $forceAssignIfBusy 空きが無いときも sort_order 先頭を強制割当するか
      * @return int 確定した resource_id
      * @throws \Exception 割当不能時
      */
-    public function resolveResourceIdForBooking(int $storeId, array $bookingData): int
-    {
+    public function resolveResourceIdForBooking(
+        int $storeId,
+        array $bookingData,
+        ?int $excludeBookingId = null,
+        bool $includeUnassignedConflicts = true,
+        bool $checkBusinessHours = true,
+        bool $forceAssignIfBusy = false
+    ): int {
         $resourceId = $bookingData['resource_id'] ?? null;
 
         if (!empty($resourceId)) {
@@ -354,6 +364,9 @@ class BookingService
         }
 
         $bookingDate = $bookingData['booking_date'] ?? null;
+        if ($bookingDate instanceof \DateTimeInterface) {
+            $bookingDate = $bookingDate->format('Y-m-d');
+        }
         $startTime = isset($bookingData['start_time'])
             ? substr((string) $bookingData['start_time'], 0, 5)
             : null;
@@ -383,7 +396,10 @@ class BookingService
                 (int) $resource->id,
                 $bookingDate,
                 $startTime,
-                $endTime
+                $endTime,
+                $excludeBookingId,
+                $includeUnassignedConflicts,
+                $checkBusinessHours
             )) {
                 Log::info('担当者を自動割当', [
                     'store_id' => $storeId,
@@ -392,13 +408,140 @@ class BookingService
                     'booking_date' => $bookingDate,
                     'start_time' => $startTime,
                     'end_time' => $endTime,
+                    'exclude_booking_id' => $excludeBookingId,
                 ]);
 
                 return (int) $resource->id;
             }
         }
 
+        if ($forceAssignIfBusy) {
+            $forced = (int) $candidates->first()->id;
+            Log::warning('空き担当なしのため優先順先頭を強制割当', [
+                'store_id' => $storeId,
+                'resource_id' => $forced,
+                'booking_date' => $bookingDate,
+                'start_time' => $startTime,
+                'end_time' => $endTime,
+                'exclude_booking_id' => $excludeBookingId,
+            ]);
+
+            return $forced;
+        }
+
         throw new \Exception('指定時間に空きのある担当者がいません');
+    }
+
+    /**
+     * 既存の未割当（resource_id null）予約へ担当者を一括割当する。
+     *
+     * @param int|null $storeId 店舗指定（null で全店舗）
+     * @return array{assigned: int, forced: int, skipped: int, details: array<int, array>}
+     */
+    public function backfillUnassignedResources(?int $storeId = null): array
+    {
+        $query = Booking::query()
+            ->whereNull('resource_id')
+            ->whereIn('status', ['confirmed', 'pending', 'completed'])
+            ->orderBy('booking_date')
+            ->orderBy('start_time')
+            ->orderBy('id');
+
+        if ($storeId !== null) {
+            $query->where('store_id', $storeId);
+        }
+
+        $assigned = 0;
+        $forced = 0;
+        $skipped = 0;
+        $details = [];
+
+        foreach ($query->get() as $booking) {
+            try {
+                $date = $booking->booking_date instanceof \DateTimeInterface
+                    ? $booking->booking_date->format('Y-m-d')
+                    : substr((string) $booking->booking_date, 0, 10);
+                $start = substr((string) $booking->start_time, 0, 5);
+                $end = substr((string) $booking->end_time, 0, 5);
+
+                // 空き優先で試し、だめなら強制割当（既存データ修復）
+                $resourceId = null;
+                $wasForced = false;
+                try {
+                    $resourceId = $this->resolveResourceIdForBooking(
+                        (int) $booking->store_id,
+                        [
+                            'booking_date' => $date,
+                            'start_time' => $start,
+                            'end_time' => $end,
+                        ],
+                        (int) $booking->id,
+                        false,
+                        false,
+                        false
+                    );
+                } catch (\Exception $e) {
+                    $resourceId = $this->resolveResourceIdForBooking(
+                        (int) $booking->store_id,
+                        [
+                            'booking_date' => $date,
+                            'start_time' => $start,
+                            'end_time' => $end,
+                        ],
+                        (int) $booking->id,
+                        false,
+                        false,
+                        true
+                    );
+                    $wasForced = true;
+                }
+
+                $booking->resource_id = $resourceId;
+                $booking->save();
+
+                // 明細の未割当も同じ担当で揃える
+                BookingDetail::where('booking_id', $booking->id)
+                    ->whereNull('resource_id')
+                    ->update(['resource_id' => $resourceId]);
+
+                if ($wasForced) {
+                    $forced++;
+                } else {
+                    $assigned++;
+                }
+
+                $details[] = [
+                    'booking_id' => $booking->id,
+                    'resource_id' => $resourceId,
+                    'forced' => $wasForced,
+                    'date' => $date,
+                    'start_time' => $start,
+                ];
+
+                Log::info('未割当予約へ担当者をバックフィル', [
+                    'booking_id' => $booking->id,
+                    'resource_id' => $resourceId,
+                    'forced' => $wasForced,
+                ]);
+            } catch (\Exception $e) {
+                $skipped++;
+                $details[] = [
+                    'booking_id' => $booking->id,
+                    'error' => $e->getMessage(),
+                ];
+                Log::error('未割当予約のバックフィル失敗', [
+                    'booking_id' => $booking->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return [
+            'assigned' => $assigned,
+            'forced' => $forced,
+            'skipped' => $skipped,
+            'details' => $details,
+        ];
     }
 
     /**

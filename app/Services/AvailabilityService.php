@@ -164,10 +164,20 @@ class AvailabilityService
      * @param string $date 日付（Y-m-d）
      * @param string $startTime 開始時間（H:i）
      * @param string $endTime 終了時間（H:i）
+     * @param int|null $excludeBookingId 除外する予約ID（更新・バックフィル用）
+     * @param bool $includeUnassignedConflicts 未割当（null）予約も競合に含めるか
+     * @param bool $checkBusinessHours 営業時間・稼働時間をチェックするか
      * @return bool 利用可能な場合true
      */
-    public function isResourceAvailable(int $resourceId, string $date, string $startTime, string $endTime): bool
-    {
+    public function isResourceAvailable(
+        int $resourceId,
+        string $date,
+        string $startTime,
+        string $endTime,
+        ?int $excludeBookingId = null,
+        bool $includeUnassignedConflicts = true,
+        bool $checkBusinessHours = true
+    ): bool {
         try {
             // リソース情報取得
             $resource = Resource::with('store')->find($resourceId);
@@ -182,24 +192,29 @@ class AvailabilityService
             $storeId = $resource->store_id;
 
             // 営業時間内チェック
-            if (!$this->isWithinBusinessHours($storeId, $date, $startTime)) {
+            if ($checkBusinessHours && !$this->isWithinBusinessHours($storeId, $date, $startTime)) {
                 return false;
             }
 
             // リソース稼働時間チェック
-            if (!$this->isResourceWorkingTime($resource, $date, $startTime, $endTime)) {
+            if ($checkBusinessHours && !$this->isResourceWorkingTime($resource, $date, $startTime, $endTime)) {
                 return false;
             }
 
             // 既存予約との競合チェック
-            // 当該リソース＋未割当（null）予約をブロック（レガシー指定なし予約対策）
+            // 通常: 当該リソース＋未割当（null）。バックフィル時は当該リソースのみ（他未割当は順次割当）
             $conflictingBookings = Booking::where('store_id', $storeId)
-                ->where(function ($resourceQuery) use ($resourceId) {
-                    $resourceQuery->where('resource_id', $resourceId)
-                        ->orWhereNull('resource_id');
+                ->where(function ($resourceQuery) use ($resourceId, $includeUnassignedConflicts) {
+                    $resourceQuery->where('resource_id', $resourceId);
+                    if ($includeUnassignedConflicts) {
+                        $resourceQuery->orWhereNull('resource_id');
+                    }
                 })
                 ->whereDate('booking_date', $date)
-                ->whereIn('status', ['confirmed', 'pending'])
+                ->whereIn('status', ['confirmed', 'pending', 'completed'])
+                ->when($excludeBookingId, function ($q) use ($excludeBookingId) {
+                    $q->where('id', '!=', $excludeBookingId);
+                })
                 ->where(function ($query) use ($startTime, $endTime) {
                     $query->where(function ($q) use ($startTime, $endTime) {
                         // 時間帯の重なり
@@ -214,7 +229,8 @@ class AvailabilityService
                     'resource_id' => $resourceId,
                     'date' => $date,
                     'start_time' => $startTime,
-                    'end_time' => $endTime
+                    'end_time' => $endTime,
+                    'exclude_booking_id' => $excludeBookingId,
                 ]);
                 return false;
             }
