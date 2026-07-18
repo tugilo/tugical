@@ -1,7 +1,7 @@
 # PHASE_012_field_tips REPORT
 
-**作成日時**: 2026-07-19 05:45:00  
-**最終更新日時**: 2026-07-19 05:45:00  
+**作成日時**: 2026-07-19 05:44:08  
+**最終更新日時**: 2026-07-19 05:44:21  
 **Phase ID**: PHASE_012  
 **フェーズ種別**: implement  
 
@@ -14,7 +14,7 @@
 ## Merge Evidence
 
 ```
-merge commit id: (merge後に記録)
+merge commit id: aa6fdb6
 source branch: feature/phase012-field-tips
 target branch: develop
 phase id: 012
@@ -25,7 +25,21 @@ test command: docker compose exec -T app npm run build
 test result: success
 
 changed files:
-(merge後に記録)
+docs/process/PHASE_REGISTRY.md
+docs/process/phases/PHASE_012_field_tips_PLAN.md
+docs/process/phases/PHASE_012_field_tips_REPORT.md
+docs/process/phases/PHASE_012_field_tips_WORKLOG.md
+resources/js/components/admin/booking/BookingCreateModal.tsx
+resources/js/components/admin/customers/CustomerCreateModal.tsx
+resources/js/components/admin/menus/MenuCreateModal.tsx
+resources/js/components/admin/menus/MenuEditModal.tsx
+resources/js/components/admin/resources/ResourceCard.tsx
+resources/js/components/admin/resources/ResourceCreateModal.tsx
+resources/js/components/admin/resources/ResourceEditModal.tsx
+resources/js/components/admin/ui/FieldLabel.tsx
+resources/js/components/admin/ui/FieldTip.tsx
+resources/js/components/admin/ui/FormField.tsx
+resources/js/components/admin/ui/fieldTips.ts
 
 scope check: OK
 ssot check: OK
