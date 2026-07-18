@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Modal from '../modal/Modal';
 import FormField from '../ui/FormField';
 import AppButton from '../ui/AppButton';
+import MenuImageField from './MenuImageField';
 import { CreateMenuRequest } from '../../../types';
 import { menuApi } from '../../../services/api';
 import { useUIStore } from '../../../stores/uiStore';
@@ -13,10 +14,7 @@ interface MenuCreateModalProps {
 }
 
 /**
- * メニュー作成モーダル
- *
- * 新規メニューの作成フォーム
- * バリデーション、API送信、エラーハンドリング対応
+ * メニュー作成モーダル（シンプルUI + メイン画像1枚）
  */
 const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
   isOpen,
@@ -24,19 +22,20 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
   onSuccess,
 }) => {
   const { addNotification } = useUIStore();
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
-  // フォーム状態
   const [formData, setFormData] = useState<CreateMenuRequest>({
     name: '',
     display_name: '',
     category: '',
     description: '',
     base_price: 0,
-    base_duration: 60, // 明示的に数値型で設定
+    base_duration: 60,
     prep_duration: 0,
     cleanup_duration: 0,
     advance_booking_hours: 1,
     gender_restriction: 'none',
+    image_url: undefined,
     is_active: true,
     requires_approval: false,
     sort_order: 0,
@@ -45,28 +44,7 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // カテゴリオプション（美容室）
-  const categoryOptions = [
-    { value: 'カット', label: 'カット' },
-    { value: 'カラー', label: 'カラー' },
-    { value: 'パーマ', label: 'パーマ' },
-    { value: 'ストレート', label: 'ストレート' },
-    { value: 'ヘアケア', label: 'ヘアケア' },
-    { value: 'スパ・ケア', label: 'スパ・ケア' },
-    { value: 'セット', label: 'セット' },
-    { value: 'その他', label: 'その他' },
-  ];
-
-  // 性別制限オプション
-  const genderOptions = [
-    { value: 'none', label: '制限なし' },
-    { value: 'male_only', label: '男性のみ' },
-    { value: 'female_only', label: '女性のみ' },
-  ];
-
-  // フォーム値更新
-  const updateFormData = (field: keyof CreateMenuRequest, value: any) => {
-    // 数値フィールドの場合は明示的に数値に変換
+  const updateFormData = (field: keyof CreateMenuRequest, value: unknown) => {
     let processedValue = value;
     if (
       [
@@ -79,103 +57,67 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
       ].includes(field)
     ) {
       processedValue = typeof value === 'string' ? Number(value) : value;
-      // NaNの場合は0にフォールバック
-      if (isNaN(processedValue)) {
+      if (typeof processedValue === 'number' && isNaN(processedValue)) {
         processedValue = 0;
       }
     }
 
-    setFormData(prev => ({ ...prev, [field]: processedValue }));
+    setFormData(prev => {
+      const next = { ...prev, [field]: processedValue };
+      // 表示名を変えたら内部名も合わせる（入力欄を1つに）
+      if (field === 'display_name' && typeof processedValue === 'string') {
+        next.name = processedValue.trim();
+      }
+      return next;
+    });
 
-    // エラーをクリア
     if (errors[field]) {
       setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
+        const next = { ...prev };
+        delete next[field];
+        return next;
       });
     }
   };
 
-  // フォームバリデーション
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
+    const label = (formData.display_name || formData.name || '').trim();
 
-    if (!formData.name.trim()) {
-      newErrors.name = 'メニュー名は必須です';
+    if (!label) {
+      newErrors.display_name = 'メニュー名は必須です';
     }
 
-    if (!formData.display_name || !formData.display_name.trim()) {
-      newErrors.display_name = '表示名は必須です';
-    }
-
-    if (!formData.category) {
-      newErrors.category = 'カテゴリは必須です';
-    }
-
-    // 数値バリデーション
     const basePrice = Number(formData.base_price);
     if (isNaN(basePrice) || basePrice < 0) {
-      newErrors.base_price = '基本料金は0円以上の有効な数値を入力してください';
+      newErrors.base_price = '料金は0円以上で入力してください';
     }
 
     const baseDuration = Number(formData.base_duration);
     if (isNaN(baseDuration) || baseDuration < 1) {
-      newErrors.base_duration =
-        '基本時間は1分以上の有効な数値を入力してください';
-    }
-
-    if (!isNaN(baseDuration) && baseDuration > 1440) {
-      newErrors.base_duration = '基本時間は24時間以内で入力してください';
-    }
-
-    const prepDuration = Number(formData.prep_duration || 0);
-    if (isNaN(prepDuration) || prepDuration < 0) {
-      newErrors.prep_duration =
-        '準備時間は0分以上の有効な数値を入力してください';
-    }
-
-    const cleanupDuration = Number(formData.cleanup_duration || 0);
-    if (isNaN(cleanupDuration) || cleanupDuration < 0) {
-      newErrors.cleanup_duration =
-        '片付け時間は0分以上の有効な数値を入力してください';
-    }
-
-    const advanceBookingHours = Number(formData.advance_booking_hours || 0);
-    if (isNaN(advanceBookingHours) || advanceBookingHours < 0) {
-      newErrors.advance_booking_hours =
-        '事前予約時間は0時間以上の有効な数値を入力してください';
-    }
-
-    // 総時間チェック（24時間以内）
-    if (
-      !isNaN(baseDuration) &&
-      !isNaN(prepDuration) &&
-      !isNaN(cleanupDuration)
-    ) {
-      const totalDuration = baseDuration + prepDuration + cleanupDuration;
-      if (totalDuration > 1440) {
-        newErrors.base_duration =
-          '総所要時間（基本時間+準備時間+片付け時間）は24時間以内にしてください';
-      }
+      newErrors.base_duration = '所要時間は1分以上で入力してください';
+    } else if (baseDuration > 1440) {
+      newErrors.base_duration = '所要時間は24時間以内で入力してください';
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  // フォーム送信
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     setIsSubmitting(true);
-
     try {
-      await menuApi.create(formData);
+      const label = (formData.display_name || formData.name || '').trim();
+      await menuApi.create({
+        ...formData,
+        name: label,
+        display_name: label,
+        category: formData.category?.trim() || undefined,
+        image_url: formData.image_url || undefined,
+      });
 
       addNotification({
         type: 'success',
@@ -186,17 +128,19 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
 
       onSuccess();
       handleClose();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('メニュー作成エラー:', error);
-
-      if (error.response?.data?.error?.details) {
-        setErrors(error.response.data.error.details);
+      const err = error as {
+        response?: { data?: { error?: { details?: Record<string, string>; message?: string } } };
+      };
+      if (err.response?.data?.error?.details) {
+        setErrors(err.response.data.error.details);
       } else {
         addNotification({
           type: 'error',
           title: 'メニュー作成エラー',
           message:
-            error.response?.data?.error?.message ||
+            err.response?.data?.error?.message ||
             'メニューの作成に失敗しました',
           duration: 5000,
         });
@@ -206,7 +150,6 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
     }
   };
 
-  // モーダルクローズ処理
   const handleClose = () => {
     setFormData({
       name: '',
@@ -214,15 +157,17 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
       category: '',
       description: '',
       base_price: 0,
-      base_duration: 60, // 明示的に数値型で設定
+      base_duration: 60,
       prep_duration: 0,
       cleanup_duration: 0,
       advance_booking_hours: 1,
       gender_restriction: 'none',
+      image_url: undefined,
       is_active: true,
       requires_approval: false,
       sort_order: 0,
     });
+    setShowAdvanced(false);
     setErrors({});
     setIsSubmitting(false);
     onClose();
@@ -232,197 +177,158 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title='新規メニュー作成'
-      size='lg'
+      title='新規メニュー'
+      size='md'
       className='max-h-[90vh] overflow-y-auto'
     >
-      <form onSubmit={handleSubmit} className='space-y-6'>
-        {/* 基本情報 */}
-        <div className='space-y-4'>
-          <h4 className='text-sm font-medium text-gray-900 border-b border-gray-200 pb-2'>
-            基本情報
-          </h4>
+      <form onSubmit={handleSubmit} className='space-y-5'>
+        <MenuImageField
+          value={formData.image_url}
+          onChange={url => updateFormData('image_url', url ?? undefined)}
+          error={errors.image_url}
+          disabled={isSubmitting}
+        />
 
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-            <FormField
-              label='メニュー名'
-              name='name'
-              type='text'
-              value={formData.name}
-              onChange={value => updateFormData('name', value)}
-              placeholder='例: cut'
-              error={errors.name}
-              required
-            />
+        <FormField
+          label='メニュー名'
+          name='display_name'
+          type='text'
+          value={formData.display_name || ''}
+          onChange={value => updateFormData('display_name', value)}
+          placeholder='例: カット'
+          error={errors.display_name || errors.name}
+          required
+        />
 
-            <FormField
-              label='表示名'
-              name='display_name'
-              type='text'
-              value={formData.display_name || ''}
-              onChange={value => updateFormData('display_name', value)}
-              placeholder='例: カット'
-              error={errors.display_name}
-              required
-            />
-          </div>
+        <FormField
+          label='カテゴリ'
+          name='category'
+          type='text'
+          value={formData.category || ''}
+          onChange={value => updateFormData('category', value)}
+          placeholder='任意（例: カット）'
+          error={errors.category}
+        />
 
+        <div className='grid grid-cols-2 gap-4'>
           <FormField
-            label='カテゴリ'
-            name='category'
-            type='select'
-            value={formData.category || ''}
-            onChange={value => updateFormData('category', value)}
-            options={categoryOptions}
-            error={errors.category}
+            label='料金'
+            name='base_price'
+            type='number'
+            value={formData.base_price}
+            onChange={value => updateFormData('base_price', value)}
+            placeholder='円'
+            error={errors.base_price}
+            min={0}
+            step={100}
             required
           />
-
           <FormField
-            label='説明'
-            name='description'
-            type='textarea'
-            value={formData.description || ''}
-            onChange={value => updateFormData('description', value)}
-            placeholder='メニューの詳細説明を入力してください'
-            error={errors.description}
-            rows={3}
+            label='所要時間'
+            name='base_duration'
+            type='number'
+            value={formData.base_duration}
+            onChange={value => updateFormData('base_duration', value)}
+            placeholder='分'
+            error={errors.base_duration}
+            min={1}
+            max={1440}
+            step={5}
+            required
           />
         </div>
 
-        {/* 料金・時間設定 */}
-        <div className='space-y-4'>
-          <h4 className='text-sm font-medium text-gray-900 border-b border-gray-200 pb-2'>
-            料金・時間設定
-          </h4>
+        <FormField
+          label='説明'
+          name='description'
+          type='textarea'
+          value={formData.description || ''}
+          onChange={value => updateFormData('description', value)}
+          placeholder='任意'
+          error={errors.description}
+          rows={2}
+        />
 
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-            <FormField
-              label='基本料金'
-              name='base_price'
-              type='number'
-              value={formData.base_price}
-              onChange={value => updateFormData('base_price', value)}
-              placeholder='円'
-              error={errors.base_price}
-              min={0}
-              step={100}
-              required
-            />
-
-            <FormField
-              label='基本時間'
-              name='base_duration'
-              type='number'
-              value={formData.base_duration}
-              onChange={value => updateFormData('base_duration', value)}
-              placeholder='分'
-              error={errors.base_duration}
-              min={1}
-              max={1440}
-              step={1}
-              required
-            />
-          </div>
-
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-            <FormField
-              label='準備時間'
-              name='prep_duration'
-              type='number'
-              value={formData.prep_duration || 0}
-              onChange={value => updateFormData('prep_duration', value)}
-              placeholder='分'
-              error={errors.prep_duration}
-              min={0}
-              max={120}
-              step={1}
-            />
-
-            <FormField
-              label='片付け時間'
-              name='cleanup_duration'
-              type='number'
-              value={formData.cleanup_duration || 0}
-              onChange={value => updateFormData('cleanup_duration', value)}
-              placeholder='分'
-              error={errors.cleanup_duration}
-              min={0}
-              max={120}
-              step={1}
-            />
-          </div>
+        <div className='flex items-center space-x-3'>
+          <input
+            type='checkbox'
+            id='is_active'
+            checked={formData.is_active}
+            onChange={e => updateFormData('is_active', e.target.checked)}
+            className='w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500'
+          />
+          <label htmlFor='is_active' className='text-sm font-medium text-gray-700'>
+            公開する
+          </label>
         </div>
 
-        {/* 予約設定 */}
-        <div className='space-y-4'>
-          <h4 className='text-sm font-medium text-gray-900 border-b border-gray-200 pb-2'>
-            予約設定
-          </h4>
+        <div>
+          <button
+            type='button'
+            onClick={() => setShowAdvanced(prev => !prev)}
+            className='text-sm text-gray-600 hover:text-gray-900 underline-offset-2 hover:underline min-h-[44px]'
+          >
+            {showAdvanced ? '詳細設定を閉じる' : '詳細設定（準備時間など）'}
+          </button>
 
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-            <FormField
-              label='事前予約時間'
-              name='advance_booking_hours'
-              type='number'
-              value={formData.advance_booking_hours || 0}
-              onChange={value => updateFormData('advance_booking_hours', value)}
-              placeholder='時間'
-              error={errors.advance_booking_hours}
-              min={0}
-              max={720}
-            />
-
-            <FormField
-              label='性別制限'
-              name='gender_restriction'
-              type='select'
-              value={formData.gender_restriction || 'none'}
-              onChange={value => updateFormData('gender_restriction', value)}
-              options={genderOptions}
-              error={errors.gender_restriction}
-            />
-          </div>
-
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-            <div className='flex items-center space-x-3'>
-              <input
-                type='checkbox'
-                id='is_active'
-                checked={formData.is_active}
-                onChange={e => updateFormData('is_active', e.target.checked)}
-                className='w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500'
-              />
-              <label
-                htmlFor='is_active'
-                className='text-sm font-medium text-gray-700'
-              >
-                アクティブ状態
-              </label>
-            </div>
-
-            <div className='flex items-center space-x-3'>
-              <input
-                type='checkbox'
-                id='requires_approval'
-                checked={formData.requires_approval || false}
-                onChange={e =>
-                  updateFormData('requires_approval', e.target.checked)
+          {showAdvanced && (
+            <div className='mt-3 space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-4'>
+              <div className='grid grid-cols-2 gap-4'>
+                <FormField
+                  label='準備時間'
+                  name='prep_duration'
+                  type='number'
+                  value={formData.prep_duration || 0}
+                  onChange={value => updateFormData('prep_duration', value)}
+                  placeholder='分'
+                  min={0}
+                  max={180}
+                />
+                <FormField
+                  label='片付け時間'
+                  name='cleanup_duration'
+                  type='number'
+                  value={formData.cleanup_duration || 0}
+                  onChange={value => updateFormData('cleanup_duration', value)}
+                  placeholder='分'
+                  min={0}
+                  max={180}
+                />
+              </div>
+              <FormField
+                label='事前予約（時間）'
+                name='advance_booking_hours'
+                type='number'
+                value={formData.advance_booking_hours || 0}
+                onChange={value =>
+                  updateFormData('advance_booking_hours', value)
                 }
-                className='w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500'
+                placeholder='時間'
+                min={0}
+                max={168}
               />
-              <label
-                htmlFor='requires_approval'
-                className='text-sm font-medium text-gray-700'
-              >
-                承認必要
-              </label>
+              <div className='flex items-center space-x-3'>
+                <input
+                  type='checkbox'
+                  id='requires_approval'
+                  checked={formData.requires_approval || false}
+                  onChange={e =>
+                    updateFormData('requires_approval', e.target.checked)
+                  }
+                  className='w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500'
+                />
+                <label
+                  htmlFor='requires_approval'
+                  className='text-sm font-medium text-gray-700'
+                >
+                  承認が必要
+                </label>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
-        {/* アクションボタン */}
-        <div className='flex justify-end space-x-3 pt-6 border-t border-gray-200'>
+        <div className='flex justify-end space-x-3 pt-4 border-t border-gray-200'>
           <AppButton
             variant='outline'
             size='md'
@@ -438,7 +344,7 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
             loading={isSubmitting}
             disabled={isSubmitting}
           >
-            {isSubmitting ? '作成中...' : 'メニューを作成'}
+            {isSubmitting ? '作成中...' : '作成する'}
           </AppButton>
         </div>
       </form>
