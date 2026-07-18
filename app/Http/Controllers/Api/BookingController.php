@@ -321,7 +321,9 @@ class BookingController extends Controller
                         'customer',
                         'menu',
                         'resource',
-                        'bookingOptions'
+                        'bookingOptions',
+                        'bookingDetails.menu',
+                        'bookingDetails.resource',
                     ]))
                 ],
                 'message' => '予約詳細を取得しました',

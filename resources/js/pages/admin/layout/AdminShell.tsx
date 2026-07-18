@@ -28,6 +28,7 @@ import {
   Settings as SettingsIcon,
 } from '@mui/icons-material';
 import { useUIStore } from '../../../stores/uiStore';
+import { useAuthStore } from '../../../stores/authStore';
 import { adminColors, brandCardSx } from '../../../theme/adminTokens';
 import AdminTopBarActions from './AdminTopBarActions';
 
@@ -38,13 +39,14 @@ const NAV_ITEMS: {
   label: string;
   description: string;
   icon: React.ReactElement;
+  requiresSettings?: boolean;
 }[] = [
   { path: '/dashboard', label: 'ダッシュボード', description: '今日の予約と要対応', icon: <DashboardIcon /> },
   { path: '/bookings', label: '予約管理', description: '予約の確認・変更', icon: <EventIcon /> },
   { path: '/menus', label: 'メニュー管理', description: 'サービス・料金設定', icon: <RestaurantMenuIcon /> },
   { path: '/customers', label: '顧客管理', description: 'お客様情報', icon: <PeopleIcon /> },
-  { path: '/resources', label: 'リソース管理', description: 'スタッフ・設備', icon: <InventoryIcon /> },
-  { path: '/settings', label: '設定', description: 'LINE 連携など', icon: <SettingsIcon /> },
+  { path: '/resources', label: 'スタッフ・設備', description: '担当者と設備の管理', icon: <InventoryIcon /> },
+  { path: '/settings', label: '設定', description: 'LINE 連携など', icon: <SettingsIcon />, requiresSettings: true },
 ];
 
 const drawerPaperSx = {
@@ -61,7 +63,12 @@ const AdminShell: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const pageTitle = useUIStore(s => s.pageTitle);
+  const canManageSettings = useAuthStore(s => s.canManageSettings);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const navItems = NAV_ITEMS.filter(
+    item => !item.requiresSettings || canManageSettings()
+  );
 
   const drawer = (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -87,7 +94,7 @@ const AdminShell: React.FC = () => {
       </Box>
 
       <List aria-label="メインメニュー" sx={{ px: 1, flex: 1 }}>
-        {NAV_ITEMS.map(item => {
+        {navItems.map(item => {
           const selected = location.pathname === item.path;
           return (
             <ListItemButton

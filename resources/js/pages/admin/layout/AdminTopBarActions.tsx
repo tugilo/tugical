@@ -129,9 +129,9 @@ const AdminTopBarActions: React.FC = () => {
   return (
     <>
       <Stack direction="row" spacing={0.5} alignItems="center" sx={{ flexShrink: 0 }}>
-        <Tooltip title="通知">
+        <Tooltip title="LINE通知履歴">
           <IconButton
-            aria-label="通知"
+            aria-label="LINE通知履歴"
             onClick={handleOpenNotifications}
             size="small"
             sx={{ color: 'text.secondary' }}
@@ -183,7 +183,7 @@ const AdminTopBarActions: React.FC = () => {
       >
         <Box sx={{ px: 2, py: 1.5, borderBottom: '1px solid', borderColor: adminColors.borderSubtle }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-            通知
+            LINE通知履歴
           </Typography>
           <Typography variant="caption" color="text.secondary">
             直近の配信履歴（最大10件）

@@ -86,15 +86,15 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
             />
           </div>
 
-          {/* リソース情報 */}
+          {/* リソース情報（見出しは表示名を優先） */}
           <div className='mb-3'>
             <h3 className='font-semibold text-gray-900 mb-1'>
-              {resource.name}
+              {resource.display_name || resource.name}
             </h3>
             {resource.display_name &&
               resource.display_name !== resource.name && (
                 <p className='text-sm text-gray-600'>
-                  表示名: {resource.display_name}
+                  管理コード: {resource.name}
                 </p>
               )}
           </div>

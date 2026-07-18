@@ -266,7 +266,14 @@ class BookingService
                 'booking_number' => $booking->booking_number
             ]);
 
-            return $booking->fresh();
+            return $booking->fresh([
+                'customer',
+                'menu',
+                'resource',
+                'bookingOptions',
+                'bookingDetails.menu',
+                'bookingDetails.resource',
+            ]);
         });
     }
 
@@ -757,8 +764,39 @@ class BookingService
      */
     public function updateBookingStatus(Booking $booking, string $status, ?string $note = null): bool
     {
-        // TODO: 実装予定
-        throw new \Exception('BookingService::updateBookingStatus() - 実装予定');
+        Log::info('予約ステータス更新開始', [
+            'booking_id' => $booking->id,
+            'from' => $booking->status,
+            'to' => $status,
+            'note' => $note,
+            'store_id' => $booking->store_id,
+        ]);
+
+        $allowed = ['pending', 'confirmed', 'cancelled', 'completed', 'no_show'];
+        if (!in_array($status, $allowed, true)) {
+            throw new \InvalidArgumentException('不正なステータスです: ' . $status);
+        }
+
+        $update = ['status' => $status];
+        if ($note !== null && $note !== '') {
+            $existing = trim((string) ($booking->staff_notes ?? ''));
+            $update['staff_notes'] = $existing !== ''
+                ? $existing . "\n[ステータス変更] " . $note
+                : '[ステータス変更] ' . $note;
+        }
+
+        if ($status === 'cancelled') {
+            return $this->cancelBooking($booking, $note);
+        }
+
+        $booking->update($update);
+
+        Log::info('予約ステータス更新完了', [
+            'booking_id' => $booking->id,
+            'status' => $status,
+        ]);
+
+        return true;
     }
 
     /**
@@ -796,8 +834,15 @@ class BookingService
             $query->where('customer_id', $filters['customer_id']);
         }
 
-        // Eager Loading
-        $query->with(['customer', 'menu', 'resource', 'bookingOptions']);
+        // Eager Loading（複数メニュー詳細も含め一覧のメニュー表示を正しくする）
+        $query->with([
+            'customer',
+            'menu',
+            'resource',
+            'bookingOptions',
+            'bookingDetails.menu',
+            'bookingDetails.resource',
+        ]);
 
         // ソート
         $query->orderBy('booking_date', 'asc')

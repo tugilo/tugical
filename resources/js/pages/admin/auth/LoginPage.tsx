@@ -293,25 +293,29 @@ const LoginPage: React.FC = () => {
           </form>
         </Paper>
 
-        <Alert
-          severity="info"
-          sx={{ mt: 2.5, borderRadius: 2.5 }}
-          action={
-            <Button size="small" variant="outlined" onClick={fillTestCredentials}>
-              入力
-            </Button>
-          }
-        >
-          <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.5 }}>
-            テスト用ログイン情報
-          </Typography>
-          <Typography variant="body2">
-            オーナー: owner@tugical.test / password123
-          </Typography>
-          <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
-            ※ 現在利用可能な認証情報は上記のみです
-          </Typography>
-        </Alert>
+        {/* ローカル／開発のみ表示（本番ドメインでは出さない） */}
+        {(import.meta.env.DEV ||
+          ['localhost', '127.0.0.1'].includes(window.location.hostname)) && (
+          <Alert
+            severity="info"
+            sx={{ mt: 2.5, borderRadius: 2.5 }}
+            action={
+              <Button size="small" variant="outlined" onClick={fillTestCredentials}>
+                入力
+              </Button>
+            }
+          >
+            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.5 }}>
+              テスト用ログイン情報
+            </Typography>
+            <Typography variant="body2">
+              オーナー: owner@tugical.test / password123
+            </Typography>
+            <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+              ※ ローカル環境のみ表示
+            </Typography>
+          </Alert>
+        )}
       </Box>
     </Box>
   );

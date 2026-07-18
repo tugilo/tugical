@@ -352,9 +352,18 @@ const DashboardPage: React.FC = () => {
         title="ダッシュボード"
         description="今日の予約状況と、今すぐ確認すべき項目を一覧で確認できます。"
         action={
-          <Typography variant="body2" color="text.secondary">
-            現在 {formatNowHHmm(now)}
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
+            <Typography variant="body2" color="text.secondary">
+              現在 {formatNowHHmm(now)}
+            </Typography>
+            <AppButton
+              size="sm"
+              variant="primary"
+              onClick={() => navigate('/bookings', { state: { openCreate: true } })}
+            >
+              新規予約
+            </AppButton>
+          </Box>
         }
       />
 
@@ -397,9 +406,18 @@ const DashboardPage: React.FC = () => {
               />
               <CardContent sx={{ flex: 1, pt: 0 }}>
                 {orderedTodayBookings.length === 0 ? (
-                  <Typography variant="body2" color="text.secondary">
-                    本日の予約はありません。
-                  </Typography>
+                  <Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+                      本日の予約はありません。電話が来たら「新規予約」から登録できます。
+                    </Typography>
+                    <AppButton
+                      size="sm"
+                      variant="primary"
+                      onClick={() => navigate('/bookings', { state: { openCreate: true } })}
+                    >
+                      新規予約
+                    </AppButton>
+                  </Box>
                 ) : (
                   <List dense disablePadding>
                     {orderedTodayBookings.map((b) => {
@@ -425,7 +443,7 @@ const DashboardPage: React.FC = () => {
                             )}
                             <ListItemText
                               primary={`${formatTime(b.start_time)} - ${b.customer.name}`}
-                              secondary={`${b.menu.name}${b.resource ? ` · ${b.resource.name}` : ''}`}
+                              secondary={`${b.menu.name}${b.resource ? ` · ${(b.resource as { display_name?: string; name: string }).display_name || b.resource.name}` : ''}`}
                               primaryTypographyProps={{
                                 variant: 'body2',
                                 fontWeight: isNext ? 600 : 500,
@@ -439,13 +457,13 @@ const DashboardPage: React.FC = () => {
                   </List>
                 )}
               </CardContent>
-              {orderedTodayBookings.length > 0 && (
-                <CardActions sx={{ justifyContent: 'flex-end', px: 2, pb: 1 }}>
-                  <AppButton size="sm" onClick={() => navigate('/bookings')}>
+              <CardActions sx={{ justifyContent: 'flex-end', px: 2, pb: 1, gap: 1 }}>
+                {orderedTodayBookings.length > 0 && (
+                  <AppButton size="sm" variant="ghost" onClick={() => navigate('/bookings')}>
                     すべて表示
                   </AppButton>
-                </CardActions>
-              )}
+                )}
+              </CardActions>
             </Card>
           </Grid>
 

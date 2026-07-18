@@ -16,6 +16,7 @@ import MenusPage from "./menus/MenusPage";
 import CustomersPage from "./customers/CustomersPage";
 import ResourcesPage from "./resources/ResourcesPage";
 import SettingsPage from "./settings/SettingsPage";
+import SettingsRoute from "./SettingsRoute";
 
 const App: React.FC = () => {
   const clearAuth = useAuthStore((s) => s.clearAuth);
@@ -45,7 +46,14 @@ const App: React.FC = () => {
           <Route path="menus" element={<MenusPage />} />
           <Route path="customers" element={<CustomersPage />} />
           <Route path="resources" element={<ResourcesPage />} />
-          <Route path="settings" element={<SettingsPage />} />
+          <Route
+            path="settings"
+            element={
+              <SettingsRoute>
+                <SettingsPage />
+              </SettingsRoute>
+            }
+          />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

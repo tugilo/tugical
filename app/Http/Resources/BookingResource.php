@@ -39,7 +39,7 @@ class BookingResource extends JsonResource
             'start_time' => $this->start_time,
             'end_time' => $this->calculateEndTime(),
             'status' => $this->status,
-            'total_price' => $this->total_price,
+            'total_price' => $this->resolveTotalPrice(),
             'resource_id' => $this->resource_id,
 
             // ステータス詳細情報
@@ -366,34 +366,81 @@ class BookingResource extends JsonResource
     }
 
     /**
-     * 終了時間を計算
-     * 
+     * 合計金額（0 のときは booking_details から合算）
+     */
+    private function resolveTotalPrice(): int
+    {
+        $price = (int) ($this->total_price ?? 0);
+        if ($price > 0) {
+            return $price;
+        }
+
+        if ($this->relationLoaded('bookingDetails') && $this->bookingDetails && $this->bookingDetails->count() > 0) {
+            return (int) $this->bookingDetails->sum(function ($detail) {
+                return $detail->total_amount
+                    ?? $detail->actual_price
+                    ?? $detail->base_price
+                    ?? 0;
+            });
+        }
+
+        if ($this->relationLoaded('menu') && $this->menu) {
+            return (int) ($this->menu->base_price ?? 0);
+        }
+
+        return 0;
+    }
+
+    /**
+     * 終了時間を返す（DB 値を優先。無い場合のみ所要時間から算出）
+     *
      * @return string
      */
     private function calculateEndTime(): string
     {
-        if (!$this->start_time) {
-            return '';
-        }
+        $startHm = $this->start_time
+            ? substr(is_string($this->start_time) ? $this->start_time : (string) $this->start_time, 0, 5)
+            : '';
 
-        // 基本所要時間
-        $totalDuration = 0;
-
-        // メニューの基本時間
-        if ($this->relationLoaded('menu') && $this->menu) {
-            $totalDuration += $this->menu->base_duration;
-        }
-
-        // オプションの時間を加算
-        if ($this->relationLoaded('bookingOptions') && $this->bookingOptions) {
-            foreach ($this->bookingOptions as $option) {
-                $totalDuration += $option->duration ?? 0;
+        // DB の end_time が開始より後なら採用（開始以前・同一は再計算）
+        if (!empty($this->end_time) && $startHm !== '') {
+            $stored = substr(
+                is_string($this->end_time) ? $this->end_time : (string) $this->end_time,
+                0,
+                5
+            );
+            if ($stored > $startHm) {
+                return $stored;
             }
         }
 
-        // 開始時間に所要時間を加算
-        $startTime = strtotime($this->start_time);
-        $endTime = $startTime + ($totalDuration * 60); // 分を秒に変換
+        if ($startHm === '') {
+            return '';
+        }
+
+        $totalDuration = 0;
+
+        // 複数メニュー詳細があれば合計時間を優先
+        if ($this->relationLoaded('bookingDetails') && $this->bookingDetails && $this->bookingDetails->count() > 0) {
+            $totalDuration = (int) $this->bookingDetails->sum(function ($detail) {
+                return $detail->total_duration ?? $detail->base_duration ?? 0;
+            });
+        } elseif ($this->relationLoaded('menu') && $this->menu) {
+            $totalDuration += (int) $this->menu->base_duration;
+        }
+
+        if ($this->relationLoaded('bookingOptions') && $this->bookingOptions) {
+            foreach ($this->bookingOptions as $option) {
+                $totalDuration += (int) ($option->duration ?? 0);
+            }
+        }
+
+        if ($totalDuration <= 0) {
+            return $startHm;
+        }
+
+        $startTime = strtotime($startHm);
+        $endTime = $startTime + ($totalDuration * 60);
 
         return date('H:i', $endTime);
     }

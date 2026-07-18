@@ -75,7 +75,7 @@ const ResourcesPage: React.FC = () => {
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    setPageTitle('リソース管理');
+    setPageTitle('スタッフ・設備');
   }, [setPageTitle]);
 
   /**
@@ -311,9 +311,9 @@ const ResourcesPage: React.FC = () => {
       {/* ヘッダー */}
       <div className='flex items-center justify-between'>
         <div>
-          <h1 className='text-2xl font-bold text-gray-900'>リソース管理</h1>
+          <h1 className='text-2xl font-bold text-gray-900'>スタッフ・設備</h1>
           <p className='text-sm text-gray-600 mt-1'>
-            全 {allResources.length} 件のリソース（稼働中:{' '}
+            全 {allResources.length} 件（稼働中:{' '}
             {getActiveResourceCount()} 件）
           </p>
         </div>
@@ -331,7 +331,7 @@ const ResourcesPage: React.FC = () => {
             leftIcon={<PlusIcon className='w-4 h-4' />}
             onClick={handleCreateResource}
           >
-            新規リソース
+            新規追加
           </AppButton>
         </div>
       </div>

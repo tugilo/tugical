@@ -30,6 +30,10 @@ class StoreLineSettingsController extends Controller
      */
     public function show(Request $request): JsonResponse
     {
+        if ($denied = $this->ensureCanManageSettings()) {
+            return $denied;
+        }
+
         $store = $this->storeForUser();
 
         return response()->json([
@@ -44,6 +48,10 @@ class StoreLineSettingsController extends Controller
      */
     public function update(Request $request): JsonResponse
     {
+        if ($denied = $this->ensureCanManageSettings()) {
+            return $denied;
+        }
+
         $store = $this->storeForUser();
 
         $validated = $request->validate([
@@ -92,6 +100,10 @@ class StoreLineSettingsController extends Controller
      */
     public function testConnection(Request $request): JsonResponse
     {
+        if ($denied = $this->ensureCanManageSettings()) {
+            return $denied;
+        }
+
         $store = $this->storeForUser();
 
         $validated = $request->validate([
@@ -177,6 +189,10 @@ class StoreLineSettingsController extends Controller
      */
     public function testPush(Request $request): JsonResponse
     {
+        if ($denied = $this->ensureCanManageSettings()) {
+            return $denied;
+        }
+
         $store = $this->storeForUser();
 
         $validated = $request->validate([
@@ -224,6 +240,26 @@ class StoreLineSettingsController extends Controller
     private function storeForUser(): Store
     {
         return Store::findOrFail(Auth::user()->store_id);
+    }
+
+    /**
+     * 設定管理権限（owner のみ）が無い場合は 403
+     * UserResource の can_manage_settings と同方針
+     */
+    private function ensureCanManageSettings(): ?JsonResponse
+    {
+        if (Auth::user()?->role === 'owner') {
+            return null;
+        }
+
+        return response()->json([
+            'success' => false,
+            'error' => [
+                'code' => 'FORBIDDEN',
+                'message' => '設定を変更する権限がありません',
+            ],
+            'meta' => ['timestamp' => now()->toISOString()],
+        ], 403);
     }
 
     /**
