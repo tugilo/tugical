@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import Modal from '../modal/Modal';
 import FormField from '../ui/FormField';
+import FieldTip from '../ui/FieldTip';
 import AppButton from '../ui/AppButton';
 import MenuImageField from './MenuImageField';
+import { FIELD_TIPS } from '../ui/fieldTips';
 import { CreateMenuRequest } from '../../../types';
 import { menuApi } from '../../../services/api';
 import { useUIStore } from '../../../stores/uiStore';
@@ -203,6 +205,7 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
           onChange={value => updateFormData('display_name', value)}
           placeholder='例: カット'
           error={errors.display_name || errors.name}
+          tip={FIELD_TIPS.menuName}
           required
         />
 
@@ -214,6 +217,7 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
           onChange={value => updateFormData('category', value)}
           placeholder='任意（例: カット）'
           error={errors.category}
+          tip={FIELD_TIPS.menuCategory}
         />
 
         <div className='grid grid-cols-2 gap-4'>
@@ -225,6 +229,7 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
             onChange={value => updateFormData('base_price', value)}
             placeholder='円'
             error={errors.base_price}
+            tip={FIELD_TIPS.menuPrice}
             min={0}
             step={100}
             required
@@ -237,6 +242,7 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
             onChange={value => updateFormData('base_duration', value)}
             placeholder='分'
             error={errors.base_duration}
+            tip={FIELD_TIPS.menuDuration}
             min={1}
             max={1440}
             step={5}
@@ -252,6 +258,7 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
           onChange={value => updateFormData('description', value)}
           placeholder='任意'
           error={errors.description}
+          tip={FIELD_TIPS.menuDescription}
           rows={2}
         />
 
@@ -263,8 +270,12 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
             onChange={e => updateFormData('is_active', e.target.checked)}
             className='w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500'
           />
-          <label htmlFor='is_active' className='text-sm font-medium text-gray-700'>
+          <label
+            htmlFor='is_active'
+            className='text-sm font-medium text-gray-700 inline-flex items-center'
+          >
             公開する
+            <FieldTip tip={FIELD_TIPS.menuActive} label='公開するの説明' />
           </label>
         </div>
 
@@ -287,6 +298,7 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
                   value={formData.prep_duration || 0}
                   onChange={value => updateFormData('prep_duration', value)}
                   placeholder='分'
+                  tip={FIELD_TIPS.prepDuration}
                   min={0}
                   max={180}
                 />
@@ -297,12 +309,13 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
                   value={formData.cleanup_duration || 0}
                   onChange={value => updateFormData('cleanup_duration', value)}
                   placeholder='分'
+                  tip={FIELD_TIPS.cleanupDuration}
                   min={0}
                   max={180}
                 />
               </div>
               <FormField
-                label='事前予約（時間）'
+                label='受付締切（何時間前まで）'
                 name='advance_booking_hours'
                 type='number'
                 value={formData.advance_booking_hours || 0}
@@ -310,6 +323,7 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
                   updateFormData('advance_booking_hours', value)
                 }
                 placeholder='時間'
+                tip={FIELD_TIPS.advanceBookingHours}
                 min={0}
                 max={168}
               />
@@ -325,9 +339,13 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
                 />
                 <label
                   htmlFor='requires_approval'
-                  className='text-sm font-medium text-gray-700'
+                  className='text-sm font-medium text-gray-700 inline-flex items-center'
                 >
                   承認が必要
+                  <FieldTip
+                    tip={FIELD_TIPS.requiresApproval}
+                    label='承認が必要の説明'
+                  />
                 </label>
               </div>
             </div>

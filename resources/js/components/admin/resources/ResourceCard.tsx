@@ -108,12 +108,14 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
               <p>収容人数: {resource.capacity}人</p>
             )}
             {resource.efficiency_rate && resource.efficiency_rate !== 1.0 && (
-              <p>効率率: {(resource.efficiency_rate * 100).toFixed(0)}%</p>
+              <p>
+                作業時間: メニュー×{resource.efficiency_rate.toFixed(1)}
+              </p>
             )}
             {resource.hourly_rate_diff && resource.hourly_rate_diff !== 0 && (
               <p>
                 指名料金: {resource.hourly_rate_diff > 0 ? '+' : ''}¥
-                {resource.hourly_rate_diff}
+                {resource.hourly_rate_diff}/時
               </p>
             )}
           </div>

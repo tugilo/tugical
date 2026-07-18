@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../modal/Modal';
 import FormField from '../ui/FormField';
+import FieldTip from '../ui/FieldTip';
 import AppButton from '../ui/AppButton';
 import MenuImageField from './MenuImageField';
+import { FIELD_TIPS } from '../ui/fieldTips';
 import { Menu, UpdateMenuRequest } from '../../../types';
 import { menuApi } from '../../../services/api';
 import { useUIStore } from '../../../stores/uiStore';
@@ -363,17 +365,6 @@ const MenuEditModal: React.FC<MenuEditModalProps> = ({
 
             <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
               <FormField
-                label='メニュー名'
-                name='name'
-                type='text'
-                value={formData.name || originalMenu.name}
-                onChange={value => updateFormData('name', value)}
-                placeholder='例: cut'
-                error={errors.name}
-                required
-              />
-
-              <FormField
                 label='表示名'
                 name='display_name'
                 type='text'
@@ -381,6 +372,19 @@ const MenuEditModal: React.FC<MenuEditModalProps> = ({
                 onChange={value => updateFormData('display_name', value)}
                 placeholder='例: カット'
                 error={errors.display_name}
+                tip={FIELD_TIPS.menuName}
+                required
+              />
+
+              <FormField
+                label='管理コード'
+                name='name'
+                type='text'
+                value={formData.name || originalMenu.name}
+                onChange={value => updateFormData('name', value)}
+                placeholder='例: cut'
+                error={errors.name}
+                tip={FIELD_TIPS.resourceName}
                 required
               />
             </div>
@@ -397,6 +401,7 @@ const MenuEditModal: React.FC<MenuEditModalProps> = ({
               onChange={value => updateFormData('category', value)}
               options={categoryOptions}
               error={errors.category}
+              tip={FIELD_TIPS.menuCategory}
             />
 
             <FormField
@@ -409,8 +414,9 @@ const MenuEditModal: React.FC<MenuEditModalProps> = ({
                   : originalMenu.description || ''
               }
               onChange={value => updateFormData('description', value)}
-              placeholder='メニューの詳細説明を入力してください'
+              placeholder='任意'
               error={errors.description}
+              tip={FIELD_TIPS.menuDescription}
               rows={3}
             />
           </div>
@@ -423,7 +429,7 @@ const MenuEditModal: React.FC<MenuEditModalProps> = ({
 
             <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
               <FormField
-                label='基本料金'
+                label='料金'
                 name='base_price'
                 type='number'
                 value={
@@ -434,13 +440,14 @@ const MenuEditModal: React.FC<MenuEditModalProps> = ({
                 onChange={value => updateFormData('base_price', value)}
                 placeholder='円'
                 error={errors.base_price}
+                tip={FIELD_TIPS.menuPrice}
                 min={0}
                 step={100}
                 required
               />
 
               <FormField
-                label='基本時間'
+                label='所要時間'
                 name='base_duration'
                 type='number'
                 value={
@@ -451,6 +458,7 @@ const MenuEditModal: React.FC<MenuEditModalProps> = ({
                 onChange={value => updateFormData('base_duration', value)}
                 placeholder='分'
                 error={errors.base_duration}
+                tip={FIELD_TIPS.menuDuration}
                 min={0}
                 max={1440}
                 step={5}
@@ -471,6 +479,7 @@ const MenuEditModal: React.FC<MenuEditModalProps> = ({
                 onChange={value => updateFormData('prep_duration', value)}
                 placeholder='分'
                 error={errors.prep_duration}
+                tip={FIELD_TIPS.prepDuration}
                 min={0}
                 max={120}
                 step={5}
@@ -488,6 +497,7 @@ const MenuEditModal: React.FC<MenuEditModalProps> = ({
                 onChange={value => updateFormData('cleanup_duration', value)}
                 placeholder='分'
                 error={errors.cleanup_duration}
+                tip={FIELD_TIPS.cleanupDuration}
                 min={0}
                 max={120}
                 step={5}
@@ -516,9 +526,10 @@ const MenuEditModal: React.FC<MenuEditModalProps> = ({
                 />
                 <label
                   htmlFor='is_active_edit'
-                  className='text-sm font-medium text-gray-700'
+                  className='text-sm font-medium text-gray-700 inline-flex items-center'
                 >
-                  アクティブ状態
+                  公開する
+                  <FieldTip tip={FIELD_TIPS.menuActive} label='公開するの説明' />
                 </label>
               </div>
 
@@ -538,9 +549,13 @@ const MenuEditModal: React.FC<MenuEditModalProps> = ({
                 />
                 <label
                   htmlFor='requires_approval_edit'
-                  className='text-sm font-medium text-gray-700'
+                  className='text-sm font-medium text-gray-700 inline-flex items-center'
                 >
-                  承認必要
+                  承認が必要
+                  <FieldTip
+                    tip={FIELD_TIPS.requiresApproval}
+                    label='承認が必要の説明'
+                  />
                 </label>
               </div>
             </div>
