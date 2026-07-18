@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * ResourceController
@@ -200,6 +201,51 @@ class ResourceController extends Controller
     }
 
     /**
+     * リソース画像アップロード（メイン1枚）
+     * POST /api/v1/resources/upload-image
+     */
+    public function uploadImage(Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'image' => 'required|image|mimes:jpeg,jpg,png,webp|max:5120',
+            ], [
+                'image.required' => '画像を選択してください',
+                'image.image' => '画像ファイルを選択してください',
+                'image.mimes' => 'jpeg / png / webp のみアップロードできます',
+                'image.max' => '画像は5MB以下にしてください',
+            ]);
+
+            $storeId = auth()->user()->store_id;
+            $path = $request->file('image')->store("resources/{$storeId}", 'public');
+            $url = Storage::disk('public')->url($path);
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'url' => $url,
+                ],
+                'message' => '画像をアップロードしました',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            Log::error('リソース画像アップロードエラー', [
+                'error' => $e->getMessage(),
+                'store_id' => auth()->user()->store_id ?? null,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => [
+                    'code' => 'RESOURCE_IMAGE_UPLOAD_ERROR',
+                    'message' => '画像のアップロードに失敗しました',
+                ],
+            ], 500);
+        }
+    }
+
+    /**
      * リソース新規作成
      * POST /api/v1/resources
      * 
@@ -305,10 +351,18 @@ class ResourceController extends Controller
             DB::beginTransaction();
 
             try {
-                // 更新データの準備
-                $updateData = array_filter($request->validated(), function($value) {
-                    return $value !== null;
-                });
+                // 更新データの準備（photo_url の null クリアを許可）
+                $validated = $request->validated();
+                $updateData = [];
+                foreach ($validated as $key => $value) {
+                    if ($key === 'photo_url' && $request->has('photo_url')) {
+                        $updateData[$key] = $value;
+                        continue;
+                    }
+                    if ($value !== null) {
+                        $updateData[$key] = $value;
+                    }
+                }
 
                 // タイプ変更の場合、追加バリデーション
                 if (isset($updateData['type']) && $updateData['type'] !== $resource->type) {

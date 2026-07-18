@@ -6,10 +6,10 @@ import {
   TruckIcon,
   ClockIcon,
   CurrencyYenIcon,
-  PhotoIcon,
 } from '@heroicons/react/24/outline';
 import Modal from '../modal/Modal';
 import Button from '../ui/Button';
+import ImageUploadField from '../ui/ImageUploadField';
 import { resourceApi } from '../../../services/api';
 import { useUIStore } from '../../../stores/uiStore';
 import type { Resource, ResourceType } from '../../../types';
@@ -183,7 +183,10 @@ const ResourceCreateModal: React.FC<ResourceCreateModalProps> = ({
 
     try {
       setIsLoading(true);
-      const resource = await resourceApi.create(formData);
+      const resource = await resourceApi.create({
+        ...formData,
+        photo_url: formData.photo_url?.trim() || null,
+      });
       addNotification({
         type: 'success',
         title: 'リソースを作成しました',
@@ -277,6 +280,16 @@ const ResourceCreateModal: React.FC<ResourceCreateModalProps> = ({
             })}
           </div>
         </div>
+
+        <ImageUploadField
+          value={formData.photo_url || null}
+          onChange={url => handleInputChange('photo_url', url || '')}
+          onUpload={file => resourceApi.uploadImage(file)}
+          label='画像'
+          hint='任意・1枚 / ドラッグ＆ドロップ可'
+          error={errors.photo_url}
+          disabled={isLoading}
+        />
 
         {/* 基本情報 */}
         <div>
@@ -451,23 +464,6 @@ const ResourceCreateModal: React.FC<ResourceCreateModalProps> = ({
                 <p className='mt-1 text-sm text-red-600'>{errors.capacity}</p>
               )}
             </div>
-          </div>
-        </div>
-
-        <div>
-          <h3 className='text-lg font-semibold text-gray-900 mb-4'>画像設定</h3>
-          <div>
-            <label className='flex items-center text-sm font-medium text-gray-700 mb-1'>
-              <PhotoIcon className='w-4 h-4 mr-1' />
-              画像URL（任意）
-            </label>
-            <input
-              type='url'
-              value={formData.photo_url || ''}
-              onChange={e => handleInputChange('photo_url', e.target.value)}
-              className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500'
-              placeholder='https://example.com/image.jpg'
-            />
           </div>
         </div>
 

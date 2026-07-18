@@ -36,7 +36,9 @@ class ResourceResource extends JsonResource
             'capacity' => $this->capacity,
             'is_active' => $this->is_active,
             'sort_order' => $this->sort_order,
-            'image_url' => $this->image_url,
+            'photo_url' => $this->photo_url,
+            // 互換（旧クライアント向け）
+            'image_url' => $this->photo_url,
             
             // 計算フィールド
             'type_info' => $this->getTypeInfo(),

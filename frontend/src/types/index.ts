@@ -636,7 +636,8 @@ export interface Resource {
   hourly_rate_diff: number;
   equipment_specs: Record<string, any>;
   booking_rules: Record<string, any>;
-  image_url?: string;
+  photo_url?: string | null;
+  image_url?: string | null;
   is_active: boolean;
   sort_order: number;
   created_at: string;
@@ -656,7 +657,7 @@ export interface CreateResourceRequest {
   capacity?: number;
   equipment_specs?: Record<string, any>;
   booking_rules?: Record<string, any>;
-  image_url?: string;
+  photo_url?: string | null;
   is_active?: boolean;
   sort_order?: number;
 }
@@ -674,7 +675,7 @@ export interface UpdateResourceRequest {
   capacity?: number;
   equipment_specs?: Record<string, any>;
   booking_rules?: Record<string, any>;
-  image_url?: string;
+  photo_url?: string | null;
   is_active?: boolean;
   sort_order?: number;
 }

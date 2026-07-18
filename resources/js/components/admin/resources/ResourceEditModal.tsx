@@ -17,6 +17,7 @@ import { resourceApi } from '../../../services/api';
 import { useUIStore } from '../../../stores/uiStore';
 import Modal from '../modal/Modal';
 import AppButton from '../ui/AppButton';
+import ImageUploadField from '../ui/ImageUploadField';
 import {
   UserIcon,
   BuildingOfficeIcon,
@@ -39,6 +40,7 @@ interface EditFormData {
   efficiency_rate: number;
   hourly_rate_diff: number;
   is_active: boolean;
+  photo_url: string | null;
 }
 
 /**
@@ -60,6 +62,7 @@ const ResourceEditModal: React.FC<ResourceEditModalProps> = ({
     efficiency_rate: 1.0,
     hourly_rate_diff: 0,
     is_active: true,
+    photo_url: null,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -92,6 +95,7 @@ const ResourceEditModal: React.FC<ResourceEditModalProps> = ({
         efficiency_rate: resource.efficiency_rate || 1.0,
         hourly_rate_diff: resource.hourly_rate_diff || 0,
         is_active: resource.is_active !== false,
+        photo_url: resource.photo_url || null,
       });
       setErrors({});
     }
@@ -165,6 +169,7 @@ const ResourceEditModal: React.FC<ResourceEditModalProps> = ({
         efficiency_rate: Number(formData.efficiency_rate),
         hourly_rate_diff: Number(formData.hourly_rate_diff),
         is_active: formData.is_active,
+        photo_url: formData.photo_url?.trim() || null,
       });
 
       addNotification({
@@ -227,6 +232,16 @@ const ResourceEditModal: React.FC<ResourceEditModalProps> = ({
             <p className='text-sm text-gray-600'>タイプ: {resource.type}</p>
           </div>
         </div>
+
+        <ImageUploadField
+          value={formData.photo_url}
+          onChange={url => handleInputChange('photo_url', url)}
+          onUpload={file => resourceApi.uploadImage(file)}
+          label='画像'
+          hint='任意・1枚 / ドラッグ＆ドロップ可'
+          error={errors.photo_url}
+          disabled={isLoading}
+        />
 
         {/* 基本情報 */}
         <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
