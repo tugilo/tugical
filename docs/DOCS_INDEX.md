@@ -1,8 +1,8 @@
 # tugical ドキュメント索引（司令塔）
 
-**Version**: 1.3  
+**Version**: 1.4  
 **作成日時**: 2026-07-06 16:50:15  
-**最終更新日時**: 2026-07-06 17:13:11  
+**最終更新日時**: 2026-07-18 21:36:11  
 **目的**: 再開・実装・判断時に参照するドキュメントの優先順位と役割を 1 ページに集約する。
 
 ---
@@ -51,12 +51,15 @@
 
 | ドキュメント | 用途 |
 |--------------|------|
+| **`ADMIN_UX_MANUALESS_AUDIT_v1.0.md`** | **マニュアルレス UX 監査（ケース判定・P0〜P3）** |
 | `ADMIN_MUI_MIGRATION_PLAN_v1.0.md` | Phase 0〜5（Phase 5 検討中） |
 | `ADMIN_LIST_UI_DATAGRID_EVALUATION_v1.0.md` | DataGrid 評価（案 B 推奨） |
 | `ADMIN_MENUS_IMPLEMENTATION_AUDIT_v1.0.md` | MenusPage 棚卸し・PoC 案 |
 | `ADMIN_DASHBOARD_IMPLEMENTATION_PLAN_v1.2.1.md` | ダッシュボード Step 計画 |
+| `docs/process/phases/PHASE_001_admin_ux_manualess_audit_PLAN.md` | 監査 Phase PLAN |
 
-**実行順序**: #16〜18（P3、β と独立・並行可）
+**実行順序**: #16〜18（P3、β と独立・並行可）  
+**UX 改善の着手順**: `ADMIN_UX_MANUALESS_AUDIT_v1.0.md` §7（P0-1 予約詳細が最優先）
 
 ---
 
@@ -93,6 +96,7 @@
 
 | Version | 日時 | Changes |
 |---------|------|---------|
+| 1.4 | 2026-07-18 21:36:11 | ADMIN_UX_MANUALESS_AUDIT / PHASE_001 を索引追加 |
 | 1.3 | 2026-07-06 17:13:11 | v1.7 同期。#1〜18、P0.5 SEC-01、次着手 #1 |
 | 1.2 | 2026-07-06 17:08:52 | SECURITY_FIT_GAP 追加 |
 | 1.1 | 2026-07-06 17:05:25 | Fit&Gap §4.4 管理画面監査への参照 |
