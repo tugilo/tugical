@@ -1,7 +1,7 @@
 # Phase Registry
 
 **作成日時**: 2026-07-18 21:30:51  
-**最終更新日時**: 2026-07-19 05:55:40  
+**最終更新日時**: 2026-07-19 05:58:46  
 
 | Phase ID | 名称 | 種別 | 状態 | 完了日 | ブランチ |
 |----------|------|------|------|--------|----------|
@@ -20,6 +20,7 @@
 | PHASE_013 | soft_number_keypad | implement | 完了 | 2026-07-19 05:47:00 | feature/phase013-soft-number-keypad（merge: 045a1c7） |
 | PHASE_014 | unify_digit_inputs | implement | 完了 | 2026-07-19 05:52:47 | feature/phase014-unify-digit-inputs（merge: d2dac34） |
 | PHASE_015 | dashboard_today_bookings | implement | 完了 | 2026-07-19 05:55:40 | feature/phase015-dashboard-today-bookings（merge: a696225） |
+| PHASE_016 | dashboard_menu_display | implement | 進行中 | — | feature/phase016-dashboard-menu-display |
 
 ---
 
