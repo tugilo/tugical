@@ -45,6 +45,7 @@ class MenuResource extends JsonResource
             'requires_approval' => $this->requires_approval,
             'sort_order' => $this->sort_order,
             'image_url' => $this->image_url,
+            'images' => EntityImageResource::collection($this->whenLoaded('images')),
             
             // 関連データ
             'options' => MenuOptionResource::collection($this->whenLoaded('options')),

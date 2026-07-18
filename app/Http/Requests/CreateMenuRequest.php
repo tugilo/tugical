@@ -57,8 +57,12 @@ class CreateMenuRequest extends FormRequest
             
             // その他
             'gender_restriction' => 'nullable|in:none,male_only,female_only',
-            // 外部URLまたは /storage/... の相対パス
+            // 外部URLまたは /storage/... の相対パス（互換・メイン画像）
             'image_url' => 'nullable|string|max:500',
+            // 1対多画像（最大10枚）
+            'images' => 'nullable|array|max:10',
+            'images.*.url' => 'required|string|max:500',
+            'images.*.is_primary' => 'nullable|boolean',
             'is_active' => 'nullable|boolean',
             'requires_approval' => 'nullable|boolean',
             'sort_order' => 'nullable|integer|min:0',

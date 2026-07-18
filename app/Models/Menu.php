@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -253,6 +254,14 @@ class Menu extends Model
     public function options(): HasMany
     {
         return $this->hasMany(MenuOption::class)->orderBy('sort_order');
+    }
+
+    /**
+     * メニュー画像（1対多）
+     */
+    public function images(): MorphMany
+    {
+        return $this->morphMany(EntityImage::class, 'imageable')->orderBy('sort_order');
     }
 
     /**

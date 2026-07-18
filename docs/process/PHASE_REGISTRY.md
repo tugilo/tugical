@@ -1,7 +1,7 @@
 # Phase Registry
 
 **作成日時**: 2026-07-18 21:30:51  
-**最終更新日時**: 2026-07-19 05:29:05  
+**最終更新日時**: 2026-07-19 05:40:00  
 
 | Phase ID | 名称 | 種別 | 状態 | 完了日 | ブランチ |
 |----------|------|------|------|--------|----------|
@@ -15,6 +15,7 @@
 | PHASE_008 | always_show_name_search | implement | 完了 | 2026-07-19 05:18:10 | feature/phase008-always-show-name-search（merge: e9f8595） |
 | PHASE_009 | menu_create_image | implement | 完了 | 2026-07-19 05:25:21 | feature/phase009-menu-create-image（merge: 37d31ab） |
 | PHASE_010 | resource_image_dnd | implement | 完了 | 2026-07-19 05:29:05 | feature/phase010-resource-image-dnd（merge: 44ac3a2） |
+| PHASE_011 | entity_images_1n | implement | 進行中 | - | feature/phase011-entity-images-1n |
 
 ---
 

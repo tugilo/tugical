@@ -9,7 +9,9 @@ import {
 } from '@heroicons/react/24/outline';
 import Modal from '../modal/Modal';
 import Button from '../ui/Button';
-import ImageUploadField from '../ui/ImageUploadField';
+import MultiImageUploadField, {
+  EntityImageItem,
+} from '../ui/MultiImageUploadField';
 import { resourceApi } from '../../../services/api';
 import { useUIStore } from '../../../stores/uiStore';
 import type { Resource, ResourceType } from '../../../types';
@@ -31,6 +33,7 @@ interface ResourceFormData {
   display_name: string;
   description: string;
   photo_url: string;
+  images: EntityImageItem[];
   attributes: Record<string, any>;
   working_hours: Record<string, any>;
   efficiency_rate: number;
@@ -65,6 +68,7 @@ const ResourceCreateModal: React.FC<ResourceCreateModalProps> = ({
     display_name: '',
     description: '',
     photo_url: '',
+    images: [],
     attributes: {},
     working_hours: {},
     efficiency_rate: 1.0,
@@ -183,9 +187,13 @@ const ResourceCreateModal: React.FC<ResourceCreateModalProps> = ({
 
     try {
       setIsLoading(true);
+      const images = formData.images || [];
+      const primary =
+        images.find(img => img.is_primary)?.url || images[0]?.url || null;
       const resource = await resourceApi.create({
         ...formData,
-        photo_url: formData.photo_url?.trim() || null,
+        images,
+        photo_url: primary,
       });
       addNotification({
         type: 'success',
@@ -221,6 +229,7 @@ const ResourceCreateModal: React.FC<ResourceCreateModalProps> = ({
       display_name: '',
       description: '',
       photo_url: '',
+      images: [],
       attributes: {},
       working_hours: {},
       efficiency_rate: 1.0,
@@ -281,14 +290,15 @@ const ResourceCreateModal: React.FC<ResourceCreateModalProps> = ({
           </div>
         </div>
 
-        <ImageUploadField
-          value={formData.photo_url || null}
-          onChange={url => handleInputChange('photo_url', url || '')}
+        <MultiImageUploadField
+          value={formData.images || []}
+          onChange={images => handleInputChange('images', images)}
           onUpload={file => resourceApi.uploadImage(file)}
           label='画像'
-          hint='任意・1枚 / ドラッグ＆ドロップ可'
-          error={errors.photo_url}
+          hint='任意・最大10枚 / ドラッグ＆ドロップ可 / ★がメイン'
+          error={errors.images || errors.photo_url}
           disabled={isLoading}
+          max={10}
         />
 
         {/* 基本情報 */}

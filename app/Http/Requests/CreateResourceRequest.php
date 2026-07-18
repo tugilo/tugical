@@ -56,6 +56,10 @@ class CreateResourceRequest extends FormRequest
             
             // その他（DBカラムは photo_url。相対パス /storage/... も許可）
             'photo_url' => 'nullable|string|max:500',
+            // 1対多画像（最大10枚）
+            'images' => 'nullable|array|max:10',
+            'images.*.url' => 'required|string|max:500',
+            'images.*.is_primary' => 'nullable|boolean',
             'is_active' => 'nullable|boolean',
             'sort_order' => 'nullable|integer|min:0',
         ];
