@@ -1,10 +1,10 @@
 # PHASE_001_admin_ux_manualess_audit REPORT
 
 **作成日時**: 2026-07-18 21:36:11  
-**最終更新日時**: 2026-07-18 21:36:11  
+**最終更新日時**: 2026-07-18 21:43:55  
 **Phase ID**: PHASE_001  
 **フェーズ種別**: docs  
-**状態**: 完了（ローカル merge / push はユーザー依頼後）
+**状態**: 完了（develop へ merge 済み）
 
 ---
 
@@ -32,7 +32,7 @@
 ## 3. Merge Evidence
 
 ```
-merge commit id: （未 merge。docs ブランチ上で作成済み）
+merge commit id: 29d2e850d68680c1cfd5ed17dbbf7ed2570f389e
 source branch: feature/phase001-admin-ux-manualess-audit
 target branch: develop
 phase id: 001
@@ -64,9 +64,8 @@ dod check: OK
 
 ## 4. 次アクション（人間向け）
 
-1. 本ブランチを develop へ merge（依頼時）  
-2. 実装 Phase を切る場合の推奨着手: 監査 §7（P0-1 → P0-2/P0-3 → P1…）  
-3. 予約詳細 TODO（`BookingsPage.handleBookingClick`）は最優先候補  
+1. 実装 Phase を切る場合の推奨着手: 監査 §7（P0-1 → P0-2/P0-3 → P1…）  
+2. 予約詳細 TODO（`BookingsPage.handleBookingClick`）は最優先候補  
 
 ---
 
@@ -75,3 +74,4 @@ dod check: OK
 | 日時 | 内容 |
 |------|------|
 | 2026-07-18 21:36:11 | 初版（検証完了・成果物作成） |
+| 2026-07-18 21:43:55 | Merge Evidence 記録（29d2e85） |
