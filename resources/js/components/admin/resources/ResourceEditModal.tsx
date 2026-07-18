@@ -19,6 +19,7 @@ import Modal from '../modal/Modal';
 import AppButton from '../ui/AppButton';
 import FieldLabel from '../ui/FieldLabel';
 import FieldTip from '../ui/FieldTip';
+import SoftNumberField from '../ui/SoftNumberField';
 import MultiImageUploadField, {
   EntityImageItem,
 } from '../ui/MultiImageUploadField';
@@ -322,68 +323,40 @@ const ResourceEditModal: React.FC<ResourceEditModalProps> = ({
 
         {/* 詳細設定 */}
         <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
-          <div>
-            <FieldLabel label='指名料金' tip={FIELD_TIPS.hourlyRateDiff} />
-            <div className='relative'>
-              <input
-                type='number'
-                min='-10000'
-                max='10000'
-                step='100'
-                value={formData.hourly_rate_diff}
-                onChange={e =>
-                  handleInputChange(
-                    'hourly_rate_diff',
-                    parseInt(e.target.value) || 0
-                  )
-                }
-                disabled={isLoading}
-                className={`w-full px-3 py-2 pr-14 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-50 ${
-                  errors.hourly_rate_diff ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder='0'
-              />
-              <span className='absolute right-2 top-2 text-gray-500 text-sm'>
-                円/時
-              </span>
-            </div>
-            {errors.hourly_rate_diff && (
-              <p className='mt-1 text-sm text-red-600'>
-                {errors.hourly_rate_diff}
-              </p>
-            )}
-          </div>
+          <SoftNumberField
+            name='hourly_rate_diff'
+            label='指名料金'
+            tip={FIELD_TIPS.hourlyRateDiff}
+            value={formData.hourly_rate_diff}
+            onChange={v => handleInputChange('hourly_rate_diff', v)}
+            error={errors.hourly_rate_diff}
+            unit='円/時'
+            min={-10000}
+            max={10000}
+            step={100}
+            disabled={isLoading}
+          />
 
-          <div>
-            <FieldLabel
-              label={
-                resource.type === 'staff'
-                  ? '同時対応人数'
-                  : resource.type === 'room'
-                    ? '収容人数'
-                    : resource.type === 'equipment'
-                      ? '同時利用数'
-                      : '乗車定員'
-              }
-              tip={capacityTip(resource.type)}
-            />
-            <input
-              type='number'
-              min='1'
-              max='100'
-              value={formData.capacity}
-              onChange={e =>
-                handleInputChange('capacity', parseInt(e.target.value) || 1)
-              }
-              disabled={isLoading}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-50 ${
-                errors.capacity ? 'border-red-500' : 'border-gray-300'
-              }`}
-            />
-            {errors.capacity && (
-              <p className='mt-1 text-sm text-red-600'>{errors.capacity}</p>
-            )}
-          </div>
+          <SoftNumberField
+            name='capacity'
+            label={
+              resource.type === 'staff'
+                ? '同時対応人数'
+                : resource.type === 'room'
+                  ? '収容人数'
+                  : resource.type === 'equipment'
+                    ? '同時利用数'
+                    : '乗車定員'
+            }
+            tip={capacityTip(resource.type)}
+            value={formData.capacity}
+            onChange={v => handleInputChange('capacity', v)}
+            error={errors.capacity}
+            unit='人'
+            min={1}
+            max={100}
+            disabled={isLoading}
+          />
 
           <div>
             <FieldLabel

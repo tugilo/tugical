@@ -1,10 +1,12 @@
 /**
  * tugical 管理画面用 統一フォームフィールド（MUI TextField 実装）
  * tip: ⓘ で効果・意味を表示
+ * number: ソフトウェアテンキー入力（SoftNumberField）
  */
 import React from 'react';
 import { Box, TextField, MenuItem } from '@mui/material';
 import FieldTip from './FieldTip';
+import SoftNumberField from './SoftNumberField';
 
 export interface FormFieldProps {
   label: string;
@@ -32,6 +34,8 @@ export interface FormFieldProps {
   min?: number;
   max?: number;
   step?: number;
+  /** 数値の単位表示（円・分など） */
+  unit?: string;
   className?: string;
 }
 
@@ -54,6 +58,7 @@ const FormField: React.FC<FormFieldProps> = ({
   min,
   max,
   step,
+  unit,
   className = '',
 }) => {
   const displayValue = value === null ? '' : String(value);
@@ -61,17 +66,7 @@ const FormField: React.FC<FormFieldProps> = ({
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    const raw = e.target.value;
-    if (type === 'number') {
-      if (raw === '') {
-        onChange(0);
-      } else {
-        const num = Number(raw);
-        if (!Number.isNaN(num)) onChange(num);
-      }
-    } else {
-      onChange(raw);
-    }
+    onChange(e.target.value);
   };
 
   const hasError = Boolean(error);
@@ -87,8 +82,36 @@ const FormField: React.FC<FormFieldProps> = ({
     label
   );
 
-  // tip 付きのとき required はラベル側に出したので TextField の * は抑止
   const muiRequired = tip ? false : required;
+
+  // 数値はソフトテンキー（OSキーボード非表示）
+  if (type === 'number') {
+    const numValue =
+      typeof value === 'number'
+        ? value
+        : value === null || value === ''
+          ? 0
+          : Number(value) || 0;
+
+    return (
+      <SoftNumberField
+        name={name}
+        label={label}
+        tip={tip}
+        value={numValue}
+        onChange={v => onChange(v)}
+        placeholder={placeholder || 'タップして入力'}
+        error={error || undefined}
+        required={required}
+        disabled={disabled}
+        min={min}
+        max={max}
+        step={step}
+        unit={unit}
+        className={className}
+      />
+    );
+  }
 
   if (type === 'select') {
     return (
@@ -126,7 +149,7 @@ const FormField: React.FC<FormFieldProps> = ({
   const isMultiline = type === 'textarea';
   const inputType = isMultiline
     ? undefined
-    : (type as 'text' | 'email' | 'password' | 'number' | 'tel' | 'url');
+    : (type as 'text' | 'email' | 'password' | 'tel' | 'url' | 'date');
 
   return (
     <TextField
@@ -155,7 +178,11 @@ const FormField: React.FC<FormFieldProps> = ({
             ? { shrink: true, required: muiRequired }
             : { required: muiRequired }
       }
-      inputProps={type === 'number' ? { min, max, step } : undefined}
+      inputProps={
+        type === 'tel'
+          ? { inputMode: 'tel', autoComplete: 'tel' }
+          : undefined
+      }
       FormHelperTextProps={{ sx: { marginTop: 0.25 } }}
     />
   );

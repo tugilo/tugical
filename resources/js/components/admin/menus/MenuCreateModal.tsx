@@ -227,9 +227,10 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
             type='number'
             value={formData.base_price}
             onChange={value => updateFormData('base_price', value)}
-            placeholder='円'
+            placeholder='タップして入力'
             error={errors.base_price}
             tip={FIELD_TIPS.menuPrice}
+            unit='円'
             min={0}
             step={100}
             required
@@ -240,9 +241,10 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
             type='number'
             value={formData.base_duration}
             onChange={value => updateFormData('base_duration', value)}
-            placeholder='分'
+            placeholder='タップして入力'
             error={errors.base_duration}
             tip={FIELD_TIPS.menuDuration}
+            unit='分'
             min={1}
             max={1440}
             step={5}
@@ -297,8 +299,9 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
                   type='number'
                   value={formData.prep_duration || 0}
                   onChange={value => updateFormData('prep_duration', value)}
-                  placeholder='分'
+                  placeholder='タップして入力'
                   tip={FIELD_TIPS.prepDuration}
+                  unit='分'
                   min={0}
                   max={180}
                 />
@@ -308,8 +311,9 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
                   type='number'
                   value={formData.cleanup_duration || 0}
                   onChange={value => updateFormData('cleanup_duration', value)}
-                  placeholder='分'
+                  placeholder='タップして入力'
                   tip={FIELD_TIPS.cleanupDuration}
+                  unit='分'
                   min={0}
                   max={180}
                 />
@@ -322,8 +326,9 @@ const MenuCreateModal: React.FC<MenuCreateModalProps> = ({
                 onChange={value =>
                   updateFormData('advance_booking_hours', value)
                 }
-                placeholder='時間'
+                placeholder='タップして入力'
                 tip={FIELD_TIPS.advanceBookingHours}
+                unit='時間前'
                 min={0}
                 max={168}
               />

@@ -438,9 +438,10 @@ const MenuEditModal: React.FC<MenuEditModalProps> = ({
                     : originalMenu.base_price
                 }
                 onChange={value => updateFormData('base_price', value)}
-                placeholder='円'
+                placeholder='タップして入力'
                 error={errors.base_price}
                 tip={FIELD_TIPS.menuPrice}
+                unit='円'
                 min={0}
                 step={100}
                 required
@@ -456,9 +457,10 @@ const MenuEditModal: React.FC<MenuEditModalProps> = ({
                     : originalMenu.base_duration
                 }
                 onChange={value => updateFormData('base_duration', value)}
-                placeholder='分'
+                placeholder='タップして入力'
                 error={errors.base_duration}
                 tip={FIELD_TIPS.menuDuration}
+                unit='分'
                 min={0}
                 max={1440}
                 step={5}
@@ -477,9 +479,10 @@ const MenuEditModal: React.FC<MenuEditModalProps> = ({
                     : originalMenu.prep_duration
                 }
                 onChange={value => updateFormData('prep_duration', value)}
-                placeholder='分'
+                placeholder='タップして入力'
                 error={errors.prep_duration}
                 tip={FIELD_TIPS.prepDuration}
+                unit='分'
                 min={0}
                 max={120}
                 step={5}
@@ -495,9 +498,10 @@ const MenuEditModal: React.FC<MenuEditModalProps> = ({
                     : originalMenu.cleanup_duration
                 }
                 onChange={value => updateFormData('cleanup_duration', value)}
-                placeholder='分'
+                placeholder='タップして入力'
                 error={errors.cleanup_duration}
                 tip={FIELD_TIPS.cleanupDuration}
+                unit='分'
                 min={0}
                 max={120}
                 step={5}

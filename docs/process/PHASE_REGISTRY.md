@@ -1,7 +1,7 @@
 # Phase Registry
 
 **作成日時**: 2026-07-18 21:30:51  
-**最終更新日時**: 2026-07-19 05:44:21  
+**最終更新日時**: 2026-07-19 05:47:00  
 
 | Phase ID | 名称 | 種別 | 状態 | 完了日 | ブランチ |
 |----------|------|------|------|--------|----------|
@@ -17,6 +17,7 @@
 | PHASE_010 | resource_image_dnd | implement | 完了 | 2026-07-19 05:29:05 | feature/phase010-resource-image-dnd（merge: 44ac3a2） |
 | PHASE_011 | entity_images_1n | implement | 完了 | 2026-07-19 05:37:58 | feature/phase011-entity-images-1n（merge: 148b30c） |
 | PHASE_012 | field_tips | implement | 完了 | 2026-07-19 05:44:21 | feature/phase012-field-tips（merge: aa6fdb6） |
+| PHASE_013 | soft_number_keypad | implement | 進行中 | - | feature/phase013-soft-number-keypad |
 
 ---
 
