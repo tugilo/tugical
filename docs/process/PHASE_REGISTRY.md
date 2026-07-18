@@ -8,7 +8,7 @@
 | PHASE_001 | admin_ux_manualess_audit | docs | 完了 | 2026-07-18 21:43:55 | feature/phase001-admin-ux-manualess-audit（merge: 29d2e85） |
 | PHASE_002 | admin_ux_manualess_fix | implement | 完了 | 2026-07-18 21:53:52 | feature/phase002-admin-ux-manualess-fix（merge: 68bed26） |
 | PHASE_003 | booking_create_ux | implement | 完了 | 2026-07-19 04:38:49 | feature/phase003-booking-create-ux（merge: 8f80e66） |
-| PHASE_004 | customer_dropdown_close | implement | 完了 | 2026-07-19 04:42:32 | feature/phase004-customer-dropdown-close |
+| PHASE_004 | customer_dropdown_close | implement | 完了 | 2026-07-19 04:42:32 | feature/phase004-customer-dropdown-close（merge: 3aadc93） |
 
 ---
 
