@@ -1,7 +1,7 @@
 # Phase Registry
 
 **作成日時**: 2026-07-18 21:30:51  
-**最終更新日時**: 2026-07-19 05:15:35  
+**最終更新日時**: 2026-07-19 05:17:55  
 
 | Phase ID | 名称 | 種別 | 状態 | 完了日 | ブランチ |
 |----------|------|------|------|--------|----------|
@@ -12,6 +12,7 @@
 | PHASE_005 | booking_modal_ux | implement | 完了 | 2026-07-19 05:07:49 | feature/phase005-booking-modal-ux（merge: 2fcabe1） |
 | PHASE_006 | time_hour_minute | implement | 完了 | 2026-07-19 05:12:03 | feature/phase006-time-hour-minute（merge: 8ca782c） |
 | PHASE_007 | datepicker_month_view | implement | 完了 | 2026-07-19 05:15:35 | feature/phase007-datepicker-month-view（merge: 71f189a） |
+| PHASE_008 | always_show_name_search | implement | 完了 | 2026-07-19 05:17:55 | feature/phase008-always-show-name-search |
 
 ---
 
