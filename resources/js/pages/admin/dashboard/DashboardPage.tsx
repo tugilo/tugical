@@ -92,8 +92,33 @@ interface BookingRow {
   status: string;
   updated_at?: string;
   customer?: { name: string };
-  menu?: { name: string };
-  resource?: { name: string };
+  menu?: { name: string; display_name?: string };
+  resource?: { name: string; display_name?: string };
+  /** 複数メニュー組み合わせ時（menu_id が null でもこちらに入る） */
+  details?: Array<{
+    service_name?: string;
+    menu?: { name?: string; display_name?: string };
+  }>;
+}
+
+/**
+ * メニュー表示名を解決する（単一 menu / details の service_name 対応）
+ * BookingsPage.getMenuName と同方針
+ */
+function resolveMenuName(booking: BookingRow): string {
+  if (booking.details && booking.details.length > 0) {
+    const names = booking.details
+      .map(
+        (d) =>
+          d.service_name || d.menu?.display_name || d.menu?.name || ''
+      )
+      .filter(Boolean);
+    if (names.length > 0) return names.join(' + ');
+  }
+  if (booking.menu) {
+    return booking.menu.display_name || booking.menu.name || '';
+  }
+  return '';
 }
 
 /** 今日の日付 Y-m-d */
@@ -175,8 +200,12 @@ function mapToTodayBookings(bookings: BookingRow[], today: string): TodayBooking
       end_time: b.end_time,
       status: b.status,
       customer: b.customer ? { name: b.customer.name } : { name: '' },
-      menu: b.menu ? { name: b.menu.name } : { name: '' },
-      resource: b.resource ? { name: (b.resource as { name?: string }).name } : undefined,
+      menu: { name: resolveMenuName(b) },
+      resource: b.resource
+        ? {
+            name: b.resource.display_name || b.resource.name,
+          }
+        : undefined,
     }));
 }
 
@@ -449,7 +478,7 @@ const DashboardPage: React.FC = () => {
                             )}
                             <ListItemText
                               primary={`${formatTime(b.start_time)} - ${b.customer.name}`}
-                              secondary={`${b.menu.name}${b.resource ? ` · ${(b.resource as { display_name?: string; name: string }).display_name || b.resource.name}` : ''}`}
+                              secondary={`${b.menu.name || 'メニュー未設定'}${b.resource ? ` · ${b.resource.name}` : ''}`}
                               primaryTypographyProps={{
                                 variant: 'body2',
                                 fontWeight: isNext ? 600 : 500,
