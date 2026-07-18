@@ -181,13 +181,69 @@ export const MultiMenuSelector: React.FC<MultiMenuSelectorProps> = ({
 
   return (
     <div className='multi-menu-selector space-y-4'>
-      {/* 選択済みメニュー表示 */}
+      {/* 1. メニュー一覧（選ぶ） */}
+      <div className='available-menus'>
+        <h3 className='text-base font-semibold text-gray-900 mb-3'>
+          メニューを選ぶ
+        </h3>
+        <div className='space-y-2'>
+          {availableMenus.map(menu => (
+            <Card key={menu.id} className={cardClassName}>
+              <div
+                className='flex items-center justify-between'
+                onClick={() => handleMenuAdd(menu)}
+              >
+                <div className='flex-1'>
+                  <h4 className='font-medium text-gray-900 mb-1'>
+                    {menu.display_name || menu.name}
+                  </h4>
+                  <div className='flex items-center space-x-4 text-sm text-gray-600'>
+                    <div className='flex items-center'>
+                      <CurrencyYenIcon className='w-4 h-4 mr-1' />
+                      {menu.formatted_price}
+                    </div>
+                    <div className='flex items-center'>
+                      <ClockIcon className='w-4 h-4 mr-1' />
+                      {menu.formatted_duration}
+                    </div>
+                  </div>
+                  {menu.description && (
+                    <p className='text-sm text-gray-500 mt-1 line-clamp-2'>
+                      {menu.description}
+                    </p>
+                  )}
+                </div>
+
+                <div onClick={e => e.stopPropagation()} className='ml-4'>
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    className={buttonClassName}
+                    onClick={() => handleMenuAdd(menu)}
+                  >
+                    <PlusIcon className='w-5 h-5' />
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      {/* 空状態 */}
+      {availableMenus.length === 0 && selectedMenus.length === 0 && (
+        <Card className='text-center py-8'>
+          <p className='text-gray-500'>利用可能なメニューがありません</p>
+        </Card>
+      )}
+
+      {/* 2. 選択中（確認）— 下に置き、スクロール時は下部固定 */}
       {selectedMenus.length > 0 && (
-        <div className='selected-menus'>
-          <h3 className='text-lg font-semibold text-gray-900 mb-3'>
-            選択中のメニュー
+        <div className='selected-menus sticky bottom-0 z-20 -mx-1 px-1 pt-3 pb-1 bg-white/95 backdrop-blur border-t border-emerald-100 shadow-[0_-4px_12px_rgba(0,0,0,0.06)]'>
+          <h3 className='text-base font-semibold text-gray-900 mb-2'>
+            選択中（{selectedMenus.length}）
           </h3>
-          <div className='space-y-2'>
+          <div className='space-y-2 max-h-48 overflow-y-auto'>
             {selectedMenus.map((menuRequest, index) => {
               const menuDisplay = getSelectedMenuDisplay(menuRequest);
               if (!menuDisplay) return null;
@@ -195,15 +251,12 @@ export const MultiMenuSelector: React.FC<MultiMenuSelectorProps> = ({
               return (
                 <Card key={menuRequest.menu_id} className='selected-menu-card'>
                   <div className='flex items-center justify-between'>
-                    <div className='flex items-center space-x-3'>
-                      {/* 順序番号 */}
+                    <div className='flex items-center space-x-3 min-w-0'>
                       <div className='flex-shrink-0 w-8 h-8 bg-emerald-100 text-emerald-800 rounded-full flex items-center justify-center font-semibold'>
                         {menuRequest.sequence_order}
                       </div>
-
-                      {/* メニュー情報 */}
-                      <div className='flex-1'>
-                        <h4 className='font-medium text-gray-900'>
+                      <div className='flex-1 min-w-0'>
+                        <h4 className='font-medium text-gray-900 truncate'>
                           {menuDisplay.display_name || menuDisplay.name}
                         </h4>
                         <div className='flex items-center space-x-4 text-sm text-gray-600'>
@@ -219,9 +272,7 @@ export const MultiMenuSelector: React.FC<MultiMenuSelectorProps> = ({
                       </div>
                     </div>
 
-                    {/* 操作ボタン */}
-                    <div className='flex items-center space-x-2'>
-                      {/* 順序変更ボタン */}
+                    <div className='flex items-center space-x-2 shrink-0'>
                       <div className='flex flex-col'>
                         <Button
                           variant='ghost'
@@ -246,8 +297,6 @@ export const MultiMenuSelector: React.FC<MultiMenuSelectorProps> = ({
                           <ChevronDownIcon className='w-4 h-4' />
                         </Button>
                       </div>
-
-                      {/* 削除ボタン */}
                       <Button
                         variant='ghost'
                         size='sm'
@@ -263,63 +312,6 @@ export const MultiMenuSelector: React.FC<MultiMenuSelectorProps> = ({
             })}
           </div>
         </div>
-      )}
-
-      {/* 利用可能なメニュー一覧 */}
-      <div className='available-menus'>
-        <h3 className='text-lg font-semibold text-gray-900 mb-3'>
-          メニューを追加
-        </h3>
-        <div className='space-y-2'>
-          {availableMenus.map(menu => (
-            <Card key={menu.id} className={cardClassName}>
-              <div
-                className='flex items-center justify-between'
-                onClick={() => handleMenuAdd(menu)}
-              >
-                <div className='flex-1'>
-                  <h4 className='font-medium text-gray-900 mb-1'>
-                    {menu.display_name || menu.name}
-                  </h4>
-                  <div className='flex items-center space-x-4 text-sm text-gray-600'>
-                    <div className='flex items-center'>
-                      <CurrencyYenIcon className='w-4 h-4 mr-1' />
-                      {menu.formatted_price}
-                    </div>
-                    <div className='flex items-center'>
-                      <ClockIcon className='w-4 h-4 mr-1' />
-                      {menu.formatted_duration}
-                    </div>
-                  </div>
-                  {menu.description && (
-                    <p className='text-sm text-gray-500 mt-1'>
-                      {menu.description}
-                    </p>
-                  )}
-                </div>
-
-                {/* 追加ボタン */}
-                <div onClick={e => e.stopPropagation()} className='ml-4'>
-                  <Button
-                    variant='outline'
-                    size='sm'
-                    className={buttonClassName}
-                    onClick={() => handleMenuAdd(menu)}
-                  >
-                    <PlusIcon className='w-5 h-5' />
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
-      </div>
-
-      {/* 空状態 */}
-      {availableMenus.length === 0 && selectedMenus.length === 0 && (
-        <Card className='text-center py-8'>
-          <p className='text-gray-500'>利用可能なメニューがありません</p>
-        </Card>
       )}
     </div>
   );

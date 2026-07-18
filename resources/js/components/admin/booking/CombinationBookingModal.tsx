@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   CalendarIcon,
   ClockIcon,
@@ -6,7 +6,7 @@ import {
   PlusIcon,
   CurrencyYenIcon,
   MagnifyingGlassIcon,
-  XMarkIcon,
+  PhoneIcon,
 } from '@heroicons/react/24/outline';
 import Modal from '../modal/Modal';
 import Button from '../ui/Button';
@@ -85,6 +85,19 @@ const snapToQuarterHour = (time?: string): string => {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 };
 
+/** 電話番号を数字のみに正規化 */
+const digitsOnly = (value: string): string => value.replace(/\D/g, '');
+
+/**
+ * チップ（時間・担当）の共通スタイル
+ */
+const chipClass = (active: boolean): string =>
+  `min-h-[44px] min-w-[4.5rem] px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
+    active
+      ? 'bg-emerald-600 text-white border-emerald-600'
+      : 'bg-white text-gray-700 border-gray-300 hover:border-emerald-400 hover:bg-emerald-50'
+  }`;
+
 /**
  * 予約からメニューラベルと選択用リクエストを抽出
  */
@@ -98,7 +111,10 @@ const extractMenusFromBooking = (
     const labels: string[] = [];
     const requests: CombinationMenuRequest[] = [];
     booking.details.forEach((detail, index) => {
-      const d = detail as typeof detail & { service_name?: string; menu_id?: number };
+      const d = detail as typeof detail & {
+        service_name?: string;
+        menu_id?: number;
+      };
       const menuId = d.menu_id ?? detail.menu?.id;
       const name =
         d.service_name || detail.menu?.display_name || detail.menu?.name;
@@ -138,7 +154,8 @@ const extractMenusFromBooking = (
   }
 
   return {
-    label: booking.menu?.display_name || booking.menu?.name || 'メニュー情報なし',
+    label:
+      booking.menu?.display_name || booking.menu?.name || 'メニュー情報なし',
     menus: [],
   };
 };
@@ -183,16 +200,25 @@ const CombinationBookingModal: React.FC<CombinationBookingModalProps> = ({
   const [lastVisit, setLastVisit] = useState<LastVisitSummary | null>(null);
   const [loadingLastVisit, setLoadingLastVisit] = useState(false);
 
+  // 顧客 UI（電話優先）
+  const [phoneSearch, setPhoneSearch] = useState('');
+  const [nameSearch, setNameSearch] = useState('');
+  const [showNameSearch, setShowNameSearch] = useState(false);
+  const [phoneMatches, setPhoneMatches] = useState<Customer[]>([]);
+  const [nameMatches, setNameMatches] = useState<Customer[]>([]);
+  const [showNameList, setShowNameList] = useState(false);
+  const [newCustomerName, setNewCustomerName] = useState('');
+  const [isCreatingCustomer, setIsCreatingCustomer] = useState(false);
+  /** 「変更」直後に同一番号で自動再確定しないためのフラグ */
+  const skipPhoneAutoSelectRef = useRef(false);
+
   // UI状態
-  const [customerSearch, setCustomerSearch] = useState('');
-  const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
-  const [showCustomerList, setShowCustomerList] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
-
-  // データ取得（初回のみ）
   const [isDataLoaded, setIsDataLoaded] = useState(false);
+
+  const phoneDigits = digitsOnly(phoneSearch);
 
   useEffect(() => {
     if (isOpen && !isDataLoaded) {
@@ -204,39 +230,62 @@ const CombinationBookingModal: React.FC<CombinationBookingModalProps> = ({
     }
   }, [isOpen, isDataLoaded]);
 
-  // 顧客検索フィルタリング
-  // 注意: 選択直後に customerSearch が名前で更新されるため、
-  // 選択済みと一致するだけのときは候補を再オープンしない（2タップ問題の防止）
+  // 電話番号検索・1件なら自動確定
   useEffect(() => {
-    const query = customerSearch.trim();
+    if (selectedCustomer) {
+      setPhoneMatches([]);
+      return;
+    }
+
+    if (phoneDigits.length < 3) {
+      setPhoneMatches([]);
+      return;
+    }
+
+    const matches = customers.filter(customer => {
+      if (!customer.phone) return false;
+      return digitsOnly(customer.phone).includes(phoneDigits);
+    });
+    setPhoneMatches(matches);
+
+    // 4桁以上で一意一致なら自動確定（「変更」直後はスキップ）
+    if (
+      phoneDigits.length >= 4 &&
+      matches.length === 1 &&
+      !skipPhoneAutoSelectRef.current
+    ) {
+      selectCustomer(matches[0], { keepPhone: true });
+    }
+  }, [phoneSearch, customers, selectedCustomer]);
+
+  // 名前検索（補助）
+  useEffect(() => {
+    if (selectedCustomer || !showNameSearch) {
+      setNameMatches([]);
+      setShowNameList(false);
+      return;
+    }
+
+    const query = nameSearch.trim();
     if (!query) {
-      setFilteredCustomers([]);
-      setShowCustomerList(false);
+      setNameMatches([]);
+      setShowNameList(false);
       return;
     }
 
-    if (selectedCustomer && query === selectedCustomer.name) {
-      setFilteredCustomers([]);
-      setShowCustomerList(false);
-      return;
-    }
-
-    const filtered = customers.filter(
-      customer =>
-        customer.name.toLowerCase().includes(query.toLowerCase()) ||
-        (customer.phone && customer.phone.includes(query))
+    const matches = customers.filter(customer =>
+      customer.name.toLowerCase().includes(query.toLowerCase())
     );
-    setFilteredCustomers(filtered);
-    setShowCustomerList(filtered.length > 0);
-  }, [customerSearch, customers, selectedCustomer]);
+    setNameMatches(matches);
+    setShowNameList(matches.length > 0);
+  }, [nameSearch, customers, selectedCustomer, showNameSearch]);
 
   // 初期顧客設定
   useEffect(() => {
     if (initialCustomerId && customers.length > 0) {
       const customer = customers.find(c => c.id === initialCustomerId);
       if (customer) {
-        setSelectedCustomer(customer);
-        setCustomerSearch(customer.name);
+        selectCustomer(customer);
       }
     }
   }, [initialCustomerId, customers]);
@@ -255,12 +304,14 @@ const CombinationBookingModal: React.FC<CombinationBookingModalProps> = ({
 
       const customerList = Array.isArray(customersResponse.data)
         ? customersResponse.data
-        : Array.isArray((customersResponse as { customers?: Customer[] }).customers)
+        : Array.isArray(
+              (customersResponse as { customers?: Customer[] }).customers
+            )
           ? (customersResponse as { customers: Customer[] }).customers
           : [];
       setCustomers(customerList);
       setResources(resourcesResponse.resources || []);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('初期データ取得エラー:', error);
       addNotification({
         type: 'error',
@@ -287,9 +338,16 @@ const CombinationBookingModal: React.FC<CombinationBookingModalProps> = ({
     setSelectedCustomer(null);
     setSelectedMenus([]);
     setCalculationResult(null);
-    setCustomerSearch('');
+    setPhoneSearch('');
+    setNameSearch('');
+    setShowNameSearch(false);
+    setPhoneMatches([]);
+    setNameMatches([]);
+    setShowNameList(false);
+    setNewCustomerName('');
     setErrors({});
     setLastVisit(null);
+    skipPhoneAutoSelectRef.current = false;
   };
 
   /**
@@ -329,27 +387,94 @@ const CombinationBookingModal: React.FC<CombinationBookingModalProps> = ({
   };
 
   /**
-   * 顧客選択（1タップで候補を閉じる）
+   * 顧客選択
    */
-  const selectCustomer = (customer: Customer) => {
-    setShowCustomerList(false);
-    setFilteredCustomers([]);
+  const selectCustomer = (
+    customer: Customer,
+    options?: { keepPhone?: boolean }
+  ) => {
     setSelectedCustomer(customer);
-    setCustomerSearch(customer.name);
     setFormData(prev => ({ ...prev, customer_id: customer.id }));
+    setPhoneMatches([]);
+    setNameMatches([]);
+    setShowNameList(false);
+    setShowNameSearch(false);
+    setNameSearch('');
+    if (!options?.keepPhone) {
+      setPhoneSearch(customer.phone || '');
+    } else if (!phoneSearch.trim() && customer.phone) {
+      setPhoneSearch(customer.phone);
+    }
     clearError('customer_id');
     void loadLastVisit(customer.id);
   };
 
   /**
-   * 検索入力変更（手入力時は選択を解除して候補を出す）
+   * 顧客選択を解除して電話入力に戻す
    */
-  const handleCustomerSearchChange = (value: string) => {
-    setCustomerSearch(value);
-    if (selectedCustomer && value !== selectedCustomer.name) {
+  const clearCustomerSelection = () => {
+    skipPhoneAutoSelectRef.current = true;
+    setSelectedCustomer(null);
+    setFormData(prev => ({ ...prev, customer_id: 0 }));
+    setLastVisit(null);
+    setNewCustomerName('');
+  };
+
+  /**
+   * 電話番号入力変更
+   */
+  const handlePhoneSearchChange = (value: string) => {
+    skipPhoneAutoSelectRef.current = false;
+    setPhoneSearch(value);
+    if (selectedCustomer) {
       setSelectedCustomer(null);
       setFormData(prev => ({ ...prev, customer_id: 0 }));
       setLastVisit(null);
+    }
+  };
+
+  /**
+   * 該当なしのときその場で顧客を作成して選択
+   */
+  const createCustomerInline = async () => {
+    const name = newCustomerName.trim();
+    if (!name) {
+      setErrors(prev => ({ ...prev, customer_id: 'お名前を入力してください' }));
+      return;
+    }
+    if (phoneDigits.length < 7) {
+      setErrors(prev => ({
+        ...prev,
+        customer_id: '電話番号を7桁以上入力してください',
+      }));
+      return;
+    }
+
+    try {
+      setIsCreatingCustomer(true);
+      const customer = await customerApi.create({
+        name,
+        phone: phoneSearch.trim(),
+        loyalty_rank: 'new',
+      });
+      setCustomers(prev => [customer, ...prev]);
+      selectCustomer(customer, { keepPhone: true });
+      addNotification({
+        type: 'success',
+        title: '顧客を登録しました',
+        message: name,
+      });
+    } catch (error: unknown) {
+      console.error('顧客作成エラー:', error);
+      const message =
+        error instanceof Error ? error.message : '顧客の登録に失敗しました';
+      addNotification({
+        type: 'error',
+        title: '顧客登録エラー',
+        message,
+      });
+    } finally {
+      setIsCreatingCustomer(false);
     }
   };
 
@@ -450,16 +575,20 @@ const CombinationBookingModal: React.FC<CombinationBookingModalProps> = ({
 
       onSuccess?.(booking);
       onClose();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('予約作成エラー:', error);
+      const err = error as {
+        response?: { data?: { error?: { details?: Record<string, string> } } };
+        message?: string;
+      };
 
-      if (error.response?.data?.error?.details) {
-        setErrors(error.response.data.error.details);
+      if (err.response?.data?.error?.details) {
+        setErrors(err.response.data.error.details);
       } else {
         addNotification({
           type: 'error',
           title: '予約作成エラー',
-          message: error.message || '予約の作成に失敗しました',
+          message: err.message || '予約の作成に失敗しました',
         });
       }
     } finally {
@@ -475,25 +604,49 @@ const CombinationBookingModal: React.FC<CombinationBookingModalProps> = ({
     onClose();
   };
 
-  return (
-    <Modal isOpen={isOpen} onClose={handleClose} size='xl'>
-      <div className='p-6'>
-        {/* ヘッダー */}
-        <div className='flex items-center justify-between mb-6'>
-          <div className='flex items-center space-x-3'>
-            <PlusIcon className='w-6 h-6 text-emerald-600' />
-            <h2 className='text-xl font-semibold text-gray-900'>新規予約</h2>
-          </div>
-          <Button
-            variant='ghost'
-            size='sm'
-            onClick={handleClose}
-            className='text-gray-400 hover:text-gray-600'
-          >
-            <XMarkIcon className='w-5 h-5' />
-          </Button>
-        </div>
+  const showInlineCreate =
+    !selectedCustomer &&
+    phoneDigits.length >= 7 &&
+    phoneMatches.length === 0;
 
+  const showPhoneCandidates =
+    !selectedCustomer &&
+    phoneDigits.length >= 3 &&
+    phoneMatches.length > 1;
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      size='xl'
+      title='新規予約'
+      footer={
+        <>
+          <Button
+            variant='outline'
+            onClick={handleClose}
+            disabled={isSubmitting}
+          >
+            キャンセル
+          </Button>
+          <Button
+            variant='primary'
+            onClick={handleSubmit}
+            disabled={
+              isSubmitting ||
+              !formData.customer_id ||
+              !formData.booking_date ||
+              !formData.start_time ||
+              selectedMenus.length === 0
+            }
+            className='bg-emerald-600 hover:bg-emerald-700 border-emerald-600'
+          >
+            {isSubmitting ? '作成中...' : '予約を作成'}
+          </Button>
+        </>
+      }
+    >
+      <div className='space-y-6'>
         {/* ローディング */}
         {isLoadingData && (
           <div className='text-center py-8'>
@@ -502,73 +655,178 @@ const CombinationBookingModal: React.FC<CombinationBookingModalProps> = ({
           </div>
         )}
 
-        {/* フォーム */}
         {!isLoadingData && (
-          <div className='space-y-6'>
-            {/* 顧客選択 */}
+          <>
+            {/* 顧客（電話優先） */}
             <div>
               <label className='block text-sm font-medium text-gray-700 mb-2'>
-                <UserIcon className='w-4 h-4 inline mr-1' />
-                顧客選択
+                <PhoneIcon className='w-4 h-4 inline mr-1' />
+                電話番号
               </label>
-              <div className='relative'>
-                <MagnifyingGlassIcon className='absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400' />
-                <input
-                  type='text'
-                  placeholder='顧客名または電話番号で検索'
-                  value={customerSearch}
-                  onChange={e => handleCustomerSearchChange(e.target.value)}
-                  onFocus={() => {
-                    // 未選択、または検索文字列が選択名と違うときだけ候補を開く
-                    if (
-                      customerSearch.trim() &&
-                      !(selectedCustomer && customerSearch === selectedCustomer.name) &&
-                      filteredCustomers.length > 0
-                    ) {
-                      setShowCustomerList(true);
-                    }
-                  }}
-                  className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent ${
-                    errors.customer_id ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                />
-                {showCustomerList && filteredCustomers.length > 0 && (
-                  <div
-                    className='absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto'
-                    // 入力の blur より先に選択を確定（モバイルの1タップ目を拾う）
-                    onMouseDown={e => e.preventDefault()}
-                  >
-                    {filteredCustomers.map(customer => (
-                      <button
-                        type='button'
-                        key={customer.id}
-                        onMouseDown={e => {
-                          e.preventDefault();
-                          selectCustomer(customer);
-                        }}
-                        onClick={() => selectCustomer(customer)}
-                        className='w-full text-left px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0'
-                      >
-                        <div className='font-medium text-gray-900'>
-                          {customer.name}
-                        </div>
-                        <div className='text-sm text-gray-600'>
-                          {customer.phone}
-                        </div>
-                      </button>
-                    ))}
+
+              {selectedCustomer ? (
+                <div className='rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-3'>
+                  <div className='flex items-start justify-between gap-3'>
+                    <div className='min-w-0'>
+                      <p className='text-xs font-medium text-emerald-700 mb-0.5'>
+                        お客様
+                      </p>
+                      <p className='font-semibold text-gray-900 truncate'>
+                        {selectedCustomer.name}
+                      </p>
+                      <p className='text-sm text-gray-600'>
+                        {selectedCustomer.phone || '電話番号なし'}
+                      </p>
+                    </div>
+                    <Button
+                      type='button'
+                      variant='outline'
+                      size='sm'
+                      onClick={clearCustomerSelection}
+                      className='shrink-0'
+                    >
+                      変更
+                    </Button>
                   </div>
-                )}
-              </div>
-              {errors.customer_id && (
-                <p className='text-sm text-red-600 mt-1'>
-                  {errors.customer_id}
-                </p>
+                </div>
+              ) : (
+                <>
+                  <div className='relative'>
+                    <PhoneIcon className='absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400' />
+                    <input
+                      type='tel'
+                      inputMode='tel'
+                      autoComplete='tel'
+                      placeholder='例: 09012345678'
+                      value={phoneSearch}
+                      onChange={e => handlePhoneSearchChange(e.target.value)}
+                      className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent ${
+                        errors.customer_id
+                          ? 'border-red-500'
+                          : 'border-gray-300'
+                      }`}
+                    />
+                  </div>
+
+                  {showPhoneCandidates && (
+                    <div className='mt-2 border border-gray-200 rounded-lg overflow-hidden max-h-48 overflow-y-auto'>
+                      {phoneMatches.map(customer => (
+                        <button
+                          type='button'
+                          key={customer.id}
+                          onClick={() => selectCustomer(customer)}
+                          className='w-full text-left px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 min-h-[44px]'
+                        >
+                          <div className='font-medium text-gray-900'>
+                            {customer.name}
+                          </div>
+                          <div className='text-sm text-gray-600'>
+                            {customer.phone}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {showInlineCreate && (
+                    <div className='mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-3'>
+                      <p className='text-sm text-amber-900'>
+                        該当するお客様がいません。この電話番号で新規登録できます。
+                      </p>
+                      <div>
+                        <label className='block text-xs font-medium text-gray-700 mb-1'>
+                          お名前
+                        </label>
+                        <input
+                          type='text'
+                          placeholder='山田 太郎'
+                          value={newCustomerName}
+                          onChange={e => {
+                            setNewCustomerName(e.target.value);
+                            clearError('customer_id');
+                          }}
+                          className='w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent'
+                        />
+                      </div>
+                      <Button
+                        type='button'
+                        variant='primary'
+                        onClick={createCustomerInline}
+                        disabled={isCreatingCustomer || !newCustomerName.trim()}
+                        className='w-full bg-emerald-600 hover:bg-emerald-700 border-emerald-600 min-h-[44px]'
+                      >
+                        <PlusIcon className='w-4 h-4 mr-1 inline' />
+                        {isCreatingCustomer
+                          ? '登録中...'
+                          : '登録してこのお客様を選択'}
+                      </Button>
+                    </div>
+                  )}
+
+                  <div className='mt-2'>
+                    <button
+                      type='button'
+                      onClick={() => setShowNameSearch(prev => !prev)}
+                      className='text-sm text-emerald-700 hover:text-emerald-800 underline-offset-2 hover:underline min-h-[44px] inline-flex items-center'
+                    >
+                      <UserIcon className='w-4 h-4 mr-1' />
+                      {showNameSearch
+                        ? '名前検索を閉じる'
+                        : '名前で探す（補助）'}
+                    </button>
+                  </div>
+
+                  {showNameSearch && (
+                    <div className='mt-2 relative'>
+                      <MagnifyingGlassIcon className='absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400' />
+                      <input
+                        type='text'
+                        placeholder='顧客名で検索'
+                        value={nameSearch}
+                        onChange={e => setNameSearch(e.target.value)}
+                        className='w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent'
+                      />
+                      {showNameList && nameMatches.length > 0 && (
+                        <div
+                          className='absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto'
+                          onMouseDown={e => e.preventDefault()}
+                        >
+                          {nameMatches.map(customer => (
+                            <button
+                              type='button'
+                              key={customer.id}
+                              onMouseDown={e => {
+                                e.preventDefault();
+                                selectCustomer(customer);
+                              }}
+                              onClick={() => selectCustomer(customer)}
+                              className='w-full text-left px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0'
+                            >
+                              <div className='font-medium text-gray-900'>
+                                {customer.name}
+                              </div>
+                              <div className='text-sm text-gray-600'>
+                                {customer.phone}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
               )}
+
+              {errors.customer_id && (
+                <p className='text-sm text-red-600 mt-1'>{errors.customer_id}</p>
+              )}
+
               {selectedCustomer && (
                 <div className='mt-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5'>
                   {loadingLastVisit ? (
-                    <p className='text-sm text-gray-500'>前回の予約を確認中...</p>
+                    <p className='text-sm text-gray-500'>
+                      前回の予約を確認中...
+                    </p>
                   ) : lastVisit ? (
                     <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
                       <div className='min-w-0'>
@@ -600,94 +858,94 @@ const CombinationBookingModal: React.FC<CombinationBookingModalProps> = ({
               )}
             </div>
 
-            {/* 日付・時間選択 */}
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-              <div>
-                <label className='block text-sm font-medium text-gray-700 mb-2'>
-                  <CalendarIcon className='w-4 h-4 inline mr-1' />
-                  予約日
-                </label>
-                <DatePicker
-                  value={
-                    formData.booking_date
-                      ? new Date(formData.booking_date)
-                      : null
-                  }
-                  onChange={date => {
-                    setFormData(prev => ({
-                      ...prev,
-                      booking_date: date
-                        ? date.toISOString().split('T')[0]
-                        : '',
-                    }));
-                    clearError('booking_date');
-                  }}
-                  className={errors.booking_date ? 'border-red-500' : ''}
-                />
-                {errors.booking_date && (
-                  <p className='text-sm text-red-600 mt-1'>
-                    {errors.booking_date}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className='block text-sm font-medium text-gray-700 mb-2'>
-                  <ClockIcon className='w-4 h-4 inline mr-1' />
-                  開始時間
-                </label>
-                <select
-                  value={formData.start_time}
-                  onChange={e => {
-                    setFormData(prev => ({
-                      ...prev,
-                      start_time: e.target.value,
-                    }));
-                    clearError('start_time');
-                  }}
-                  className={`w-full px-3 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent ${
-                    errors.start_time ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                >
-                  <option value=''>時間を選択（15分刻み）</option>
-                  {timeSlots.map(slot => (
-                    <option key={slot} value={slot}>
-                      {slot}
-                    </option>
-                  ))}
-                </select>
-                {errors.start_time && (
-                  <p className='text-sm text-red-600 mt-1'>
-                    {errors.start_time}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* リソース選択 */}
+            {/* 予約日 */}
             <div>
               <label className='block text-sm font-medium text-gray-700 mb-2'>
-                担当者（オプション）
+                <CalendarIcon className='w-4 h-4 inline mr-1' />
+                予約日
               </label>
-              <select
-                value={formData.resource_id || ''}
-                onChange={e =>
-                  selectResource(
-                    e.target.value ? parseInt(e.target.value) : undefined
-                  )
+              <DatePicker
+                value={
+                  formData.booking_date
+                    ? new Date(formData.booking_date)
+                    : null
                 }
-                className='w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent'
-              >
-                <option value=''>担当者を選択</option>
-                {resources.map(resource => (
-                  <option key={resource.id} value={resource.id}>
-                    {resource.display_name || resource.name}
-                  </option>
-                ))}
-              </select>
+                onChange={date => {
+                  setFormData(prev => ({
+                    ...prev,
+                    booking_date: date
+                      ? date.toISOString().split('T')[0]
+                      : '',
+                  }));
+                  clearError('booking_date');
+                }}
+                className={errors.booking_date ? 'border-red-500' : ''}
+              />
+              {errors.booking_date && (
+                <p className='text-sm text-red-600 mt-1'>
+                  {errors.booking_date}
+                </p>
+              )}
             </div>
 
-            {/* メニュー選択 */}
+            {/* 開始時間（チップ） */}
+            <div>
+              <label className='block text-sm font-medium text-gray-700 mb-2'>
+                <ClockIcon className='w-4 h-4 inline mr-1' />
+                開始時間
+                {formData.start_time && (
+                  <span className='ml-2 text-emerald-700 font-semibold'>
+                    {formData.start_time}
+                  </span>
+                )}
+              </label>
+              <div className='flex flex-wrap gap-2 max-h-40 overflow-y-auto p-1 -m-1'>
+                {timeSlots.map(slot => (
+                  <button
+                    type='button'
+                    key={slot}
+                    onClick={() => {
+                      setFormData(prev => ({ ...prev, start_time: slot }));
+                      clearError('start_time');
+                    }}
+                    className={chipClass(formData.start_time === slot)}
+                  >
+                    {slot}
+                  </button>
+                ))}
+              </div>
+              {errors.start_time && (
+                <p className='text-sm text-red-600 mt-1'>{errors.start_time}</p>
+              )}
+            </div>
+
+            {/* 担当（チップ） */}
+            <div>
+              <label className='block text-sm font-medium text-gray-700 mb-2'>
+                担当（任意）
+              </label>
+              <div className='flex flex-wrap gap-2'>
+                <button
+                  type='button'
+                  onClick={() => selectResource(undefined)}
+                  className={chipClass(formData.resource_id == null)}
+                >
+                  指定なし
+                </button>
+                {resources.map(resource => (
+                  <button
+                    type='button'
+                    key={resource.id}
+                    onClick={() => selectResource(resource.id)}
+                    className={chipClass(formData.resource_id === resource.id)}
+                  >
+                    {resource.display_name || resource.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* メニュー選択（一覧上・選択下+sticky） */}
             <div>
               <label className='block text-sm font-medium text-gray-700 mb-2'>
                 メニュー
@@ -748,37 +1006,12 @@ const CombinationBookingModal: React.FC<CombinationBookingModalProps> = ({
                   }))
                 }
                 placeholder='顧客からの要望など'
-                rows={3}
+                rows={2}
                 className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent'
               />
             </div>
-          </div>
+          </>
         )}
-
-        {/* フッター */}
-        <div className='flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200'>
-          <Button
-            variant='outline'
-            onClick={handleClose}
-            disabled={isSubmitting}
-          >
-            キャンセル
-          </Button>
-          <Button
-            variant='primary'
-            onClick={handleSubmit}
-            disabled={
-              isSubmitting ||
-              !formData.customer_id ||
-              !formData.booking_date ||
-              !formData.start_time ||
-              selectedMenus.length === 0
-            }
-            className='bg-emerald-600 hover:bg-emerald-700 border-emerald-600'
-          >
-            {isSubmitting ? '作成中...' : '予約を作成'}
-          </Button>
-        </div>
       </div>
     </Modal>
   );
