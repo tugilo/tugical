@@ -1,7 +1,7 @@
 # Phase Registry
 
 **作成日時**: 2026-07-18 21:30:51  
-**最終更新日時**: 2026-07-19 05:07:32  
+**最終更新日時**: 2026-07-19 05:07:49  
 
 | Phase ID | 名称 | 種別 | 状態 | 完了日 | ブランチ |
 |----------|------|------|------|--------|----------|
@@ -9,7 +9,7 @@
 | PHASE_002 | admin_ux_manualess_fix | implement | 完了 | 2026-07-18 21:53:52 | feature/phase002-admin-ux-manualess-fix（merge: 68bed26） |
 | PHASE_003 | booking_create_ux | implement | 完了 | 2026-07-19 04:38:49 | feature/phase003-booking-create-ux（merge: 8f80e66） |
 | PHASE_004 | customer_dropdown_close | implement | 完了 | 2026-07-19 04:42:32 | feature/phase004-customer-dropdown-close（merge: 3aadc93） |
-| PHASE_005 | booking_modal_ux | implement | 完了 | 2026-07-19 05:07:32 | feature/phase005-booking-modal-ux |
+| PHASE_005 | booking_modal_ux | implement | 完了 | 2026-07-19 05:07:49 | feature/phase005-booking-modal-ux（merge: 2fcabe1） |
 
 ---
 
