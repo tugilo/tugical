@@ -1,7 +1,7 @@
 # PHASE_019_resource_priority_ui REPORT
 
 **作成日時**: 2026-07-19 06:12:01  
-**最終更新日時**: 2026-07-19 06:12:01  
+**最終更新日時**: 2026-07-19 06:12:22  
 **Phase ID**: PHASE_019  
 **フェーズ種別**: implement  
 
@@ -13,7 +13,7 @@
 ## Merge Evidence
 
 ```
-merge commit id: (merge 後に記入)
+merge commit id: 42be408
 source branch: feature/phase019-resource-priority-ui
 target branch: develop
 phase id: 019
@@ -24,7 +24,17 @@ test command: docker compose exec -T app npm run build
 test result: success
 
 changed files:
-(merge 後に記入)
+app/Models/Resource.php
+docs/process/PHASE_REGISTRY.md
+docs/process/phases/PHASE_019_resource_priority_ui_PLAN.md
+docs/process/phases/PHASE_019_resource_priority_ui_REPORT.md
+docs/process/phases/PHASE_019_resource_priority_ui_WORKLOG.md
+resources/js/components/admin/modal/Modal.tsx
+resources/js/components/admin/resources/ResourceCard.tsx
+resources/js/components/admin/resources/ResourceCreateModal.tsx
+resources/js/components/admin/resources/ResourceEditModal.tsx
+resources/js/components/admin/ui/SoftNumberKeypad.tsx
+resources/js/components/admin/ui/fieldTips.ts
 
 scope check: OK
 ssot check: OK

@@ -1,7 +1,7 @@
 # Phase Registry
 
 **作成日時**: 2026-07-18 21:30:51  
-**最終更新日時**: 2026-07-19 06:12:00  
+**最終更新日時**: 2026-07-19 06:12:22  
 
 | Phase ID | 名称 | 種別 | 状態 | 完了日 | ブランチ |
 |----------|------|------|------|--------|----------|
@@ -23,7 +23,7 @@
 | PHASE_016 | dashboard_menu_display | implement | 完了 | 2026-07-19 05:59:05 | feature/phase016-dashboard-menu-display（merge: 09f3c0a） |
 | PHASE_017 | auto_assign_resource | implement | 完了 | 2026-07-19 06:06:05 | feature/phase017-auto-assign-resource（merge: 0bc2980） |
 | PHASE_018 | backfill_unassigned_resources | implement | 完了 | 2026-07-19 06:09:58 | feature/phase018-backfill-unassigned-resources（merge: d765c0f） |
-| PHASE_019 | resource_priority_ui | implement | 進行中 | — | feature/phase019-resource-priority-ui |
+| PHASE_019 | resource_priority_ui | implement | 完了 | 2026-07-19 06:12:22 | feature/phase019-resource-priority-ui（merge: 42be408） |
 
 ---
 
