@@ -1,7 +1,7 @@
 # PHASE_018_backfill_unassigned_resources REPORT
 
 **作成日時**: 2026-07-19 06:09:30  
-**最終更新日時**: 2026-07-19 06:09:30  
+**最終更新日時**: 2026-07-19 06:09:58  
 **Phase ID**: PHASE_018  
 **フェーズ種別**: implement  
 
@@ -13,7 +13,7 @@
 ## Merge Evidence
 
 ```
-merge commit id: (merge 後に記入)
+merge commit id: d765c0f
 source branch: feature/phase018-backfill-unassigned-resources
 target branch: develop
 phase id: 018
@@ -24,7 +24,13 @@ test command: php artisan bookings:backfill-unassigned-resources
 test result: assigned=5 forced=0 skipped=0 remaining=0
 
 changed files:
-(merge 後に記入)
+app/Console/Commands/BackfillUnassignedBookingResourcesCommand.php
+app/Services/AvailabilityService.php
+app/Services/BookingService.php
+docs/process/PHASE_REGISTRY.md
+docs/process/phases/PHASE_018_backfill_unassigned_resources_PLAN.md
+docs/process/phases/PHASE_018_backfill_unassigned_resources_REPORT.md
+docs/process/phases/PHASE_018_backfill_unassigned_resources_WORKLOG.md
 
 scope check: OK
 ssot check: OK
