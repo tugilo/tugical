@@ -1,16 +1,36 @@
 /**
  * LIFF 予約フロー（4ステップ・提案型導線）
- * 1. メニューを選ぶ 2. おすすめ日時（／他の日時） 3. 確認 4. 完了
+ * 1. メニューを選ぶ 2. おすすめ日時（時期指定／他の日時） 3. 確認 4. 完了
  */
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 
 const API_BASE = '/api/v1/liff';
 const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'] as const;
-/** 空き検索・代替日提案の日数（日付一覧と同じ） */
-const AVAIL_DAYS = 14;
+/** 1回の空き検索窓（日数） */
+const WINDOW_DAYS = 14;
 /** おすすめとして先に出す枠数 */
 const SUGGEST_LIMIT = 5;
+/** 候補日として出す最大件数 */
+const CANDIDATE_DAYS_LIMIT = 5;
+
+/** 時期プリセット（オフセットはおおよそ） */
+const HORIZON_MAIN = [
+  { id: 'soon', label: '直近', offsetDays: 0 },
+  { id: '1m', label: '1ヶ月後', offsetDays: 30 },
+  { id: '3m', label: '3ヶ月後', offsetDays: 90 },
+] as const;
+
+/** 「〜ヶ月後」の追加プリセット */
+const HORIZON_MORE = [
+  { id: '2m', label: '2ヶ月後', offsetDays: 60 },
+  { id: '4m', label: '4ヶ月後', offsetDays: 120 },
+  { id: '6m', label: '6ヶ月後', offsetDays: 180 },
+] as const;
+
+type HorizonId =
+  | (typeof HORIZON_MAIN)[number]['id']
+  | (typeof HORIZON_MORE)[number]['id'];
 
 interface MenuItem {
   id: number;
@@ -45,6 +65,12 @@ interface CompletedBooking {
   total_price?: number;
 }
 
+interface DayOption {
+  value: string;
+  label: string;
+  count: number;
+}
+
 interface BookingFlowProps {
   storeId: number;
   customerId: number;
@@ -61,6 +87,19 @@ function toDateKey(d: Date): string {
     '-' +
     String(d.getDate()).padStart(2, '0')
   );
+}
+
+/** today から offset 日後を起点に count 日分の日付キー */
+function buildDateKeys(offsetDays: number, count: number): string[] {
+  const base = new Date();
+  base.setHours(12, 0, 0, 0);
+  const keys: string[] = [];
+  for (let i = 0; i < count; i++) {
+    const d = new Date(base);
+    d.setDate(base.getDate() + offsetDays + i);
+    keys.push(toDateKey(d));
+  }
+  return keys;
 }
 
 /** 日付表示（今日(月) / 明日(火) / 7/22(火)） */
@@ -112,6 +151,28 @@ async function fetchDaySlots(
     .map(s => ({ ...s, booking_date: dateKey }));
 }
 
+/** 日別件数から候補日リストを作る（excludeDate を除外） */
+function buildCandidateDays(
+  counts: Record<string, number>,
+  todayKey: string,
+  excludeDate?: string
+): DayOption[] {
+  return Object.entries(counts)
+    .filter(([dk, c]) => c > 0 && dk !== excludeDate)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .slice(0, CANDIDATE_DAYS_LIMIT)
+    .map(([value, count]) => ({
+      value,
+      label: formatDateLabel(value, todayKey),
+      count,
+    }));
+}
+
+function horizonLabel(id: HorizonId): string {
+  const all = [...HORIZON_MAIN, ...HORIZON_MORE];
+  return all.find(h => h.id === id)?.label || '直近';
+}
+
 /**
  * LIFF 予約メインフロー
  */
@@ -126,6 +187,9 @@ const BookingFlow: React.FC<BookingFlowProps> = ({
   const [datetimeView, setDatetimeView] = useState<
     'suggest' | 'pickDate' | 'pickSlot'
   >('suggest');
+  /** 時期プリセット */
+  const [horizonId, setHorizonId] = useState<HorizonId>('soon');
+  const [showMoreHorizons, setShowMoreHorizons] = useState(false);
 
   const [menu, setMenu] = useState<MenuItem | null>(null);
   const [date, setDate] = useState<string>('');
@@ -148,45 +212,59 @@ const BookingFlow: React.FC<BookingFlowProps> = ({
 
   const todayKey = useMemo(() => toDateKey(new Date()), []);
 
-  const dateOptions = useMemo(() => {
-    const opts: { value: string; label: string }[] = [];
-    const base = new Date();
-    base.setHours(12, 0, 0, 0);
-    for (let i = 0; i < 14; i++) {
-      const d = new Date(base);
-      d.setDate(base.getDate() + i);
-      const value = toDateKey(d);
-      opts.push({ value, label: formatDateLabel(value, todayKey) });
-    }
-    return opts;
-  }, [todayKey]);
+  const horizonOffset = useMemo(() => {
+    const all = [...HORIZON_MAIN, ...HORIZON_MORE];
+    return all.find(h => h.id === horizonId)?.offsetDays ?? 0;
+  }, [horizonId]);
 
-  /** メニュー確定後：おすすめ枠を並列取得 */
+  const dateOptions = useMemo(() => {
+    return buildDateKeys(horizonOffset, WINDOW_DAYS).map(value => ({
+      value,
+      label: formatDateLabel(value, todayKey),
+    }));
+  }, [horizonOffset, todayKey]);
+
+  const candidateDays = useMemo(
+    () => buildCandidateDays(daySlotCounts, todayKey, date || undefined),
+    [daySlotCounts, todayKey, date]
+  );
+
+  /** メニュー＋時期確定後：おすすめ枠を並列取得（空きなしなら次窓も探索） */
   const loadSuggestions = useCallback(
-    async (menuId: number) => {
+    async (menuId: number, offsetDays: number) => {
       setLoading(true);
       setError(null);
       setSuggestedSlots([]);
       setDaySlotCounts({});
       try {
-        const dates: string[] = [];
-        const base = new Date();
-        base.setHours(12, 0, 0, 0);
-        for (let i = 0; i < AVAIL_DAYS; i++) {
-          const d = new Date(base);
-          d.setDate(base.getDate() + i);
-          dates.push(toDateKey(d));
-        }
-        const results = await Promise.all(
-          dates.map(dk => fetchDaySlots(storeId, menuId, dk))
+        const primaryDates = buildDateKeys(offsetDays, WINDOW_DAYS);
+        const primaryResults = await Promise.all(
+          primaryDates.map(dk => fetchDaySlots(storeId, menuId, dk))
         );
         const counts: Record<string, number> = {};
         const merged: TimeSlot[] = [];
-        results.forEach((daySlots, idx) => {
+        primaryResults.forEach((daySlots, idx) => {
           const collapsed = collapseSlotsByStart(daySlots);
-          counts[dates[idx]] = collapsed.length;
+          counts[primaryDates[idx]] = collapsed.length;
           merged.push(...collapsed);
         });
+
+        // 窓内に空きが無い場合、次の14日も探して候補日を確保
+        if (merged.length === 0) {
+          const nextDates = buildDateKeys(
+            offsetDays + WINDOW_DAYS,
+            WINDOW_DAYS
+          );
+          const nextResults = await Promise.all(
+            nextDates.map(dk => fetchDaySlots(storeId, menuId, dk))
+          );
+          nextResults.forEach((daySlots, idx) => {
+            const collapsed = collapseSlotsByStart(daySlots);
+            counts[nextDates[idx]] = collapsed.length;
+            merged.push(...collapsed);
+          });
+        }
+
         merged.sort((a, b) => {
           const da = `${a.booking_date} ${formatTime(a.start_time)}`;
           const db = `${b.booking_date} ${formatTime(b.start_time)}`;
@@ -225,9 +303,9 @@ const BookingFlow: React.FC<BookingFlowProps> = ({
 
   useEffect(() => {
     if (step === 2 && datetimeView === 'suggest' && menu) {
-      loadSuggestions(menu.id);
+      loadSuggestions(menu.id, horizonOffset);
     }
-  }, [step, datetimeView, menu, loadSuggestions]);
+  }, [step, datetimeView, menu, horizonOffset, loadSuggestions]);
 
   useEffect(() => {
     if (step === 2 && datetimeView === 'pickSlot' && menu && date) {
@@ -259,21 +337,28 @@ const BookingFlow: React.FC<BookingFlowProps> = ({
     return () => window.clearInterval(id);
   }, [step, expiresAt]);
 
-  const altDays = useMemo(() => {
-    return dateOptions
-      .filter(o => (daySlotCounts[o.value] || 0) > 0 && o.value !== date)
-      .slice(0, 3);
-  }, [dateOptions, daySlotCounts, date]);
-
   const handleMenuSelect = (m: MenuItem) => {
     setMenu(m);
     setDate('');
     setSelectedSlot(null);
     setHoldToken(null);
     setExpiresAt(null);
+    setHorizonId('soon');
+    setShowMoreHorizons(false);
     setDatetimeView('suggest');
     setStep(2);
     setError(null);
+  };
+
+  const handleHorizonSelect = (id: HorizonId) => {
+    setHorizonId(id);
+    setDate('');
+    setSelectedSlot(null);
+    setDatetimeView('suggest');
+    setError(null);
+    if (HORIZON_MORE.some(h => h.id === id)) {
+      setShowMoreHorizons(true);
+    }
   };
 
   const handleSuggestedSlotSelect = (slot: TimeSlot) => {
@@ -375,6 +460,7 @@ const BookingFlow: React.FC<BookingFlowProps> = ({
     if (step === 2) {
       if (datetimeView === 'pickSlot') {
         setDatetimeView('pickDate');
+        setDate('');
         return;
       }
       if (datetimeView === 'pickDate') {
@@ -382,51 +468,72 @@ const BookingFlow: React.FC<BookingFlowProps> = ({
         return;
       }
       setStep(1);
+      setMenu(null);
+      setHorizonId('soon');
+      setShowMoreHorizons(false);
     }
   };
 
-  const stepTitle =
-    step === 1
-      ? 'メニューを選ぶ'
-      : step === 2
-        ? '日時を選ぶ'
-        : step === 3
-          ? '内容を確認'
-          : '予約完了';
+  const steps = ['メニュー', '日時', '確認', '完了'];
+
+  /** 候補日ボタン群 */
+  const CandidateDayList: React.FC<{ days: DayOption[]; title: string }> = ({
+    days,
+    title,
+  }) => (
+    <div className='space-y-2'>
+      <p className='text-sm text-gray-600'>{title}</p>
+      {days.map(d => (
+        <button
+          key={d.value}
+          type='button'
+          onClick={() => handleDateSelect(d.value)}
+          className='w-full min-h-[48px] p-3 rounded-lg border-2 border-emerald-500 bg-emerald-50 text-emerald-800 font-medium text-left'
+        >
+          {d.label}
+          <span className='ml-2 text-sm font-normal'>
+            （空き {d.count} 枠）
+          </span>
+        </button>
+      ))}
+    </div>
+  );
 
   return (
-    <div className='min-h-screen bg-gradient-to-b from-emerald-50 to-white'>
-      <header className='bg-white shadow-sm border-b sticky top-0 z-10'>
-        <div className='max-w-md mx-auto px-4 py-3'>
-          <div className='flex items-center justify-between'>
+    <div className='min-h-screen bg-gray-50 flex flex-col'>
+      <header className='bg-white border-b border-gray-200 px-4 py-3 sticky top-0 z-10'>
+        <div className='flex items-center gap-3'>
+          {step > 1 && step < 4 ? (
             <button
               type='button'
               onClick={handleBack}
-              className='min-h-[44px] min-w-[44px] px-2 text-gray-600 hover:text-gray-800 disabled:opacity-40'
-              disabled={step <= 1 || step === 4}
+              className='min-w-[44px] min-h-[44px] text-gray-600'
               aria-label='戻る'
             >
-              ← 戻る
+              ←
             </button>
-            <h1 className='text-lg font-semibold text-gray-900'>{stepTitle}</h1>
-            <div className='w-11' />
-          </div>
-          <div className='mt-2 flex justify-between text-xs text-gray-500'>
-            <span>ステップ {Math.min(step, 4)} / 4</span>
-            <span>{Math.round((Math.min(step, 4) / 4) * 100)}%</span>
-          </div>
-          <div className='w-full bg-gray-200 rounded-full h-1.5 mt-1'>
-            <motion.div
-              className='bg-emerald-500 h-1.5 rounded-full'
-              initial={{ width: 0 }}
-              animate={{ width: `${(Math.min(step, 4) / 4) * 100}%` }}
-              transition={{ duration: 0.3 }}
-            />
+          ) : (
+            <span className='w-11' />
+          )}
+          <div className='flex-1'>
+            <p className='text-xs text-gray-500'>
+              ステップ {step} / 4 · {steps[step - 1]}
+            </p>
+            <div className='flex gap-1 mt-1'>
+              {steps.map((_, i) => (
+                <div
+                  key={steps[i]}
+                  className={`h-1 flex-1 rounded ${
+                    i < step ? 'bg-emerald-500' : 'bg-gray-200'
+                  }`}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </header>
 
-      <main className='max-w-md mx-auto px-4 py-6 pb-24'>
+      <main className='flex-1 px-4 py-4 max-w-lg mx-auto w-full'>
         {error && (
           <div className='mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm'>
             {error}
@@ -447,18 +554,81 @@ const BookingFlow: React.FC<BookingFlowProps> = ({
               {menu.display_name || menu.name}
             </p>
 
+            {/* 時期ショートカット */}
+            <div className='space-y-2'>
+              <p className='text-xs text-gray-500'>いつ頃がご希望ですか？</p>
+              <div className='flex flex-wrap gap-2'>
+                {HORIZON_MAIN.map(h => (
+                  <button
+                    key={h.id}
+                    type='button'
+                    onClick={() => {
+                      setShowMoreHorizons(false);
+                      handleHorizonSelect(h.id);
+                    }}
+                    className={`min-h-[44px] px-3 rounded-lg text-sm font-medium border-2 ${
+                      horizonId === h.id
+                        ? 'border-emerald-500 bg-emerald-50 text-emerald-800'
+                        : 'border-gray-200 text-gray-700'
+                    }`}
+                  >
+                    {h.label}
+                  </button>
+                ))}
+                <button
+                  type='button'
+                  onClick={() => setShowMoreHorizons(v => !v)}
+                  className={`min-h-[44px] px-3 rounded-lg text-sm font-medium border-2 ${
+                    HORIZON_MORE.some(h => h.id === horizonId)
+                      ? 'border-emerald-500 bg-emerald-50 text-emerald-800'
+                      : 'border-gray-200 text-gray-700'
+                  }`}
+                >
+                  〜ヶ月後
+                </button>
+              </div>
+              {showMoreHorizons && (
+                <div className='flex flex-wrap gap-2'>
+                  {HORIZON_MORE.map(h => (
+                    <button
+                      key={h.id}
+                      type='button'
+                      onClick={() => handleHorizonSelect(h.id)}
+                      className={`min-h-[44px] px-3 rounded-lg text-sm font-medium border-2 ${
+                        horizonId === h.id
+                          ? 'border-emerald-500 bg-emerald-50 text-emerald-800'
+                          : 'border-gray-200 text-gray-700'
+                      }`}
+                    >
+                      {h.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {datetimeView === 'suggest' && (
               <>
                 <p className='text-gray-700'>
-                  おすすめの空きです。お好みで選んでください
+                  {horizonLabel(horizonId)}
+                  あたりのおすすめ空きです
                 </p>
                 {loading ? (
                   <LoadingSpinner />
                 ) : suggestedSlots.length === 0 ? (
                   <div className='space-y-3'>
                     <p className='text-gray-600'>
-                      直近で空きが見つかりませんでした。他の日時から探せます。
+                      この時期は空きが見つかりませんでした。
+                      {candidateDays.length > 0
+                        ? '近い候補日があります。'
+                        : '他の時期や日時から探せます。'}
                     </p>
+                    {candidateDays.length > 0 && (
+                      <CandidateDayList
+                        days={candidateDays}
+                        title='空きのある候補日'
+                      />
+                    )}
                     <button
                       type='button'
                       onClick={() => setDatetimeView('pickDate')}
@@ -496,7 +666,7 @@ const BookingFlow: React.FC<BookingFlowProps> = ({
                       onClick={() => setDatetimeView('pickDate')}
                       className='w-full min-h-[48px] rounded-lg border border-gray-300 text-gray-700 font-medium'
                     >
-                      他の日時を見る
+                      希望日を指定する
                     </button>
                   </>
                 )}
@@ -505,18 +675,39 @@ const BookingFlow: React.FC<BookingFlowProps> = ({
 
             {datetimeView === 'pickDate' && (
               <>
-                <p className='text-gray-700'>予約したい日を選んでください</p>
+                <p className='text-gray-700'>
+                  {horizonLabel(horizonId)}あたりで予約したい日を選んでください
+                </p>
+                {candidateDays.length > 0 && (
+                  <CandidateDayList
+                    days={candidateDays}
+                    title='空きのある候補日（おすすめ）'
+                  />
+                )}
                 <div className='grid grid-cols-2 gap-2'>
-                  {dateOptions.map(opt => (
-                    <button
-                      key={opt.value}
-                      type='button'
-                      onClick={() => handleDateSelect(opt.value)}
-                      className='min-h-[52px] p-4 rounded-lg border-2 border-gray-200 hover:border-emerald-500 hover:bg-emerald-50 text-left'
-                    >
-                      <span className='font-medium'>{opt.label}</span>
-                    </button>
-                  ))}
+                  {dateOptions.map(opt => {
+                    const count = daySlotCounts[opt.value];
+                    const hasCount = typeof count === 'number';
+                    return (
+                      <button
+                        key={opt.value}
+                        type='button'
+                        onClick={() => handleDateSelect(opt.value)}
+                        className={`min-h-[52px] p-4 rounded-lg border-2 text-left ${
+                          hasCount && count === 0
+                            ? 'border-gray-100 bg-gray-50 text-gray-400'
+                            : 'border-gray-200 hover:border-emerald-500 hover:bg-emerald-50'
+                        }`}
+                      >
+                        <span className='font-medium'>{opt.label}</span>
+                        {hasCount ? (
+                          <span className='block text-xs mt-0.5'>
+                            {count > 0 ? `空き ${count} 枠` : '空きなし'}
+                          </span>
+                        ) : null}
+                      </button>
+                    );
+                  })}
                 </div>
               </>
             )}
@@ -531,24 +722,13 @@ const BookingFlow: React.FC<BookingFlowProps> = ({
                 ) : slots.length === 0 ? (
                   <div className='space-y-3'>
                     <p className='text-gray-600'>
-                      この日は空きがありません。近い空き日を選んでください。
+                      この日は空きがありません。候補日から選んでください。
                     </p>
-                    {altDays.length > 0 ? (
-                      <div className='space-y-2'>
-                        {altDays.map(d => (
-                          <button
-                            key={d.value}
-                            type='button'
-                            onClick={() => handleDateSelect(d.value)}
-                            className='w-full min-h-[48px] p-3 rounded-lg border-2 border-emerald-500 bg-emerald-50 text-emerald-800 font-medium text-left'
-                          >
-                            {d.label}
-                            <span className='ml-2 text-sm font-normal'>
-                              （空き {daySlotCounts[d.value]} 枠）
-                            </span>
-                          </button>
-                        ))}
-                      </div>
+                    {candidateDays.length > 0 ? (
+                      <CandidateDayList
+                        days={candidateDays}
+                        title='空きのある候補日'
+                      />
                     ) : (
                       <button
                         type='button'
