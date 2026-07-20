@@ -1,7 +1,7 @@
 # PHASE_022_liff_horizon_suggestions
 
 **作成日時**: 2026-07-20 23:13:33  
-**最終更新日時**: 2026-07-20 23:14:51  
+**最終更新日時**: 2026-07-20 23:15:12  
 **Phase ID**: PHASE_022  
 **フェーズ種別**: implement  
 **ブランチ**: `feature/phase022-liff-horizon-suggestions`
@@ -34,4 +34,4 @@
 - [x] 窓内空きなし時は近傍の候補日を複数提案
 - [x] 希望日空きなし時の候補日を最大5件
 - [x] `npm run build`（Docker）成功
-- [ ] develop へ merge / push
+- [x] develop へ merge / push
