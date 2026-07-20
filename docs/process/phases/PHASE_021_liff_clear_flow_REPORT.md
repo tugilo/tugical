@@ -1,7 +1,7 @@
 # PHASE_021_liff_clear_flow REPORT
 
 **作成日時**: 2026-07-20 23:12:31  
-**最終更新日時**: 2026-07-20 23:12:31  
+**最終更新日時**: 2026-07-20 23:12:44  
 **Phase ID**: PHASE_021  
 **フェーズ種別**: implement  
 
@@ -13,7 +13,7 @@
 ## Merge Evidence
 
 ```
-merge commit id: (merge 後に記入)
+merge commit id: 0245fd8
 source branch: feature/phase021-liff-clear-flow
 target branch: develop
 phase id: 021
@@ -24,7 +24,11 @@ test command: docker compose exec -T app npm run build
 test result: success
 
 changed files:
-(merge 後に記入)
+docs/process/PHASE_REGISTRY.md
+docs/process/phases/PHASE_021_liff_clear_flow_PLAN.md
+docs/process/phases/PHASE_021_liff_clear_flow_REPORT.md
+docs/process/phases/PHASE_021_liff_clear_flow_WORKLOG.md
+resources/js/components/liff/BookingFlow/BookingFlow.tsx
 
 scope check: OK
 ssot check: OK
