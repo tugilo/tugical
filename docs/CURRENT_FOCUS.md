@@ -1,6 +1,6 @@
 # tugical Current Focus
 
-**最終更新日時**: 2026-07-07 00:29:37  
+**最終更新日時**: 2026-07-20 23:16:59  
 
 > **判断・優先順位の正**: `STATUS.md` → `REMAINING_TASKS_PLAN_v1.0.md` §4（**#1〜18**）
 
@@ -32,10 +32,12 @@
 
 ---
 
-## 直近完了（2026-07-07）
+## 直近完了（DevOS Phase）
 
-- SEC-01 ログ機密除去、`SensitiveDataMasker`
-- P6-01〜04 LINE 暗号化・設定 API/UI・token 完全化
-- P4-01 Webhook + P6-05 routing
-- P6-03 LIFF 動的 init + ID token
-- Feature テスト 14 passed、`npm run build` 成功
+| Phase | 内容 | merge |
+|-------|------|-------|
+| PHASE_022 | LIFF 時期ショートカット・候補日提案 | `8e0dee4` |
+| PHASE_021 | LIFF 4ステップ提案型導線 | `0245fd8` |
+| PHASE_020 | スタッフ優先度ドラッグ並べ替え | `a9236cf` |
+
+LIFF 現状: メニュー → おすすめ日時（時期チップ付き）→ 確認 → 完了。詳細は `STATUS.md` §3.1 / `LIFF_PHASE1_SETUP.md`。

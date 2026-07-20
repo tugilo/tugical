@@ -1,7 +1,7 @@
 # LIFF 予約フロー フェーズ1 セットアップ
 
 **作成日**: 2026-02-11 15:43  
-**更新日**: 2026-07-06 16:50:15  
+**更新日**: 2026-07-20 23:16:59  
 
 **目的**: βリリース最低条件のうち「LIFFから単一メニュー予約が完走する」を満たすための最小手順。
 
@@ -33,13 +33,14 @@ VITE_LIFF_ID=1234567890-xxxxxxxxxx
 
 `store_id` は店舗ID。省略時は `1` が使われる。
 
-## 3. フロー概要（5ステップ）
+## 3. フロー概要（4ステップ・提案型）
 
 1. **メニュー選択** … `GET /api/v1/liff/stores/{storeId}/menus`
-2. **日付選択** … 今日〜14日後から選択
-3. **時間選択** … `GET /api/v1/liff/availability` → スロット選択で `POST /api/v1/liff/hold-slots`（10分仮押さえ）
-4. **確認** … 内容表示 → 「予約確定」で `POST /api/v1/liff/bookings`
-5. **完了** … 予約番号表示。LINE 通知は `NotificationService::sendBookingConfirmation` で送信（店舗の LINE 連携・顧客の `line_user_id` が設定されている場合）
+2. **日時（おすすめ）** … 時期ショートカット（直近 / 1・3ヶ月後 / 〜ヶ月後）で空き窓を切り替え。`GET /api/v1/liff/availability` を日別に取得しおすすめ枠を先出し。空きなし時は候補日を複数提案。希望日指定も可。枠選択で `POST /api/v1/liff/hold-slots`（仮押さえ）
+3. **確認** … 内容・仮押さえ残り時間表示 → 「予約確定」で `POST /api/v1/liff/bookings`
+4. **完了** … 予約番号・日時表示。LINE 通知は `NotificationService::sendBookingConfirmation` で送信（店舗の LINE 連携・顧客の `line_user_id` が設定されている場合）
+
+実装: `resources/js/components/liff/BookingFlow/BookingFlow.tsx`（PHASE_021 / PHASE_022）
 
 ## 4. 完了条件チェックリスト（#2 実機 E2E 用）
 

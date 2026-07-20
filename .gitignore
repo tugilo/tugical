@@ -1,6 +1,30 @@
 # tugical Project .gitignore
+# 注: Git ルートは backend/。パスはリポジトリ直下基準。
 
-# Laravel
+# Laravel（リポジトリ直下）
+/vendor/
+/node_modules/
+/public/hot
+/public/storage
+/public/build/
+/storage/*.key
+.env
+.env.backup
+.env.production
+.phpunit.result.cache
+Homestead.json
+Homestead.yaml
+npm-debug.log
+yarn-error.log
+.phpstorm.meta.php
+_ide_helper.php
+
+# ローカル AI / Cursor 作業用（コミット対象外）
+.agents/
+.cursor/
+skills-lock.json
+
+# 旧モノレポ構成向けパス（互換）
 /backend/vendor/
 /backend/node_modules/
 /backend/public/hot

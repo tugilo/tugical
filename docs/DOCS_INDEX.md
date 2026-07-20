@@ -1,8 +1,8 @@
 # tugical ドキュメント索引（司令塔）
 
-**Version**: 1.4  
+**Version**: 1.5  
 **作成日時**: 2026-07-06 16:50:15  
-**最終更新日時**: 2026-07-18 21:36:11  
+**最終更新日時**: 2026-07-20 23:16:59  
 **目的**: 再開・実装・判断時に参照するドキュメントの優先順位と役割を 1 ページに集約する。
 
 ---
@@ -16,7 +16,7 @@
 | 3 | **MVP_IMPLEMENTATION_PLAN.md** | タスク ID・DoD・実施記録 |
 | 4 | 該当タスクの要件 / Fit&Gap | 下表「テーマ別」参照 |
 
-**次に着手**: **#1 MVP-SEC-01**（ログ機密除去・P0.5）
+**次に着手**: **#2 MVP-P4-02**（LINE 通知 E2E 実機確認）
 
 ---
 
@@ -41,7 +41,8 @@
 | `LINE_STORE_INTEGRATION_REQUIREMENTS_v1.0.md` | 店舗別公式アカウント要件（v1.2 追補） |
 | `LINE_STORE_INTEGRATION_FIT_GAP_v1.0.md` | DB/API/実装 Gap・**§4.4 管理画面監査** |
 | `SECURITY_FIT_GAP_v1.0.md` | **暗号化・PII・ログ・LIFF セキュリティ Gap** |
-| `LIFF_PHASE1_SETUP.md` | LIFF 単一メニュー・URL・チェックリスト |
+| `LIFF_PHASE1_SETUP.md` | LIFF 単一メニュー・4ステップ提案型フロー・URL・チェックリスト |
+| `docs/process/PHASE_REGISTRY.md` | DevOS Phase 一覧（PHASE_001〜） |
 
 **実行順序上の LINE タスク**: #2〜3（P0）→ #4〜8（P1）→ #13（P2）
 
@@ -96,6 +97,7 @@
 
 | Version | 日時 | Changes |
 |---------|------|---------|
+| 1.5 | 2026-07-20 23:16:59 | 次着手を #2 に同期。LIFF 4ステップ・PHASE_REGISTRY を索引追加 |
 | 1.4 | 2026-07-18 21:36:11 | ADMIN_UX_MANUALESS_AUDIT / PHASE_001 を索引追加 |
 | 1.3 | 2026-07-06 17:13:11 | v1.7 同期。#1〜18、P0.5 SEC-01、次着手 #1 |
 | 1.2 | 2026-07-06 17:08:52 | SECURITY_FIT_GAP 追加 |

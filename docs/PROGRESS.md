@@ -7942,3 +7942,10 @@ Next: 店舗設定等の他画面への展開"
 - 選択時期の14日窓でおすすめ枠を提示。窓内ゼロ件時は次の14日も探索
 - 希望日空きなし時は候補日を最大5件（空き枠数付き）で提案
 - 変更: `resources/js/components/liff/BookingFlow/BookingFlow.tsx`
+
+
+## 2026-07-20 23:16 関連ドキュメント同期・gitignore 修正
+
+- `LIFF_PHASE1_SETUP.md`: 4ステップ提案型・時期ショートカットに更新
+- `CURRENT_FOCUS.md` / `DOCS_INDEX.md` / `STATUS.md`: PHASE_021/022 反映・次着手 #2 同期
+- `.gitignore`: Git ルート=backend 前提の ignore パスを追加（vendor / public/build / .agents 等）
